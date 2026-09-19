@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agendar horário</title>
+<style>
+  :root {
+    --cor-primaria: #0d1b3e;
+    --cor-secundaria: #c9a24b;
+    --cor-fundo: #f4f5f8;
+    --cor-texto: #1f2430;
+    --cor-borda: #e3e5ec;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+    background: var(--cor-fundo);
+    color: var(--cor-texto);
+    min-height: 100vh;
+  }
+  header.topo {
+    background: var(--cor-primaria);
+    color: #fff;
+    padding: 22px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  header.topo img, header.topo .logo-placeholder {
+    width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex-shrink: 0;
+  }
+  header.topo .logo-placeholder {
+    background: var(--cor-secundaria);
+    color: var(--cor-primaria);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 18px;
+  }
+  header.topo .nome { font-size: 19px; font-weight: 700; }
+  header.topo .sub { font-size: 12.5px; opacity: .75; margin-top: 2px; }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 28px 18px 60px; }
+  .card {
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px solid var(--cor-borda);
+    padding: 22px;
+    box-shadow: 0 1px 3px rgba(13,27,62,0.05);
+    margin-bottom: 20px;
+  }
+  h2.section-title { color: var(--cor-primaria); font-size: 16px; margin-bottom: 14px; }
+
+  .profissionais-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+  .profissional-card {
+    border: 2px solid var(--cor-borda);
+    border-radius: 10px;
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .profissional-card:hover { border-color: var(--cor-secundaria); }
+  .profissional-card.selecionado {
+    border-color: var(--cor-secundaria);
+    box-shadow: 0 0 0 3px rgba(201,162,75,0.2);
+  }
+  .profissional-card img, .profissional-card .foto-placeholder {
+    width: 56px; height: 56px; border-radius: 50%; object-fit: cover; margin: 0 auto 8px;
+  }
+  .profissional-card .foto-placeholder {
+    background: var(--cor-secundaria); color: var(--cor-primaria);
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px;
+  }
+  .profissional-card .nome { font-weight: 700; color: var(--cor-primaria); font-size: 13.5px; }
+  .profissional-card .esp { font-size: 11.5px; color: #6b7280; margin-top: 2px; }
+
+  .servicos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .servico-card {
+    border: 2px solid var(--cor-borda);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+    display: flex;
+    flex-direction: column;
+  }
+  .servico-card:hover { border-color: var(--cor-secundaria); }
+  .servico-card.selecionado {
+    border-color: var(--cor-secundaria);
+    box-shadow: 0 0 0 3px rgba(201,162,75,0.2);
+  }
+  .servico-card .thumb {
+    width: 100%; height: 100px; object-fit: cover; background: #eceef3;
+    display: flex; align-items: center; justify-content: center; color: #a7acb8; font-size: 12px;
+  }
+  .servico-card .body { padding: 10px 12px; }
+  .servico-card .nome { font-weight: 700; color: var(--cor-primaria); font-size: 14px; }
+  .servico-card .meta { font-size: 12.5px; color: #6b7280; margin-top: 3px; }
+
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 14px; }
+  label { display: block; font-size: 12.5px; color: #4b5162; font-weight: 600; margin-bottom: 6px; }
+  input[type=text], input[type=date], input[type=tel] {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fbfbfd;
+  }
+  input:focus {
+    outline: none; border-color: var(--cor-secundaria);
+    box-shadow: 0 0 0 3px rgba(201,162,75,0.15);
+  }
+  .field { margin-bottom: 14px; }
+
+  .grade-horarios { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; margin-top: 14px; }
+  .slot-cell {
+    text-align: center; padding: 10px 6px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    border: 2px solid transparent;
+  }
+  .slot-cell.livre { background: #e6f4ea; color: #1a7d3a; cursor: pointer; }
+  .slot-cell.livre:hover { background: #d3ecd9; }
+  .slot-cell.livre.selecionado { background: var(--cor-secundaria); color: var(--cor-primaria); border-color: var(--cor-primaria); }
+  .slot-cell.ocupado { background: #eceef3; color: #a7acb8; cursor: not-allowed; }
+  .legenda { display: flex; gap: 16px; margin-top: 12px; font-size: 12.5px; color: #6b7280; }
+  .legenda span { display: inline-flex; align-items: center; gap: 6px; }
+  .legenda .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.livre { background: #1a7d3a; }
+  .dot.ocupado { background: #a7acb8; }
+
+  .btn {
+    background: var(--cor-primaria);
+    color: #fff;
+    border: none;
+    padding: 13px 22px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: opacity .15s;
+  }
+  .btn:hover { opacity: .9; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  .empty-msg { color: #9aa0ab; font-size: 14px; padding: 14px 0; text-align: center; }
+
+  .confirmacao {
+    text-align: center;
+    padding: 20px 10px;
+  }
+  .confirmacao .check {
+    width: 60px; height: 60px; border-radius: 50%;
+    background: var(--cor-secundaria); color: var(--cor-primaria);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; margin: 0 auto 16px;
+  }
+  .confirmacao h2 { color: var(--cor-primaria); margin-bottom: 10px; }
+  .confirmacao .detalhe { font-size: 14.5px; color: #4b5162; margin-bottom: 4px; }
+  .confirmacao .detalhe strong { color: var(--cor-primaria); }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; left: 24px; max-width: 320px; margin-left: auto;
+    background: var(--cor-primaria); color: #fff;
+    padding: 12px 20px; border-radius: 8px; font-size: 14px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+    z-index: 2000; opacity: 0; transform: translateY(10px);
+    transition: opacity .2s, transform .2s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<header class="topo" id="topoHeader"></header>
+
+<div class="wrap">
+
+  <div id="areaAgendamento">
+    <div class="card">
+      <h2 class="section-title">1. Escolha o profissional</h2>
+      <div class="profissionais-grid" id="profissionaisGrid"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">2. Escolha o procedimento</h2>
+      <div class="servicos-grid" id="servicosGrid"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">3. Escolha o dia e horário</h2>
+      <div class="field" style="max-width:220px">
+        <label>Data</label>
+        <input type="date" id="inputData" required>
+      </div>
+      <div class="grade-horarios" id="gradeHorarios"></div>
+      <div class="legenda">
+        <span><span class="dot livre"></span> Disponível</span>
+        <span><span class="dot ocupado"></span> Ocupado</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">4. Seus dados</h2>
+      <div class="form-grid">
+        <div class="field">
+          <label>Nome completo</label>
+          <input type="text" id="inputNome" required placeholder="Seu nome">
+        </div>
+        <div class="field">
+          <label>Telefone</label>
+          <input type="tel" id="inputTelefone" required placeholder="(11) 99999-9999">
+        </div>
+      </div>
+    </div>
+
+    <button class="btn" id="btnConfirmar">Confirmar agendamento</button>
+  </div>
+
+  <div class="card confirmacao" id="areaConfirmacao" style="display:none">
+    <div class="check">✓</div>
+    <h2>Agendamento confirmado!</h2>
+    <div class="detalhe">Profissional: <strong id="confProfissional"></strong></div>
+    <div class="detalhe">Procedimento: <strong id="confServico"></strong></div>
+    <div class="detalhe">Data: <strong id="confData"></strong> às <strong id="confHora"></strong></div>
+    <div class="detalhe">Cliente: <strong id="confNome"></strong></div>
+    <p style="margin-top:16px;font-size:13px;color:#6b7280">Anote os dados acima. A clínica já recebeu sua solicitação.</p>
+    <button class="btn" id="btnNovoAgendamento" style="margin-top:18px;width:auto;padding:11px 20px">Fazer novo agendamento</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  const STORAGE_KEYS = {
+    config: 'estetica_config',
+    servicos: 'estetica_servicos',
+    profissionais: 'estetica_profissionais',
+    clientes: 'estetica_clientes',
+    agendamentos: 'estetica_agendamentos'
+  };
+
+  const DEFAULT_CONFIG = {
+    nomeNegocio: 'Clínica de Estética',
+    logo: '', corPrimaria: '#0d1b3e', corSecundaria: '#c9a24b',
+    negocioId: '', senhaAdmin: '', codigoMaster: '',
+    horarioAbertura: '08:00', horarioFechamento: '19:00', intervaloGrade: 30,
+    horarioPadrao: {
+      dias: {
+        seg: { ativo: true, inicio: '08:00', fim: '18:00' },
+        ter: { ativo: true, inicio: '08:00', fim: '18:00' },
+        qua: { ativo: true, inicio: '08:00', fim: '18:00' },
+        qui: { ativo: true, inicio: '08:00', fim: '18:00' },
+        sex: { ativo: true, inicio: '08:00', fim: '18:00' },
+        sab: { ativo: false, inicio: '08:00', fim: '13:00' },
+        dom: { ativo: false, inicio: '08:00', fim: '13:00' }
+      },
+      almoco: { ativo: true, inicio: '12:00', fim: '13:00' }
+    }
+  };
+
+  function load(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) { return fallback; }
+  }
+  function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function formatMoney(v) { return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function formatDateBR(iso) { if (!iso) return ''; const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; }
+  function todayISO() { return new Date().toISOString().slice(0, 10); }
+  function horaParaMin(hhmm) { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; }
+  function minParaHora(min) { const h = Math.floor(min / 60); const m = min % 60; return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'); }
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => t.classList.remove('show'), 2400);
+  }
+
+  const config = Object.assign({}, DEFAULT_CONFIG, load(STORAGE_KEYS.config, DEFAULT_CONFIG));
+  const servicos = load(STORAGE_KEYS.servicos, []);
+  const profissionais = load(STORAGE_KEYS.profissionais, []);
+  let clientes = load(STORAGE_KEYS.clientes, []);
+  let agendamentos = load(STORAGE_KEYS.agendamentos, []);
+
+  document.documentElement.style.setProperty('--cor-primaria', config.corPrimaria || DEFAULT_CONFIG.corPrimaria);
+  document.documentElement.style.setProperty('--cor-secundaria', config.corSecundaria || DEFAULT_CONFIG.corSecundaria);
+  document.title = 'Agendar horário — ' + (config.nomeNegocio || 'Clínica de Estética');
+
+  const header = document.getElementById('topoHeader');
+  const logoHtml = config.logo
+    ? `<img src="${config.logo}" alt="${config.nomeNegocio}">`
+    : `<div class="logo-placeholder">${(config.nomeNegocio || 'C').trim().charAt(0).toUpperCase()}</div>`;
+  header.innerHTML = `
+    ${logoHtml}
+    <div>
+      <div class="nome">${config.nomeNegocio || 'Clínica de Estética'}</div>
+      <div class="sub">Agende seu horário online</div>
+    </div>
+  `;
+
+  let profissionalSelecionadoId = 'qualquer';
+  let servicoSelecionadoId = servicos.length ? servicos[0].id : '';
+  let selecaoInicioMin = null;
+
+  function duracaoDoServico(servicoId) {
+    const s = servicos.find(sv => sv.id === servicoId);
+    return s ? s.duracao : 30;
+  }
+
+  function diaSemanaChave(dataISO) {
+    const dias = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+    return dias[new Date(dataISO + 'T00:00:00').getDay()];
+  }
+  function subtrairIntervalo(janelas, subInicio, subFim) {
+    const resultado = [];
+    janelas.forEach(j => {
+      if (subFim <= j.inicio || subInicio >= j.fim) { resultado.push(j); return; }
+      if (subInicio > j.inicio) resultado.push({ inicio: j.inicio, fim: Math.min(subInicio, j.fim) });
+      if (subFim < j.fim) resultado.push({ inicio: Math.max(subFim, j.inicio), fim: j.fim });
+    });
+    return resultado.filter(j => j.fim > j.inicio);
+  }
+  function janelaDoDia(profissionalId, dataISO) {
+    const prof = profissionais.find(p => p.id === profissionalId);
+    const excecao = prof && prof.excecoesDia && prof.excecoesDia[dataISO];
+    if (excecao) {
+      if (!excecao.ativo || !excecao.inicio || !excecao.fim) return null;
+      return [{ inicio: horaParaMin(excecao.inicio), fim: horaParaMin(excecao.fim) }];
+    }
+    const chave = diaSemanaChave(dataISO);
+    const diaCfg = config.horarioPadrao.dias[chave];
+    if (!diaCfg || !diaCfg.ativo) return null;
+    let janelas = [{ inicio: horaParaMin(diaCfg.inicio), fim: horaParaMin(diaCfg.fim) }];
+    const almoco = config.horarioPadrao.almoco;
+    if (almoco && almoco.ativo && almoco.inicio && almoco.fim) {
+      janelas = subtrairIntervalo(janelas, horaParaMin(almoco.inicio), horaParaMin(almoco.fim));
+    }
+    return janelas;
+  }
+  function janelaUniaoDia(dataISO) {
+    if (profissionalSelecionadoId !== 'qualquer') return janelaDoDia(profissionalSelecionadoId, dataISO);
+    let uniao = [];
+    profissionais.forEach(p => {
+      const j = janelaDoDia(p.id, dataISO);
+      if (j) uniao = uniao.concat(j);
+    });
+    return uniao.length ? uniao : null;
+  }
+
+  function profissionalDisponivel(profissionalId, data, inicioMin, duracaoMin) {
+    const prof = profissionais.find(p => p.id === profissionalId);
+    if (!prof) return false;
+    const janelas = janelaDoDia(profissionalId, data);
+    if (!janelas) return false;
+    const fimMin = inicioMin + duracaoMin;
+    const dentroDaJanela = janelas.some(j => inicioMin >= j.inicio && fimMin <= j.fim);
+    if (!dentroDaJanela) return false;
+    const bloqueado = (prof.bloqueios || []).some(b => b.data === data && inicioMin < horaParaMin(b.horaFim) && horaParaMin(b.horaInicio) < fimMin);
+    if (bloqueado) return false;
+    const ocupacoes = agendamentos.filter(a => a.profissionalId === profissionalId && a.data === data);
+    let sobrepostos = 0;
+    ocupacoes.forEach(a => {
+      const durAg = duracaoDoServico(a.servicoId);
+      const aInicio = horaParaMin(a.hora);
+      const aFim = aInicio + durAg;
+      if (inicioMin < aFim && aInicio < fimMin) sobrepostos++;
+    });
+    return sobrepostos < (prof.cadeiras || 1);
+  }
+
+  function slotDisponivel(data, inicioMin, duracaoMin) {
+    if (profissionalSelecionadoId === 'qualquer') {
+      return profissionais.some(p => profissionalDisponivel(p.id, data, inicioMin, duracaoMin));
+    }
+    return profissionalDisponivel(profissionalSelecionadoId, data, inicioMin, duracaoMin);
+  }
+
+  function resolverProfissional(data, inicioMin, duracaoMin) {
+    if (profissionalSelecionadoId !== 'qualquer') {
+      return profissionalDisponivel(profissionalSelecionadoId, data, inicioMin, duracaoMin) ? profissionalSelecionadoId : null;
+    }
+    const candidato = profissionais.find(p => profissionalDisponivel(p.id, data, inicioMin, duracaoMin));
+    return candidato ? candidato.id : null;
+  }
+
+  function renderProfissionais() {
+    const grid = document.getElementById('profissionaisGrid');
+    if (!profissionais.length) {
+      grid.innerHTML = '<div class="empty-msg">Nenhum profissional disponível no momento. Entre em contato com a clínica.</div>';
+      document.getElementById('btnConfirmar').disabled = true;
+      return;
+    }
+    const cardQualquer = `
+      <div class="profissional-card ${profissionalSelecionadoId === 'qualquer' ? 'selecionado' : ''}" data-prof="qualquer">
+        <div class="foto-placeholder">✦</div>
+        <div class="nome">Qualquer disponível</div>
+        <div class="esp">Primeiro horário livre</div>
+      </div>
+    `;
+    const cardsProf = profissionais.map(p => `
+      <div class="profissional-card ${p.id === profissionalSelecionadoId ? 'selecionado' : ''}" data-prof="${p.id}">
+        ${p.foto ? `<img src="${p.foto}" alt="${p.nome}">` : `<div class="foto-placeholder">${p.nome.trim().charAt(0).toUpperCase()}</div>`}
+        <div class="nome">${p.nome}</div>
+        <div class="esp">${p.especialidade || ''}</div>
+      </div>
+    `).join('');
+    grid.innerHTML = cardQualquer + cardsProf;
+  }
+  document.getElementById('profissionaisGrid').addEventListener('click', (e) => {
+    const card = e.target.closest('[data-prof]');
+    if (!card) return;
+    profissionalSelecionadoId = card.dataset.prof;
+    selecaoInicioMin = null;
+    renderProfissionais();
+    renderGradeHorarios();
+  });
+
+  function renderServicos() {
+    const grid = document.getElementById('servicosGrid');
+    if (!servicos.length) {
+      grid.innerHTML = '<div class="empty-msg">Nenhum procedimento disponível no momento. Entre em contato com a clínica.</div>';
+      document.getElementById('btnConfirmar').disabled = true;
+      return;
+    }
+    grid.innerHTML = servicos.map(s => `
+      <div class="servico-card ${s.id === servicoSelecionadoId ? 'selecionado' : ''}" data-servico="${s.id}">
+        ${s.foto ? `<img class="thumb" src="${s.foto}" alt="${s.nome}">` : `<div class="thumb">Sem foto</div>`}
+        <div class="body">
+          <div class="nome">${s.nome}</div>
+          <div class="meta">${formatMoney(s.preco)} · ${s.duracao} min</div>
+        </div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('servicosGrid').addEventListener('click', (e) => {
+    const card = e.target.closest('[data-servico]');
+    if (!card) return;
+    servicoSelecionadoId = card.dataset.servico;
+    selecaoInicioMin = null;
+    renderServicos();
+    renderGradeHorarios();
+  });
+
+  function renderGradeHorarios() {
+    const grid = document.getElementById('gradeHorarios');
+    if (!servicos.length || !profissionais.length) { grid.innerHTML = ''; return; }
+    const data = document.getElementById('inputData').value || todayISO();
+    const duracaoMin = duracaoDoServico(servicoSelecionadoId);
+    const intervalo = config.intervaloGrade || 30;
+
+    const janelas = janelaUniaoDia(data);
+    if (!janelas) { grid.innerHTML = '<div class="empty-msg">Não há atendimento nesta data. Escolha outro dia.</div>'; return; }
+    const inicio = Math.min(...janelas.map(j => j.inicio));
+    const fim = Math.max(...janelas.map(j => j.fim));
+
+    const celulas = [];
+    for (let t = inicio; t < fim; t += intervalo) {
+      const disponivel = slotDisponivel(data, t, duracaoMin);
+      celulas.push(`<div class="slot-cell ${disponivel ? 'livre' : 'ocupado'} ${disponivel && t === selecaoInicioMin ? 'selecionado' : ''}" ${disponivel ? `data-min="${t}"` : ''}>${minParaHora(t)}</div>`);
+    }
+    grid.innerHTML = celulas.join('') || '<div class="empty-msg">Nenhum horário disponível para esta data.</div>';
+  }
+  document.getElementById('gradeHorarios').addEventListener('click', (e) => {
+    const cell = e.target.closest('[data-min]');
+    if (!cell) return;
+    selecaoInicioMin = parseInt(cell.dataset.min, 10);
+    renderGradeHorarios();
+  });
+
+  document.getElementById('inputData').value = todayISO();
+  document.getElementById('inputData').min = todayISO();
+  document.getElementById('inputData').addEventListener('change', () => {
+    selecaoInicioMin = null;
+    renderGradeHorarios();
+  });
+
+  document.getElementById('btnConfirmar').addEventListener('click', () => {
+    if (!servicos.length) { showToast('Nenhum procedimento disponível.'); return; }
+    if (!profissionais.length) { showToast('Nenhum profissional disponível.'); return; }
+    const data = document.getElementById('inputData').value;
+    const nome = document.getElementById('inputNome').value.trim();
+    const telefone = document.getElementById('inputTelefone').value.trim();
+
+    if (!data || selecaoInicioMin === null || !nome || !telefone) {
+      showToast('Escolha um horário disponível e preencha seus dados para continuar.');
+      return;
+    }
+
+    const duracaoMin = duracaoDoServico(servicoSelecionadoId);
+    const profissionalId = resolverProfissional(data, selecaoInicioMin, duracaoMin);
+    if (!profissionalId) {
+      showToast('Esse horário não está mais disponível. Escolha outro.');
+      renderGradeHorarios();
+      selecaoInicioMin = null;
+      return;
+    }
+
+    let cliente = clientes.find(c => c.telefone && c.telefone.replace(/\D/g, '') === telefone.replace(/\D/g, ''));
+    if (!cliente) {
+      cliente = {
+        id: uid(), nome, telefone, email: '', idade: '',
+        anamneseFacial: { tipoPele: '', acne: false, manchas: false, rugas: false, rosacea: false, alergiasCosmeticos: '', usoAcidosRetinol: false, historicoProcedimentos: '' },
+        anamneseCorporal: { peso: '', altura: '', historicoCirurgias: '', medicamentos: '', problemasCirculatorios: false, marcapasso: false, gestante: false, amamentando: false, diabetes: false, varizes: false, alergias: '' },
+        objetivos: { reducaoMedidas: false, celulite: false, flacidez: false, gorduraLocalizada: false, modelagemCorporal: false },
+        mapaCorporal: {}, medidas: [], protocolo: { protocoloId: '', sessoesFeitas: 0 }
+      };
+      clientes.push(cliente);
+      save(STORAGE_KEYS.clientes, clientes);
+    }
+
+    const servico = servicos.find(s => s.id === servicoSelecionadoId);
+    const profissional = profissionais.find(p => p.id === profissionalId);
+    const hora = minParaHora(selecaoInicioMin);
+
+    agendamentos.push({ id: uid(), data, hora, clienteId: cliente.id, servicoId: servico.id, profissionalId, origem: 'online' });
+    save(STORAGE_KEYS.agendamentos, agendamentos);
+
+    document.getElementById('confProfissional').textContent = profissional.nome;
+    document.getElementById('confServico').textContent = servico.nome;
+    document.getElementById('confData').textContent = formatDateBR(data);
+    document.getElementById('confHora').textContent = hora;
+    document.getElementById('confNome').textContent = nome;
+
+    document.getElementById('areaAgendamento').style.display = 'none';
+    document.getElementById('areaConfirmacao').style.display = 'block';
+  });
+
+  document.getElementById('btnNovoAgendamento').addEventListener('click', () => {
+    agendamentos = load(STORAGE_KEYS.agendamentos, []);
+    clientes = load(STORAGE_KEYS.clientes, []);
+    document.getElementById('inputData').value = todayISO();
+    document.getElementById('inputNome').value = '';
+    document.getElementById('inputTelefone').value = '';
+    selecaoInicioMin = null;
+    document.getElementById('areaConfirmacao').style.display = 'none';
+    document.getElementById('areaAgendamento').style.display = 'block';
+    renderGradeHorarios();
+  });
+
+  renderProfissionais();
+  renderServicos();
+  renderGradeHorarios();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,2486 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel da Clínica de Estética</title>
+<style>
+  :root {
+    --cor-primaria: #0d1b3e;
+    --cor-secundaria: #c9a24b;
+    --cor-fundo: #f4f5f8;
+    --cor-texto: #1f2430;
+    --cor-borda: #e3e5ec;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+    background: var(--cor-fundo);
+    color: var(--cor-texto);
+    min-height: 100vh;
+  }
+  .app { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 260px; background: var(--cor-primaria); color: #fff;
+    display: flex; flex-direction: column; flex-shrink: 0;
+    transition: transform .25s ease; z-index: 100;
+  }
+  .sidebar-header {
+    padding: 22px 20px; display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+  }
+  .sidebar-header img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; background: #fff; }
+  .sidebar-header .logo-placeholder {
+    width: 42px; height: 42px; border-radius: 50%; background: var(--cor-secundaria);
+    display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--cor-primaria); flex-shrink: 0;
+  }
+  .sidebar-header h1 { font-size: 15.5px; font-weight: 600; line-height: 1.3; word-break: break-word; }
+  nav.menu { flex: 1; padding: 14px 10px; overflow-y: auto; }
+  nav.menu button {
+    width: 100%; display: flex; align-items: center; gap: 12px; background: none; border: none;
+    color: rgba(255,255,255,0.78); padding: 11px 14px; border-radius: 10px; font-size: 14px;
+    text-align: left; cursor: pointer; margin-bottom: 3px; transition: background .15s, color .15s;
+  }
+  nav.menu button:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  nav.menu button.active { background: var(--cor-secundaria); color: var(--cor-primaria); font-weight: 600; }
+  nav.menu .icon { font-size: 16px; width: 20px; text-align: center; }
+  .sidebar-footer { padding: 14px 20px; font-size: 11px; color: rgba(255,255,255,0.4); border-top: 1px solid rgba(255,255,255,0.12); }
+
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .topbar { display: none; align-items: center; gap: 12px; padding: 14px 20px; background: #fff; border-bottom: 1px solid var(--cor-borda); }
+  .topbar button { background: var(--cor-primaria); color: #fff; border: none; border-radius: 8px; width: 38px; height: 38px; font-size: 18px; cursor: pointer; }
+  .content { padding: 26px 30px; flex: 1; }
+  .page { display: none; animation: fadeIn .2s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px);} to { opacity:1; transform: translateY(0);} }
+
+  h2.page-title { font-size: 23px; margin-bottom: 4px; color: var(--cor-primaria); }
+  p.page-sub { color: #6b7280; font-size: 13.5px; margin-bottom: 22px; }
+
+  .card { background: #fff; border-radius: var(--radius); border: 1px solid var(--cor-borda); padding: 20px; box-shadow: 0 1px 3px rgba(13,27,62,0.04); }
+  .card h3 { color: var(--cor-primaria); font-size: 15.5px; margin-bottom: 14px; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 26px; }
+  .stat-card { background: #fff; border-radius: var(--radius); border: 1px solid var(--cor-borda); padding: 18px; border-left: 4px solid var(--cor-secundaria); }
+  .stat-card .label { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; }
+  .stat-card .value { font-size: 26px; font-weight: 700; color: var(--cor-primaria); margin-top: 6px; }
+
+  .dash-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .dash-grid { grid-template-columns: 1fr; } }
+  .list-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--cor-borda); font-size: 13.5px; }
+  .list-row:last-child { border-bottom: none; }
+  .empty-msg { color: #9aa0ab; font-size: 13.5px; padding: 14px 0; text-align: center; }
+
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px,1fr)); gap: 13px; }
+  label { display: block; font-size: 12px; color: #4b5162; font-weight: 600; margin-bottom: 5px; }
+  input[type=text], input[type=number], input[type=date], input[type=time], input[type=password],
+  input[type=tel], input[type=email], select, textarea {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--cor-borda); border-radius: 8px;
+    font-size: 13.5px; font-family: inherit; background: #fbfbfd;
+  }
+  textarea { resize: vertical; min-height: 60px; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--cor-secundaria); box-shadow: 0 0 0 3px rgba(201,162,75,0.15); }
+  input[type=file] { font-size: 12.5px; }
+  input[readonly] { background: #f0f1f5; color: #6b7280; }
+  .field { margin-bottom: 13px; }
+  .btn {
+    background: var(--cor-primaria); color: #fff; border: none; padding: 10px 18px; border-radius: 8px;
+    font-size: 13.5px; font-weight: 600; cursor: pointer; transition: opacity .15s;
+  }
+  .btn:hover { opacity: .88; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn.secondary { background: #fff; color: var(--cor-primaria); border: 1px solid var(--cor-primaria); }
+  .btn.danger { background: #b3261e; }
+  .btn.gold { background: var(--cor-secundaria); color: var(--cor-primaria); }
+  .btn.small { padding: 6px 11px; font-size: 12px; }
+  .btn-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+
+  .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px,1fr)); gap: 10px; margin-bottom: 14px; }
+  .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .checkbox-item input { width: auto; }
+
+  .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 15px; margin-top: 18px; }
+  .item-card { background: #fff; border: 1px solid var(--cor-borda); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
+  .item-card .thumb { width: 100%; height: 120px; object-fit: cover; background: #eceef3; display: flex; align-items: center; justify-content: center; color: #a7acb8; font-size: 12.5px; }
+  .item-card .body { padding: 13px; flex: 1; display: flex; flex-direction: column; gap: 5px; }
+  .item-card .name { font-weight: 700; color: var(--cor-primaria); font-size: 14.5px; }
+  .item-card .meta { font-size: 12.5px; color: #6b7280; }
+  .item-card .actions { display: flex; gap: 8px; margin-top: auto; padding-top: 8px; }
+
+  .clientes-layout { display: grid; grid-template-columns: 280px 1fr; gap: 18px; }
+  @media (max-width: 950px) { .clientes-layout { grid-template-columns: 1fr; } }
+  .cliente-list-item { padding: 11px 13px; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 13.5px; }
+  .cliente-list-item:hover { background: #f0f1f5; }
+  .cliente-list-item.selected { background: var(--cor-primaria); color: #fff; }
+  .cliente-list-item .sub { font-size: 11.5px; opacity: .7; }
+  .search-box { margin-bottom: 12px; }
+
+  .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--cor-secundaria); color: var(--cor-primaria); margin-left: 6px; vertical-align: middle; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(13,27,62,0.5); align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: var(--radius); padding: 22px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; }
+  .modal h3 { color: var(--cor-primaria); margin-bottom: 15px; }
+
+  .before-after { display: flex; gap: 10px; }
+  .before-after .ba-item { flex: 1; text-align: center; }
+  .before-after img { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; background: #eceef3; }
+  .before-after .ba-item span { font-size: 11px; color: #6b7280; display: block; margin-top: 4px; }
+  .galeria-cliente-block { margin-bottom: 24px; }
+  .galeria-cliente-block h3 { color: var(--cor-primaria); margin-bottom: 4px; }
+  .galeria-regiao-block { margin-top: 12px; }
+  .galeria-regiao-block h4 { font-size: 13px; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .03em; }
+
+  .custom-layout { display: grid; grid-template-columns: 1fr 300px; gap: 22px; }
+  @media (max-width: 900px) { .custom-layout { grid-template-columns: 1fr; } }
+  .preview-box { background: var(--cor-primaria); border-radius: var(--radius); padding: 22px; color: #fff; position: sticky; top: 20px; }
+  .preview-box .p-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .preview-box .p-header img, .preview-box .p-header .logo-placeholder { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+  .preview-box .p-header .logo-placeholder { display: flex; align-items: center; justify-content: center; font-weight: 700; }
+  .preview-box .p-menu-item { padding: 9px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 6px; }
+  .color-row { display: flex; align-items: center; gap: 12px; margin-bottom: 13px; }
+  input[type=color] { width: 44px; height: 34px; border: 1px solid var(--cor-borda); border-radius: 6px; cursor: pointer; padding: 2px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 13px; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--cor-borda); white-space: nowrap; }
+  th { color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; }
+  td.receita { color: #1a7d3a; font-weight: 600; }
+  td.despesa { color: #b3261e; font-weight: 600; }
+  .fin-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+  .tabela-scroll { overflow-x: auto; }
+  .diff-neg { color: #1a7d3a; font-weight: 700; }
+  .diff-pos { color: #b3261e; font-weight: 700; }
+  .diff-zero { color: #6b7280; }
+
+  .toast {
+    position: fixed; bottom: 22px; right: 22px; background: var(--cor-primaria); color: #fff; padding: 12px 18px;
+    border-radius: 8px; font-size: 13.5px; box-shadow: 0 4px 14px rgba(0,0,0,0.2); z-index: 2000; opacity: 0;
+    transform: translateY(10px); transition: opacity .2s, transform .2s; pointer-events: none; max-width: 320px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  .login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--cor-primaria); padding: 20px; }
+  .login-box { background: #fff; border-radius: 16px; padding: 34px 30px; width: 100%; max-width: 380px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); text-align: center; }
+  .login-box .logo-wrap { margin-bottom: 14px; }
+  .login-box .logo-wrap img, .login-box .logo-wrap .logo-placeholder { width: 62px; height: 62px; border-radius: 50%; object-fit: cover; margin: 0 auto; }
+  .login-box .logo-wrap .logo-placeholder { background: var(--cor-secundaria); color: var(--cor-primaria); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 22px; }
+  .login-box h1 { font-size: 18px; color: var(--cor-primaria); margin-bottom: 20px; }
+  .login-box .field { text-align: left; }
+  .login-box .error-msg { color: #b3261e; font-size: 12.5px; margin-top: 6px; margin-bottom: 4px; display: none; text-align: left; }
+  .login-box .error-msg.show { display: block; }
+  .login-box .link-btn { background: none; border: none; color: var(--cor-primaria); font-size: 12.5px; cursor: pointer; text-decoration: underline; margin-top: 14px; }
+  .login-box .master-code-box { background: var(--cor-fundo); border: 1px dashed var(--cor-borda); border-radius: 8px; padding: 14px; margin-top: 4px; font-size: 12.5px; text-align: left; }
+  .login-box .master-code-box strong { font-size: 19px; letter-spacing: 3px; color: var(--cor-primaria); display: block; margin-top: 6px; }
+
+  .user-footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .user-footer .nome { font-weight: 600; color: #fff; font-size: 12px; }
+  .user-footer .cargo { font-size: 10.5px; }
+  .user-footer .btn-sair { background: none; border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 10.5px; cursor: pointer; }
+  .user-footer .btn-sair:hover { background: rgba(255,255,255,0.1); }
+
+  /* Ficha da cliente - tabs */
+  .ficha-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; border-bottom: 1px solid var(--cor-borda); padding-bottom: 10px; }
+  .ficha-tab-btn {
+    background: none; border: 1px solid var(--cor-borda); color: #4b5162; padding: 7px 13px; border-radius: 999px;
+    font-size: 12.5px; cursor: pointer; font-weight: 600;
+  }
+  .ficha-tab-btn.active { background: var(--cor-primaria); color: #fff; border-color: var(--cor-primaria); }
+
+  .imc-box { display: flex; gap: 16px; align-items: center; background: var(--cor-fundo); border-radius: 8px; padding: 12px 16px; margin-bottom: 14px; }
+  .imc-box .imc-valor { font-size: 26px; font-weight: 700; color: var(--cor-primaria); }
+  .imc-box .imc-class { font-size: 12.5px; color: #6b7280; }
+
+  /* Mapa corporal */
+  .mapa-wrap { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+  .mapa-view { text-align: center; }
+  .mapa-view h4 { font-size: 12.5px; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .03em; }
+  .mapa-view svg { width: 170px; height: auto; }
+  .mapa-regiao { fill: rgba(13,27,62,0.09); stroke: var(--cor-borda); stroke-width: 1.5; cursor: pointer; transition: fill .15s, stroke .15s; }
+  .mapa-regiao:hover { fill: rgba(201,162,75,0.35); }
+  .mapa-regiao.marcada { fill: rgba(211,84,0,0.55); stroke: #b3261e; }
+  .mapa-obs-box { margin-top: 16px; }
+  .mapa-obs-box h4 { color: var(--cor-primaria); font-size: 13.5px; margin-bottom: 8px; }
+  .mapa-lista-marcadas { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+
+  /* Protocolo progress */
+  .progress-bar-wrap { background: var(--cor-fundo); border-radius: 999px; height: 12px; overflow: hidden; margin: 10px 0; }
+  .progress-bar-fill { background: var(--cor-secundaria); height: 100%; transition: width .2s; }
+
+  @media (max-width: 860px) {
+    .sidebar { position: fixed; top: 0; bottom: 0; left: 0; transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .topbar { display: flex; }
+    .content { padding: 18px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="telaAtivacao" style="display:none">
+  <div class="login-box">
+    <div class="logo-wrap"><div class="logo-placeholder">JV</div></div>
+    <h1>Ativação do sistema</h1>
+    <div id="ativacaoConteudo"></div>
+  </div>
+</div>
+
+<div class="login-screen" id="telaLogin">
+  <div class="login-box">
+    <div class="logo-wrap" id="loginLogoWrap"></div>
+    <h1 id="loginNomeNegocio">Clínica de Estética</h1>
+    <div id="loginConteudo"></div>
+  </div>
+</div>
+
+<div class="app" id="appContainer" style="display:none">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header" id="sidebarHeader"></div>
+    <nav class="menu" id="menuNav">
+      <button data-page="dashboard" class="admin-only"><span class="icon">📊</span><span class="menu-label">Dashboard</span></button>
+      <button data-page="servicos" class="admin-only"><span class="icon">💆</span><span class="menu-label">Serviços</span></button>
+      <button data-page="profissionais" class="admin-only"><span class="icon">🧑‍⚕️</span><span class="menu-label">Profissionais</span></button>
+      <button data-page="protocolos" class="admin-only"><span class="icon">📋</span><span class="menu-label">Protocolos</span></button>
+      <button data-page="agendamentos"><span class="icon">📅</span><span class="menu-label">Agendamentos</span></button>
+      <button data-page="clientes"><span class="icon">👥</span><span class="menu-label">Clientes</span></button>
+      <button data-page="galeria"><span class="icon">📸</span><span class="menu-label">Galeria Antes/Depois</span></button>
+      <button data-page="personalizacao" class="admin-only"><span class="icon">🎨</span><span class="menu-label">Personalização</span></button>
+      <button data-page="financeiro" class="admin-only"><span class="icon">💰</span><span class="menu-label">Financeiro</span></button>
+    </nav>
+    <div class="sidebar-footer" id="sidebarFooter"></div>
+  </aside>
+
+  <div class="main">
+    <div id="bannerRenovacao" style="display:none;background:#f5c542;color:#3a2e00;padding:10px 20px;text-align:center;font-size:13px;font-weight:600"></div>
+    <div class="topbar">
+      <button id="toggleSidebar">☰</button>
+      <strong id="topbarTitle" style="color:var(--cor-primaria)">Painel</strong>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <section class="page admin-only" id="page-dashboard">
+        <h2 class="page-title">Dashboard</h2>
+        <p class="page-sub">Visão geral da clínica</p>
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="dash-grid">
+          <div class="card">
+            <h3>Agendamentos de hoje</h3>
+            <div id="agendamentosHoje"></div>
+          </div>
+          <div class="card">
+            <h3>Resumo financeiro do mês</h3>
+            <div id="resumoFinMes"></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <h3>Agendamentos de amanhã</h3>
+          <div id="agendamentosAmanha"></div>
+        </div>
+      </section>
+
+      <!-- SERVICOS -->
+      <section class="page admin-only" id="page-servicos">
+        <h2 class="page-title">Serviços</h2>
+        <p class="page-sub">Cadastre os procedimentos oferecidos pela clínica</p>
+        <div class="card">
+          <h3>Novo serviço</h3>
+          <form id="formServico">
+            <div class="form-grid">
+              <div class="field"><label>Nome do serviço</label><input type="text" id="servNome" required placeholder="Ex: Drenagem Linfática"></div>
+              <div class="field"><label>Preço (R$)</label><input type="number" id="servPreco" min="0" step="0.01" required></div>
+              <div class="field"><label>Duração (minutos)</label><input type="number" id="servDuracao" min="5" step="5" required></div>
+              <div class="field"><label>Foto do serviço</label><input type="file" id="servFoto" accept="image/*"></div>
+            </div>
+            <div class="btn-row"><button type="submit" class="btn">Salvar serviço</button></div>
+          </form>
+        </div>
+        <div class="items-grid" id="servicosGrid"></div>
+      </section>
+
+      <!-- PROFISSIONAIS -->
+      <section class="page admin-only" id="page-profissionais">
+        <h2 class="page-title">Profissionais</h2>
+        <p class="page-sub">Cadastre a equipe e defina quantos atendimentos simultâneos cada um realiza</p>
+        <div class="card">
+          <h3 id="profissionalFormTitulo">Novo profissional</h3>
+          <form id="formProfissional">
+            <input type="hidden" id="profissionalId">
+            <div class="form-grid">
+              <div class="field"><label>Nome</label><input type="text" id="profNome" required></div>
+              <div class="field"><label>Especialidade</label><input type="text" id="profEspecialidade" placeholder="Ex: Esteticista corporal"></div>
+              <div class="field"><label>Senha de acesso</label><input type="text" id="profSenha" required></div>
+              <div class="field"><label>Cadeiras/vagas simultâneas</label><input type="number" id="profCadeiras" min="1" step="1" value="1" required></div>
+              <div class="field"><label>Foto</label><input type="file" id="profFoto" accept="image/*"></div>
+            </div>
+            <div class="btn-row">
+              <button type="submit" class="btn">Salvar profissional</button>
+              <button type="button" class="btn secondary" id="btnCancelarEdicaoProf" style="display:none">Cancelar edição</button>
+            </div>
+          </form>
+        </div>
+        <div class="items-grid" id="profissionaisGrid"></div>
+      </section>
+
+      <!-- PROTOCOLOS -->
+      <section class="page admin-only" id="page-protocolos">
+        <h2 class="page-title">Protocolos de Tratamento</h2>
+        <p class="page-sub">Monte protocolos por objetivo e associe às clientes na ficha</p>
+        <div class="card">
+          <h3 id="protocoloFormTitulo">Novo protocolo</h3>
+          <form id="formProtocolo">
+            <input type="hidden" id="protocoloId">
+            <div class="form-grid">
+              <div class="field"><label>Nome do protocolo</label><input type="text" id="protNome" required placeholder="Ex: Redução de Medidas"></div>
+              <div class="field"><label>Sessões recomendadas</label><input type="number" id="protSessoes" min="1" step="1" required></div>
+              <div class="field"><label>Frequência (sessões/semana)</label><input type="number" id="protFrequencia" min="1" step="1" required></div>
+            </div>
+            <div class="field"><label>Equipamentos/técnicas usadas</label><input type="text" id="protEquipamentos" placeholder="Ex: Radiofrequência, Ultrassom, Bandagem"></div>
+            <div class="field"><label>Produtos usados</label><input type="text" id="protProdutos" placeholder="Ex: Ativos redutores, gel condutor"></div>
+            <div class="btn-row">
+              <button type="submit" class="btn">Salvar protocolo</button>
+              <button type="button" class="btn secondary" id="btnCancelarEdicaoProt" style="display:none">Cancelar edição</button>
+            </div>
+          </form>
+        </div>
+        <div class="items-grid" id="protocolosGrid"></div>
+      </section>
+
+      <!-- AGENDAMENTOS -->
+      <section class="page" id="page-agendamentos">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+          <div>
+            <h2 class="page-title" id="agendaPageTitle">Agendamentos</h2>
+            <p class="page-sub" id="agendaPageSub">Cadastre horários livremente e acompanhe os agendamentos de todos os profissionais</p>
+          </div>
+          <button class="btn gold admin-only" id="btnCompartilharLink" type="button">🔗 Compartilhar link de agendamento</button>
+        </div>
+        <div class="card">
+          <h3>Novo agendamento</h3>
+          <form id="formAgendamento">
+            <div class="form-grid">
+              <div class="field" id="campoAgendaProfissional"><label>Profissional</label><select id="agendaProfissional" required></select></div>
+              <div class="field"><label>Cliente</label><select id="agendaCliente" required></select></div>
+              <div class="field"><label>Serviço</label><select id="agendaServico" required></select></div>
+              <div class="field"><label>Data</label><input type="date" id="agendaData" required></div>
+              <div class="field"><label>Horário</label><input type="time" id="agendaHora" required></div>
+            </div>
+            <div class="btn-row"><button type="submit" class="btn">Adicionar agendamento</button></div>
+          </form>
+        </div>
+        <div class="card admin-only" style="margin-top:18px" id="campoFiltroProfissional">
+          <label>Filtrar por profissional</label>
+          <select id="filtroProfissional" style="max-width:280px"></select>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <h3>Disponibilidade</h3>
+          <div id="disponibilidadeAlvoAviso"></div>
+          <div id="disponibilidadeConteudo"></div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+            <h3 style="margin-bottom:0">Visão da Agenda</h3>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button type="button" class="btn secondary small gold" id="btnModoDia">Dia</button>
+              <button type="button" class="btn secondary small" id="btnModoSemana">Semana</button>
+            </div>
+          </div>
+          <div id="timelineNav" style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap"></div>
+          <div id="timelineConteudo"></div>
+          <div style="display:flex;gap:16px;margin-top:14px;font-size:12.5px;color:#6b7280;flex-wrap:wrap">
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#1a7d3a;margin-right:5px"></span>Disponível</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#c9701a;margin-right:5px"></span>Ocupado</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#9aa0ab;margin-right:5px"></span>Bloqueado / Fechado</span>
+          </div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <h3>Todos os agendamentos futuros</h3>
+          <div id="listaAgendamentos"></div>
+        </div>
+      </section>
+
+      <!-- CLIENTES -->
+      <section class="page" id="page-clientes">
+        <h2 class="page-title" id="clientesPageTitle">Clientes</h2>
+        <p class="page-sub" id="clientesPageSub">Cadastro, anamnese completa, mapa corporal, medidas e protocolo</p>
+        <div class="clientes-layout">
+          <div class="card">
+            <div class="search-box"><input type="text" id="buscaCliente" placeholder="Buscar cliente..."></div>
+            <button class="btn gold small admin-only" id="btnNovoCliente" style="width:100%;margin-bottom:12px">+ Nova cliente</button>
+            <div id="listaClientes"></div>
+          </div>
+          <div class="card" id="clienteDetalhe">
+            <div class="empty-msg">Selecione uma cliente à esquerda para ver a ficha.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- GALERIA -->
+      <section class="page" id="page-galeria">
+        <h2 class="page-title" id="galeriaPageTitle">Galeria Antes/Depois</h2>
+        <p class="page-sub" id="galeriaPageSub">Fotos organizadas por região facial e corporal</p>
+        <div class="card">
+          <h3>Adicionar registro</h3>
+          <form id="formGaleria">
+            <div class="form-grid">
+              <div class="field"><label>Cliente</label><select id="galCliente" required></select></div>
+              <div class="field">
+                <label>Tipo</label>
+                <select id="galTipo">
+                  <option value="corporal">Corporal</option>
+                  <option value="facial">Facial</option>
+                </select>
+              </div>
+              <div class="field"><label>Região</label><select id="galRegiao" required></select></div>
+              <div class="field"><label>Data</label><input type="date" id="galData" required></div>
+              <div class="field"><label>Foto - Antes</label><input type="file" id="galAntes" accept="image/*" required></div>
+              <div class="field"><label>Foto - Depois</label><input type="file" id="galDepois" accept="image/*" required></div>
+            </div>
+            <div class="field"><label>Observação</label><input type="text" id="galObs" placeholder="Ex: 6ª sessão do protocolo"></div>
+            <div class="btn-row"><button type="submit" class="btn">Salvar registro</button></div>
+          </form>
+        </div>
+        <div id="galeriaLista" style="margin-top:22px"></div>
+      </section>
+
+      <!-- PERSONALIZACAO -->
+      <section class="page admin-only" id="page-personalizacao">
+        <h2 class="page-title">Personalização</h2>
+        <p class="page-sub">Personalize o nome, a logo e as cores do painel</p>
+        <div class="custom-layout">
+          <div class="card">
+            <div class="field"><label>Nome da clínica</label><input type="text" id="custNome" placeholder="Nome da sua clínica"></div>
+            <div class="field"><label>Logo</label><input type="file" id="custLogo" accept="image/*"></div>
+            <div class="color-row"><input type="color" id="custCorPrimaria"><label style="margin:0">Cor primária (menu lateral)</label></div>
+            <div class="color-row"><input type="color" id="custCorSecundaria"><label style="margin:0">Cor de destaque</label></div>
+            <div class="btn-row">
+              <button class="btn" id="btnSalvarCustom">Salvar personalização</button>
+              <button class="btn secondary" id="btnResetCustom">Restaurar padrão</button>
+            </div>
+          </div>
+          <div class="preview-box">
+            <div class="p-header"><div id="previewLogoWrap"></div><strong id="previewNome">Clínica de Estética</strong></div>
+            <div class="p-menu-item" style="background:var(--cor-secundaria);color:var(--cor-primaria);font-weight:600">📊 Dashboard</div>
+            <div class="p-menu-item" style="color:rgba(255,255,255,0.8)">💆 Serviços</div>
+            <div class="p-menu-item" style="color:rgba(255,255,255,0.8)">📅 Agendamentos</div>
+            <div class="p-menu-item" style="color:rgba(255,255,255,0.8)">👥 Clientes</div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <h3>Configuração de Agenda</h3>
+          <p style="font-size:12.5px;color:#6b7280;margin-bottom:14px">Defina os dias e horários padrão de atendimento da clínica. Cada profissional pode ainda bloquear horários pontuais ou ajustar um dia específico na página Agendamentos.</p>
+          <div id="configAgendaDias"></div>
+          <hr style="border:none;border-top:1px solid var(--cor-borda);margin:16px 0">
+          <label class="checkbox-item" style="margin-bottom:10px"><input type="checkbox" id="almocoAtivo"> Bloquear intervalo de almoço</label>
+          <div class="form-grid" style="max-width:400px">
+            <div class="field"><label>Almoço - início</label><input type="time" id="almocoInicio"></div>
+            <div class="field"><label>Almoço - fim</label><input type="time" id="almocoFim"></div>
+          </div>
+          <div class="btn-row"><button type="button" class="btn" id="btnSalvarConfigAgenda">Salvar configuração de agenda</button></div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <h3>Segurança</h3>
+          <div class="field">
+            <label>Código master (recuperação de senha)</label>
+            <div style="display:flex;gap:8px">
+              <input type="text" id="codigoMasterDisplay" readonly>
+              <button type="button" class="btn secondary small" id="btnRegenerarCodigo" style="white-space:nowrap">Gerar novo</button>
+            </div>
+            <p style="font-size:12px;color:#6b7280;margin-top:6px">Guarde este código em local seguro — necessário para redefinir senhas esquecidas.</p>
+          </div>
+          <hr style="border:none;border-top:1px solid var(--cor-borda);margin:18px 0">
+          <h3>Alterar senha do administrador</h3>
+          <form id="formSenhaAdmin">
+            <div class="form-grid">
+              <div class="field"><label>Senha atual</label><input type="password" id="senhaAtual" required></div>
+              <div class="field"><label>Nova senha</label><input type="password" id="senhaNova" required></div>
+            </div>
+            <div class="btn-row"><button type="submit" class="btn">Atualizar senha</button></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- FINANCEIRO -->
+      <section class="page admin-only" id="page-financeiro">
+        <h2 class="page-title">Financeiro</h2>
+        <p class="page-sub">Controle simples de receitas e despesas</p>
+        <div class="fin-summary">
+          <div class="stat-card"><div class="label">Receitas</div><div class="value" id="finReceitas" style="color:#1a7d3a">R$ 0,00</div></div>
+          <div class="stat-card"><div class="label">Despesas</div><div class="value" id="finDespesas" style="color:#b3261e">R$ 0,00</div></div>
+          <div class="stat-card"><div class="label">Saldo</div><div class="value" id="finSaldo">R$ 0,00</div></div>
+        </div>
+        <div class="card">
+          <h3>Novo lançamento</h3>
+          <form id="formFinanceiro">
+            <div class="form-grid">
+              <div class="field"><label>Tipo</label><select id="finTipo"><option value="receita">Receita</option><option value="despesa">Despesa</option></select></div>
+              <div class="field"><label>Descrição</label><input type="text" id="finDescricao" required></div>
+              <div class="field"><label>Valor (R$)</label><input type="number" id="finValor" min="0" step="0.01" required></div>
+              <div class="field"><label>Data</label><input type="date" id="finData" required></div>
+            </div>
+            <div class="btn-row"><button type="submit" class="btn">Adicionar lançamento</button></div>
+          </form>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <h3>Lançamentos</h3>
+          <div class="tabela-scroll">
+          <table id="finTabela">
+            <thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Valor</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal: nova/editar cliente -->
+<div class="modal-overlay" id="modalCliente">
+  <div class="modal">
+    <h3 id="modalClienteTitulo">Nova cliente</h3>
+    <form id="formCliente">
+      <input type="hidden" id="clienteId">
+      <div class="field"><label>Nome</label><input type="text" id="clienteNome" required></div>
+      <div class="field"><label>Idade</label><input type="number" id="clienteIdade" min="0" step="1"></div>
+      <div class="field"><label>Telefone</label><input type="tel" id="clienteTelefone" placeholder="(11) 99999-9999"></div>
+      <div class="field"><label>E-mail</label><input type="email" id="clienteEmail"></div>
+      <div class="btn-row">
+        <button type="submit" class="btn">Salvar</button>
+        <button type="button" class="btn secondary" id="btnFecharModalCliente">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: compartilhar link -->
+<div class="modal-overlay" id="modalLink">
+  <div class="modal">
+    <h3>Compartilhar link de agendamento</h3>
+    <p style="font-size:12.5px;color:#6b7280;margin-bottom:14px">
+      Envie este link para as clientes agendarem online. Funciona quando <strong>estetica.html</strong> e
+      <strong>agendamento-estetica.html</strong> estão salvos na mesma pasta e abertos no mesmo navegador.
+    </p>
+    <div class="field"><input type="text" id="linkCompartilhavel" readonly></div>
+    <div class="btn-row">
+      <button type="button" class="btn" id="btnCopiarLink">Copiar link</button>
+      <button type="button" class="btn secondary" id="btnFecharModalLink">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: esqueci a senha -->
+<div class="modal-overlay" id="modalEsqueciSenha">
+  <div class="modal">
+    <h3>Redefinir senha</h3>
+    <form id="formEsqueciSenha">
+      <div class="field"><label>Código master</label><input type="text" id="recCodigoMaster" required></div>
+      <div class="field"><label>Redefinir senha de</label><select id="recAlvo"></select></div>
+      <div class="field"><label>Nova senha</label><input type="password" id="recNovaSenha" required></div>
+      <div class="error-msg" id="recErro" style="color:#b3261e;font-size:12.5px;margin-bottom:10px">Código master incorreto.</div>
+      <div class="btn-row">
+        <button type="submit" class="btn">Redefinir senha</button>
+        <button type="button" class="btn secondary" id="btnFecharModalEsqueci">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: limite do plano -->
+<div class="modal-overlay" id="modalLimitePlano">
+  <div class="modal">
+    <h3>Limite do plano atingido</h3>
+    <p id="limitePlanoTexto" style="font-size:13.5px;color:#4b5162;margin-bottom:16px"></p>
+    <div class="btn-row">
+      <button type="button" class="btn gold" id="btnWhatsLimite">🟢 Falar com a JV Datalab</button>
+      <button type="button" class="btn secondary" id="btnFecharModalLimite">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: WhatsApp -->
+<div class="modal-overlay" id="modalWhatsapp">
+  <div class="modal">
+    <h3>Enviar mensagem no WhatsApp</h3>
+    <div class="field"><label>Cliente</label><input type="text" id="whatsCliente" readonly></div>
+    <div class="field"><label>Telefone</label><input type="text" id="whatsTelefone" placeholder="(11) 99999-9999"></div>
+    <div class="field">
+      <label>Tipo de mensagem</label>
+      <select id="whatsTipo">
+        <option value="confirmacao">Confirmação</option>
+        <option value="lembreteAmanha">Lembrete (1 dia antes)</option>
+        <option value="lembreteHoje">Lembrete (no dia)</option>
+        <option value="cancelamento">Cancelamento</option>
+        <option value="posAtendimento">Pós-atendimento</option>
+      </select>
+    </div>
+    <div class="field" id="campoWhatsRetorno" style="display:none">
+      <label>Data de retorno recomendada</label>
+      <input type="date" id="whatsDataRetorno">
+    </div>
+    <div class="field"><label>Mensagem</label><textarea id="whatsMensagem" style="min-height:110px"></textarea></div>
+    <div class="btn-row">
+      <button type="button" class="btn gold" id="btnAbrirWhatsapp">🟢 Abrir WhatsApp</button>
+      <button type="button" class="btn secondary" id="btnFecharModalWhatsapp">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  const STORAGE_KEYS = {
+    config: 'estetica_config',
+    servicos: 'estetica_servicos',
+    profissionais: 'estetica_profissionais',
+    protocolos: 'estetica_protocolos',
+    clientes: 'estetica_clientes',
+    agendamentos: 'estetica_agendamentos',
+    galeria: 'estetica_galeria',
+    financeiro: 'estetica_financeiro',
+    sessao: 'estetica_sessao',
+    licenca: 'estetica_licenca'
+  };
+
+  const LICENCAS_SHARED_KEY = 'jv_datalab_licencas';
+  const JV_CONFIG_KEY = 'jv_datalab_config';
+  const ACCEPTED_SEGMENTOS = ['EST'];
+
+  const DEFAULT_CONFIG = {
+    nomeNegocio: 'Clínica de Estética',
+    logo: '', corPrimaria: '#0d1b3e', corSecundaria: '#c9a24b',
+    negocioId: '', senhaAdmin: '', codigoMaster: '',
+    horarioAbertura: '08:00', horarioFechamento: '19:00', intervaloGrade: 30,
+    horarioPadrao: {
+      dias: {
+        seg: { ativo: true, inicio: '08:00', fim: '18:00' },
+        ter: { ativo: true, inicio: '08:00', fim: '18:00' },
+        qua: { ativo: true, inicio: '08:00', fim: '18:00' },
+        qui: { ativo: true, inicio: '08:00', fim: '18:00' },
+        sex: { ativo: true, inicio: '08:00', fim: '18:00' },
+        sab: { ativo: false, inicio: '08:00', fim: '13:00' },
+        dom: { ativo: false, inicio: '08:00', fim: '13:00' }
+      },
+      almoco: { ativo: true, inicio: '12:00', fim: '13:00' }
+    }
+  };
+
+  const DIAS_SEMANA = [
+    { chave: 'seg', label: 'Segunda-feira' },
+    { chave: 'ter', label: 'Terça-feira' },
+    { chave: 'qua', label: 'Quarta-feira' },
+    { chave: 'qui', label: 'Quinta-feira' },
+    { chave: 'sex', label: 'Sexta-feira' },
+    { chave: 'sab', label: 'Sábado' },
+    { chave: 'dom', label: 'Domingo' }
+  ];
+
+  const SERVICOS_PADRAO = [
+    { nome: 'Drenagem Linfática', preco: 120, duracao: 60 },
+    { nome: 'Radiofrequência Facial', preco: 150, duracao: 60 },
+    { nome: 'Radiofrequência Corporal', preco: 180, duracao: 90 },
+    { nome: 'Ultrassom', preco: 100, duracao: 45 },
+    { nome: 'Limpeza de Pele', preco: 130, duracao: 60 },
+    { nome: 'Peeling Químico', preco: 150, duracao: 45 },
+    { nome: 'Massagem Modeladora', preco: 120, duracao: 60 },
+    { nome: 'Criolipólise', preco: 250, duracao: 120 }
+  ];
+
+  const REGIOES_MAPA = [
+    { id: 'abdomen', nome: 'Abdômen', vista: 'frente' },
+    { id: 'flancos', nome: 'Flancos', vista: 'frente' },
+    { id: 'bracos', nome: 'Braços', vista: 'frente' },
+    { id: 'coxas', nome: 'Coxas', vista: 'frente' },
+    { id: 'joelhos', nome: 'Joelhos', vista: 'frente' },
+    { id: 'culote', nome: 'Culote', vista: 'costas' },
+    { id: 'bumbum', nome: 'Bumbum', vista: 'costas' },
+    { id: 'costas', nome: 'Costas', vista: 'costas' }
+  ];
+
+  const FACIAL_REGIOES = ['Rosto completo', 'Testa', 'Olheiras', 'Bochechas', 'Queixo', 'Pescoço'];
+  const CORPORAL_REGIOES = ['Abdômen', 'Flancos', 'Culote', 'Bumbum', 'Coxas', 'Joelhos', 'Braços', 'Costas', 'Corpo completo'];
+
+  const CAMPOS_MEDIDA = [
+    { chave: 'busto', label: 'Busto' },
+    { chave: 'cintura', label: 'Cintura' },
+    { chave: 'abdomen', label: 'Abdômen' },
+    { chave: 'quadril', label: 'Quadril' },
+    { chave: 'culote', label: 'Culote' },
+    { chave: 'coxaDireita', label: 'Coxa Dir.' },
+    { chave: 'coxaEsquerda', label: 'Coxa Esq.' },
+    { chave: 'bracoDireito', label: 'Braço Dir.' },
+    { chave: 'bracoEsquerdo', label: 'Braço Esq.' },
+    { chave: 'peso', label: 'Peso (kg)' }
+  ];
+
+  const ADMIN_ONLY_PAGES = ['dashboard', 'servicos', 'profissionais', 'protocolos', 'personalizacao', 'financeiro'];
+
+  function load(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) { return fallback; }
+  }
+  function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function gerarCodigoMaster() { return Math.random().toString(36).slice(2, 8).toUpperCase(); }
+  function formatMoney(v) { return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function formatDateBR(iso) { if (!iso) return ''; const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; }
+  function todayISO() { return new Date().toISOString().slice(0, 10); }
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      if (!file) { resolve(''); return; }
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => t.classList.remove('show'), 2300);
+  }
+
+  function fichaVaziaCliente() {
+    const mapaCorporal = {};
+    REGIOES_MAPA.forEach(r => { mapaCorporal[r.id] = { marcada: false, obs: '' }; });
+    return {
+      anamneseFacial: { tipoPele: '', acne: false, manchas: false, rugas: false, rosacea: false, alergiasCosmeticos: '', usoAcidosRetinol: false, historicoProcedimentos: '' },
+      anamneseCorporal: { peso: '', altura: '', historicoCirurgias: '', medicamentos: '', problemasCirculatorios: false, marcapasso: false, gestante: false, amamentando: false, diabetes: false, varizes: false, alergias: '' },
+      objetivos: { reducaoMedidas: false, celulite: false, flacidez: false, gorduraLocalizada: false, modelagemCorporal: false },
+      mapaCorporal,
+      medidas: [],
+      protocolo: { protocoloId: '', sessoesFeitas: 0 }
+    };
+  }
+
+  let state = {
+    config: load(STORAGE_KEYS.config, DEFAULT_CONFIG),
+    servicos: load(STORAGE_KEYS.servicos, null),
+    profissionais: load(STORAGE_KEYS.profissionais, []),
+    protocolos: load(STORAGE_KEYS.protocolos, []),
+    clientes: load(STORAGE_KEYS.clientes, []),
+    agendamentos: load(STORAGE_KEYS.agendamentos, []),
+    galeria: load(STORAGE_KEYS.galeria, []),
+    financeiro: load(STORAGE_KEYS.financeiro, [])
+  };
+  state.config = Object.assign({}, DEFAULT_CONFIG, state.config);
+  if (state.servicos === null) {
+    state.servicos = SERVICOS_PADRAO.map(s => ({ id: uid(), nome: s.nome, preco: s.preco, duracao: s.duracao, foto: '' }));
+    save(STORAGE_KEYS.servicos, state.servicos);
+  }
+  state.clientes.forEach(c => {
+    const vazia = fichaVaziaCliente();
+    if (!c.anamneseFacial) c.anamneseFacial = vazia.anamneseFacial;
+    if (!c.anamneseCorporal) c.anamneseCorporal = vazia.anamneseCorporal;
+    if (!c.objetivos) c.objetivos = vazia.objetivos;
+    if (!c.mapaCorporal) c.mapaCorporal = vazia.mapaCorporal;
+    else REGIOES_MAPA.forEach(r => { if (!c.mapaCorporal[r.id]) c.mapaCorporal[r.id] = { marcada: false, obs: '' }; });
+    if (!c.medidas) c.medidas = [];
+    if (!c.protocolo) c.protocolo = vazia.protocolo;
+  });
+  state.profissionais.forEach(p => {
+    if (!p.bloqueios) p.bloqueios = [];
+    if (!p.excecoesDia) p.excecoesDia = {};
+  });
+
+  let session = null;
+  let licencaAtiva = null;
+  let clienteSelecionadoId = null;
+  let abaAtivaCliente = 'facial';
+  let regiaoAtivaMapa = null;
+  let timelineModo = 'dia';
+  let timelineData = todayISO();
+
+  // ---------- Disponibilidade: helpers ----------
+  function horaParaMin(hhmm) { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; }
+  function minParaHora(min) { const h = Math.floor(min / 60); const m = min % 60; return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'); }
+  function duracaoDoServico(servicoId) { const s = state.servicos.find(sv => sv.id === servicoId); return s ? s.duracao : 30; }
+  function diaSemanaChave(dataISO) { const dias = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab']; return dias[new Date(dataISO + 'T00:00:00').getDay()]; }
+  function somarDias(iso, n) { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
+  function inicioDaSemana(iso) { const d = new Date(iso + 'T00:00:00'); const dia = d.getDay(); const offset = dia === 0 ? -6 : 1 - dia; d.setDate(d.getDate() + offset); return d.toISOString().slice(0, 10); }
+  function subtrairIntervalo(janelas, subInicio, subFim) {
+    const resultado = [];
+    janelas.forEach(j => {
+      if (subFim <= j.inicio || subInicio >= j.fim) { resultado.push(j); return; }
+      if (subInicio > j.inicio) resultado.push({ inicio: j.inicio, fim: Math.min(subInicio, j.fim) });
+      if (subFim < j.fim) resultado.push({ inicio: Math.max(subFim, j.inicio), fim: j.fim });
+    });
+    return resultado.filter(j => j.fim > j.inicio);
+  }
+  function janelaDoDia(profissionalId, dataISO) {
+    const prof = state.profissionais.find(p => p.id === profissionalId);
+    const excecao = prof && prof.excecoesDia && prof.excecoesDia[dataISO];
+    if (excecao) {
+      if (!excecao.ativo) return null;
+      if (!excecao.inicio || !excecao.fim) return null;
+      return [{ inicio: horaParaMin(excecao.inicio), fim: horaParaMin(excecao.fim) }];
+    }
+    const chave = diaSemanaChave(dataISO);
+    const diaCfg = state.config.horarioPadrao.dias[chave];
+    if (!diaCfg || !diaCfg.ativo) return null;
+    let janelas = [{ inicio: horaParaMin(diaCfg.inicio), fim: horaParaMin(diaCfg.fim) }];
+    const almoco = state.config.horarioPadrao.almoco;
+    if (almoco && almoco.ativo && almoco.inicio && almoco.fim) {
+      janelas = subtrairIntervalo(janelas, horaParaMin(almoco.inicio), horaParaMin(almoco.fim));
+    }
+    return janelas;
+  }
+  function statusDoSlot(profissionalId, dataISO, inicioMin, duracaoMin) {
+    const fimMin = inicioMin + duracaoMin;
+    const prof = state.profissionais.find(p => p.id === profissionalId);
+    const bloqueio = (prof.bloqueios || []).find(b => b.data === dataISO && inicioMin < horaParaMin(b.horaFim) && horaParaMin(b.horaInicio) < fimMin);
+    if (bloqueio) return { tipo: 'bloqueado', texto: `Bloqueado${bloqueio.motivo ? ' — ' + bloqueio.motivo : ''}` };
+    const agendamentosSlot = state.agendamentos.filter(a => {
+      if (a.profissionalId !== profissionalId || a.data !== dataISO) return false;
+      const durAg = duracaoDoServico(a.servicoId);
+      const aInicio = horaParaMin(a.hora), aFim = aInicio + durAg;
+      return inicioMin < aFim && aInicio < fimMin;
+    });
+    if (agendamentosSlot.length) {
+      const nomes = agendamentosSlot.map(a => { const cli = state.clientes.find(c => c.id === a.clienteId); return cli ? cli.nome : 'Cliente'; }).join(', ');
+      return { tipo: 'ocupado', texto: nomes };
+    }
+    return { tipo: 'disponivel', texto: 'Disponível' };
+  }
+  function profissionalAlvoAgenda() {
+    if (session && session.tipo === 'profissional') return session.profissionalId;
+    const el = document.getElementById('filtroProfissional');
+    return el ? el.value : '';
+  }
+
+  // ---------- Navigation ----------
+  document.getElementById('menuNav').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-page]');
+    if (!btn) return;
+    goToPage(btn.dataset.page);
+    document.getElementById('sidebar').classList.remove('open');
+  });
+
+  function goToPage(pageId) {
+    if (session && session.tipo !== 'admin' && ADMIN_ONLY_PAGES.includes(pageId)) pageId = 'agendamentos';
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + pageId).classList.add('active');
+    document.querySelectorAll('nav.menu button').forEach(b => b.classList.toggle('active', b.dataset.page === pageId));
+    document.getElementById('topbarTitle').textContent = document.querySelector('#page-' + pageId + ' .page-title').textContent;
+    if (pageId === 'dashboard') renderDashboard();
+    if (pageId === 'agendamentos') renderAgendaCompleta();
+    if (pageId === 'clientes') renderClientes();
+    if (pageId === 'galeria') renderGaleria();
+    if (pageId === 'profissionais') renderProfissionais();
+    if (pageId === 'protocolos') renderProtocolos();
+  }
+  document.getElementById('toggleSidebar').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
+
+  // ---------- Config / Personalização ----------
+  function applyConfig() {
+    const c = state.config;
+    document.documentElement.style.setProperty('--cor-primaria', c.corPrimaria);
+    document.documentElement.style.setProperty('--cor-secundaria', c.corSecundaria);
+    const header = document.getElementById('sidebarHeader');
+    header.innerHTML = '';
+    if (c.logo) { const img = document.createElement('img'); img.src = c.logo; header.appendChild(img); }
+    else { const div = document.createElement('div'); div.className = 'logo-placeholder'; div.textContent = (c.nomeNegocio || 'C').trim().charAt(0).toUpperCase(); header.appendChild(div); }
+    const h1 = document.createElement('h1'); h1.textContent = c.nomeNegocio || 'Clínica de Estética'; header.appendChild(h1);
+    document.getElementById('custNome').value = c.nomeNegocio || '';
+    document.getElementById('custCorPrimaria').value = c.corPrimaria;
+    document.getElementById('custCorSecundaria').value = c.corSecundaria;
+    document.getElementById('codigoMasterDisplay').value = c.codigoMaster || '';
+    document.getElementById('almocoAtivo').checked = !!c.horarioPadrao.almoco.ativo;
+    document.getElementById('almocoInicio').value = c.horarioPadrao.almoco.inicio || '';
+    document.getElementById('almocoFim').value = c.horarioPadrao.almoco.fim || '';
+    renderConfigAgendaDias();
+    updatePreview();
+  }
+  function renderConfigAgendaDias() {
+    const cfg = state.config.horarioPadrao;
+    document.getElementById('configAgendaDias').innerHTML = DIAS_SEMANA.map(d => {
+      const dc = cfg.dias[d.chave];
+      return `
+        <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--cor-borda);flex-wrap:wrap">
+          <label class="checkbox-item" style="min-width:150px"><input type="checkbox" class="dia-ativo" data-dia="${d.chave}" ${dc.ativo ? 'checked' : ''}> ${d.label}</label>
+          <input type="time" class="dia-inicio" data-dia="${d.chave}" value="${dc.inicio}" style="max-width:120px" ${dc.ativo ? '' : 'disabled'}>
+          <span style="font-size:12px;color:#6b7280">até</span>
+          <input type="time" class="dia-fim" data-dia="${d.chave}" value="${dc.fim}" style="max-width:120px" ${dc.ativo ? '' : 'disabled'}>
+        </div>
+      `;
+    }).join('');
+    document.querySelectorAll('.dia-ativo').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const row = cb.closest('div');
+        row.querySelectorAll('input[type=time]').forEach(inp => inp.disabled = !cb.checked);
+      });
+    });
+  }
+  document.getElementById('btnSalvarConfigAgenda').addEventListener('click', () => {
+    const dias = {};
+    DIAS_SEMANA.forEach(d => {
+      const ativo = document.querySelector(`.dia-ativo[data-dia="${d.chave}"]`).checked;
+      const inicio = document.querySelector(`.dia-inicio[data-dia="${d.chave}"]`).value || '08:00';
+      const fim = document.querySelector(`.dia-fim[data-dia="${d.chave}"]`).value || '18:00';
+      dias[d.chave] = { ativo, inicio, fim };
+    });
+    state.config.horarioPadrao = {
+      dias,
+      almoco: {
+        ativo: document.getElementById('almocoAtivo').checked,
+        inicio: document.getElementById('almocoInicio').value || '12:00',
+        fim: document.getElementById('almocoFim').value || '13:00'
+      }
+    };
+    save(STORAGE_KEYS.config, state.config);
+    showToast('Configuração de agenda salva!');
+  });
+  function updatePreview() {
+    const nome = document.getElementById('custNome').value || 'Clínica de Estética';
+    const corP = document.getElementById('custCorPrimaria').value;
+    const corS = document.getElementById('custCorSecundaria').value;
+    document.getElementById('previewNome').textContent = nome;
+    document.querySelector('.preview-box').style.background = corP;
+    document.querySelector('.preview-box .p-menu-item').style.background = corS;
+    document.querySelector('.preview-box .p-menu-item').style.color = corP;
+    const wrap = document.getElementById('previewLogoWrap');
+    wrap.innerHTML = '';
+    if (pendingLogoBase64 || state.config.logo) {
+      const img = document.createElement('img'); img.src = pendingLogoBase64 || state.config.logo; wrap.appendChild(img);
+    } else {
+      const div = document.createElement('div'); div.className = 'logo-placeholder';
+      div.style.background = corS; div.style.color = corP; div.textContent = nome.trim().charAt(0).toUpperCase();
+      wrap.appendChild(div);
+    }
+  }
+  let pendingLogoBase64 = '';
+  document.getElementById('custNome').addEventListener('input', updatePreview);
+  document.getElementById('custCorPrimaria').addEventListener('input', updatePreview);
+  document.getElementById('custCorSecundaria').addEventListener('input', updatePreview);
+  document.getElementById('custLogo').addEventListener('change', async (e) => { pendingLogoBase64 = await fileToBase64(e.target.files[0]); updatePreview(); });
+  document.getElementById('btnSalvarCustom').addEventListener('click', () => {
+    state.config.nomeNegocio = document.getElementById('custNome').value.trim() || 'Clínica de Estética';
+    state.config.corPrimaria = document.getElementById('custCorPrimaria').value;
+    state.config.corSecundaria = document.getElementById('custCorSecundaria').value;
+    if (pendingLogoBase64) state.config.logo = pendingLogoBase64;
+    save(STORAGE_KEYS.config, state.config);
+    pendingLogoBase64 = '';
+    applyConfig();
+    showToast('Personalização salva com sucesso!');
+  });
+  document.getElementById('btnResetCustom').addEventListener('click', () => {
+    const manter = { senhaAdmin: state.config.senhaAdmin, codigoMaster: state.config.codigoMaster, negocioId: state.config.negocioId };
+    state.config = Object.assign({}, DEFAULT_CONFIG, manter);
+    pendingLogoBase64 = '';
+    save(STORAGE_KEYS.config, state.config);
+    document.getElementById('custLogo').value = '';
+    applyConfig();
+    showToast('Personalização restaurada.');
+  });
+  document.getElementById('btnRegenerarCodigo').addEventListener('click', () => {
+    if (!confirm('Gerar um novo código master? O código atual deixará de funcionar.')) return;
+    state.config.codigoMaster = gerarCodigoMaster();
+    save(STORAGE_KEYS.config, state.config);
+    document.getElementById('codigoMasterDisplay').value = state.config.codigoMaster;
+    showToast('Novo código master gerado!');
+  });
+  document.getElementById('formSenhaAdmin').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const atual = document.getElementById('senhaAtual').value;
+    const nova = document.getElementById('senhaNova').value;
+    if (atual !== state.config.senhaAdmin) { alert('Senha atual incorreta.'); return; }
+    state.config.senhaAdmin = nova;
+    save(STORAGE_KEYS.config, state.config);
+    e.target.reset();
+    showToast('Senha do administrador atualizada!');
+  });
+
+  // ---------- Dashboard ----------
+  function renderDashboard() {
+    const hojeISO = todayISO();
+    const agendHoje = state.agendamentos.filter(a => a.data === hojeISO).length;
+    const mesAtual = hojeISO.slice(0, 7);
+    const faturamentoMes = state.financeiro.filter(f => f.tipo === 'receita' && f.data.slice(0, 7) === mesAtual).reduce((s, f) => s + Number(f.valor), 0);
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card"><div class="label">Clientes cadastradas</div><div class="value">${state.clientes.length}</div></div>
+      <div class="stat-card"><div class="label">Agendamentos hoje</div><div class="value">${agendHoje}</div></div>
+      <div class="stat-card"><div class="label">Faturamento do mês</div><div class="value">${formatMoney(faturamentoMes)}</div></div>
+      <div class="stat-card"><div class="label">Serviços cadastrados</div><div class="value">${state.servicos.length}</div></div>
+    `;
+    const amanhaISO = somarDias(hojeISO, 1);
+    const agendHojeLista = state.agendamentos.filter(a => a.data === hojeISO).sort((a, b) => a.hora.localeCompare(b.hora));
+    document.getElementById('agendamentosHoje').innerHTML = agendHojeLista.length ? agendHojeLista.map(a => linhaAgendamentoDashboard(a, 'lembreteHoje')).join('') : '<div class="empty-msg">Nenhum agendamento hoje.</div>';
+    const agendAmanhaLista = state.agendamentos.filter(a => a.data === amanhaISO).sort((a, b) => a.hora.localeCompare(b.hora));
+    document.getElementById('agendamentosAmanha').innerHTML = agendAmanhaLista.length ? agendAmanhaLista.map(a => linhaAgendamentoDashboard(a, 'lembreteAmanha')).join('') : '<div class="empty-msg">Nenhum agendamento amanhã.</div>';
+    const receitasMes = faturamentoMes;
+    const despesasMes = state.financeiro.filter(f => f.tipo === 'despesa' && f.data.slice(0, 7) === mesAtual).reduce((s, f) => s + Number(f.valor), 0);
+    document.getElementById('resumoFinMes').innerHTML = `
+      <div class="list-row"><span>Receitas</span><span style="color:#1a7d3a;font-weight:600">${formatMoney(receitasMes)}</span></div>
+      <div class="list-row"><span>Despesas</span><span style="color:#b3261e;font-weight:600">${formatMoney(despesasMes)}</span></div>
+      <div class="list-row"><span>Saldo</span><span style="font-weight:700">${formatMoney(receitasMes - despesasMes)}</span></div>
+    `;
+  }
+
+  // ---------- Serviços ----------
+  let pendingServicoFoto = '';
+  document.getElementById('servFoto').addEventListener('change', async (e) => { pendingServicoFoto = await fileToBase64(e.target.files[0]); });
+  document.getElementById('formServico').addEventListener('submit', (e) => {
+    e.preventDefault();
+    state.servicos.push({ id: uid(), nome: document.getElementById('servNome').value.trim(), preco: parseFloat(document.getElementById('servPreco').value), duracao: parseInt(document.getElementById('servDuracao').value, 10), foto: pendingServicoFoto });
+    save(STORAGE_KEYS.servicos, state.servicos);
+    e.target.reset();
+    pendingServicoFoto = '';
+    renderServicos();
+    populateTodosSelects();
+    showToast('Serviço cadastrado!');
+  });
+  function renderServicos() {
+    const grid = document.getElementById('servicosGrid');
+    if (!state.servicos.length) { grid.innerHTML = '<div class="empty-msg">Nenhum serviço cadastrado ainda.</div>'; return; }
+    grid.innerHTML = state.servicos.map(s => `
+      <div class="item-card">
+        ${s.foto ? `<img class="thumb" src="${s.foto}" alt="${s.nome}">` : `<div class="thumb">Sem foto</div>`}
+        <div class="body">
+          <div class="name">${s.nome}</div>
+          <div class="meta">${formatMoney(s.preco)} · ${s.duracao} min</div>
+          <div class="actions"><button class="btn danger small" data-del-servico="${s.id}">Excluir</button></div>
+        </div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('servicosGrid').addEventListener('click', (e) => {
+    const id = e.target.dataset.delServico;
+    if (!id) return;
+    state.servicos = state.servicos.filter(s => s.id !== id);
+    save(STORAGE_KEYS.servicos, state.servicos);
+    renderServicos();
+    populateTodosSelects();
+  });
+
+  // ---------- Profissionais ----------
+  let pendingProfFoto = '';
+  document.getElementById('profFoto').addEventListener('change', async (e) => { pendingProfFoto = await fileToBase64(e.target.files[0]); });
+  document.getElementById('formProfissional').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = document.getElementById('profissionalId').value;
+    const nome = document.getElementById('profNome').value.trim();
+    const especialidade = document.getElementById('profEspecialidade').value.trim();
+    const senha = document.getElementById('profSenha').value.trim();
+    const cadeiras = Math.max(1, parseInt(document.getElementById('profCadeiras').value, 10) || 1);
+    if (id) {
+      const p = state.profissionais.find(x => x.id === id);
+      p.nome = nome; p.especialidade = especialidade; p.senha = senha; p.cadeiras = cadeiras;
+      if (pendingProfFoto) p.foto = pendingProfFoto;
+    } else {
+      const lic = licencaAtualFresca();
+      if (lic && state.profissionais.length >= (lic.limiteProfissionais || 0)) {
+        abrirModalLimite(lic);
+        return;
+      }
+      state.profissionais.push({ id: uid(), nome, especialidade, senha, cadeiras, foto: pendingProfFoto, bloqueios: [], excecoesDia: {} });
+    }
+    save(STORAGE_KEYS.profissionais, state.profissionais);
+    e.target.reset();
+    document.getElementById('profissionalId').value = '';
+    document.getElementById('profissionalFormTitulo').textContent = 'Novo profissional';
+    document.getElementById('btnCancelarEdicaoProf').style.display = 'none';
+    pendingProfFoto = '';
+    renderProfissionais();
+    populateTodosSelects();
+    showToast('Profissional salvo!');
+  });
+  document.getElementById('btnCancelarEdicaoProf').addEventListener('click', () => {
+    document.getElementById('formProfissional').reset();
+    document.getElementById('profissionalId').value = '';
+    document.getElementById('profissionalFormTitulo').textContent = 'Novo profissional';
+    document.getElementById('btnCancelarEdicaoProf').style.display = 'none';
+    pendingProfFoto = '';
+  });
+  function renderProfissionais() {
+    const grid = document.getElementById('profissionaisGrid');
+    if (!state.profissionais.length) { grid.innerHTML = '<div class="empty-msg">Nenhum profissional cadastrado ainda.</div>'; return; }
+    grid.innerHTML = state.profissionais.map(p => `
+      <div class="item-card">
+        ${p.foto ? `<img class="thumb" src="${p.foto}" alt="${p.nome}">` : `<div class="thumb">Sem foto</div>`}
+        <div class="body">
+          <div class="name">${p.nome}</div>
+          <div class="meta">${p.especialidade || 'Sem especialidade definida'}</div>
+          <div class="meta">${p.cadeiras} cadeira(s) simultânea(s)</div>
+          <div class="actions">
+            <button class="btn secondary small" data-edit-prof="${p.id}">Editar</button>
+            <button class="btn danger small" data-del-prof="${p.id}">Excluir</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('profissionaisGrid').addEventListener('click', (e) => {
+    const editId = e.target.dataset.editProf, delId = e.target.dataset.delProf;
+    if (editId) {
+      const p = state.profissionais.find(x => x.id === editId);
+      if (!p) return;
+      document.getElementById('profissionalFormTitulo').textContent = 'Editar profissional';
+      document.getElementById('profissionalId').value = p.id;
+      document.getElementById('profNome').value = p.nome;
+      document.getElementById('profEspecialidade').value = p.especialidade;
+      document.getElementById('profSenha').value = p.senha;
+      document.getElementById('profCadeiras').value = p.cadeiras;
+      pendingProfFoto = '';
+      document.getElementById('btnCancelarEdicaoProf').style.display = 'inline-block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (delId) {
+      if (confirm('Excluir este profissional? Agendamentos e fotos já registrados serão mantidos, mas ficarão sem profissional vinculado.')) {
+        state.profissionais = state.profissionais.filter(p => p.id !== delId);
+        save(STORAGE_KEYS.profissionais, state.profissionais);
+        renderProfissionais();
+        populateTodosSelects();
+      }
+    }
+  });
+
+  // ---------- Protocolos ----------
+  document.getElementById('formProtocolo').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = document.getElementById('protocoloId').value;
+    const dados = {
+      nome: document.getElementById('protNome').value.trim(),
+      sessoesRecomendadas: Math.max(1, parseInt(document.getElementById('protSessoes').value, 10) || 1),
+      frequenciaSemanal: Math.max(1, parseInt(document.getElementById('protFrequencia').value, 10) || 1),
+      equipamentos: document.getElementById('protEquipamentos').value.trim(),
+      produtos: document.getElementById('protProdutos').value.trim()
+    };
+    if (id) {
+      const p = state.protocolos.find(x => x.id === id);
+      Object.assign(p, dados);
+    } else {
+      state.protocolos.push(Object.assign({ id: uid() }, dados));
+    }
+    save(STORAGE_KEYS.protocolos, state.protocolos);
+    e.target.reset();
+    document.getElementById('protocoloId').value = '';
+    document.getElementById('protocoloFormTitulo').textContent = 'Novo protocolo';
+    document.getElementById('btnCancelarEdicaoProt').style.display = 'none';
+    renderProtocolos();
+    showToast('Protocolo salvo!');
+  });
+  document.getElementById('btnCancelarEdicaoProt').addEventListener('click', () => {
+    document.getElementById('formProtocolo').reset();
+    document.getElementById('protocoloId').value = '';
+    document.getElementById('protocoloFormTitulo').textContent = 'Novo protocolo';
+    document.getElementById('btnCancelarEdicaoProt').style.display = 'none';
+  });
+  function renderProtocolos() {
+    const grid = document.getElementById('protocolosGrid');
+    if (!state.protocolos.length) { grid.innerHTML = '<div class="empty-msg">Nenhum protocolo cadastrado ainda.</div>'; return; }
+    grid.innerHTML = state.protocolos.map(p => `
+      <div class="item-card">
+        <div class="body">
+          <div class="name">${p.nome}</div>
+          <div class="meta">${p.sessoesRecomendadas} sessões · ${p.frequenciaSemanal}x/semana</div>
+          ${p.equipamentos ? `<div class="meta">Equip.: ${p.equipamentos}</div>` : ''}
+          ${p.produtos ? `<div class="meta">Produtos: ${p.produtos}</div>` : ''}
+          <div class="actions">
+            <button class="btn secondary small" data-edit-prot="${p.id}">Editar</button>
+            <button class="btn danger small" data-del-prot="${p.id}">Excluir</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('protocolosGrid').addEventListener('click', (e) => {
+    const editId = e.target.dataset.editProt, delId = e.target.dataset.delProt;
+    if (editId) {
+      const p = state.protocolos.find(x => x.id === editId);
+      if (!p) return;
+      document.getElementById('protocoloFormTitulo').textContent = 'Editar protocolo';
+      document.getElementById('protocoloId').value = p.id;
+      document.getElementById('protNome').value = p.nome;
+      document.getElementById('protSessoes').value = p.sessoesRecomendadas;
+      document.getElementById('protFrequencia').value = p.frequenciaSemanal;
+      document.getElementById('protEquipamentos').value = p.equipamentos;
+      document.getElementById('protProdutos').value = p.produtos;
+      document.getElementById('btnCancelarEdicaoProt').style.display = 'inline-block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (delId) {
+      if (confirm('Excluir este protocolo? Clientes já associadas manterão o histórico de sessões, mas o protocolo ficará indisponível.')) {
+        state.protocolos = state.protocolos.filter(p => p.id !== delId);
+        save(STORAGE_KEYS.protocolos, state.protocolos);
+        renderProtocolos();
+      }
+    }
+  });
+
+  // ---------- Clientes: lista e cadastro básico ----------
+  const modalCliente = document.getElementById('modalCliente');
+  document.getElementById('btnNovoCliente').addEventListener('click', () => {
+    document.getElementById('modalClienteTitulo').textContent = 'Nova cliente';
+    document.getElementById('formCliente').reset();
+    document.getElementById('clienteId').value = '';
+    modalCliente.classList.add('open');
+  });
+  document.getElementById('btnFecharModalCliente').addEventListener('click', () => modalCliente.classList.remove('open'));
+  modalCliente.addEventListener('click', (e) => { if (e.target === modalCliente) modalCliente.classList.remove('open'); });
+
+  document.getElementById('formCliente').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = document.getElementById('clienteId').value;
+    const nome = document.getElementById('clienteNome').value.trim();
+    const idade = document.getElementById('clienteIdade').value;
+    const telefone = document.getElementById('clienteTelefone').value.trim();
+    const email = document.getElementById('clienteEmail').value.trim();
+    if (id) {
+      const c = state.clientes.find(c => c.id === id);
+      c.nome = nome; c.idade = idade; c.telefone = telefone; c.email = email;
+    } else {
+      state.clientes.push(Object.assign({ id: uid(), nome, idade, telefone, email }, fichaVaziaCliente()));
+    }
+    save(STORAGE_KEYS.clientes, state.clientes);
+    modalCliente.classList.remove('open');
+    renderClientes();
+    populateTodosSelects();
+    showToast('Cliente salva!');
+  });
+
+  function renderClientes() {
+    const busca = (document.getElementById('buscaCliente').value || '').toLowerCase();
+    let base = state.clientes;
+    if (session.tipo === 'profissional') {
+      const meusIds = new Set(state.agendamentos.filter(a => a.profissionalId === session.profissionalId).map(a => a.clienteId));
+      base = base.filter(c => meusIds.has(c.id));
+    }
+    const lista = document.getElementById('listaClientes');
+    const filtrados = base.filter(c => c.nome.toLowerCase().includes(busca));
+    lista.innerHTML = filtrados.length ? filtrados.map(c => `
+      <div class="cliente-list-item ${c.id === clienteSelecionadoId ? 'selected' : ''}" data-cliente="${c.id}">
+        <span>${c.nome}</span><span class="sub">${c.telefone || ''}</span>
+      </div>
+    `).join('') : '<div class="empty-msg">Nenhuma cliente encontrada.</div>';
+    renderClienteDetalhe();
+  }
+  document.getElementById('buscaCliente').addEventListener('input', renderClientes);
+  document.getElementById('listaClientes').addEventListener('click', (e) => {
+    const row = e.target.closest('[data-cliente]');
+    if (!row) return;
+    clienteSelecionadoId = row.dataset.cliente;
+    abaAtivaCliente = 'facial';
+    regiaoAtivaMapa = null;
+    renderClientes();
+  });
+
+  // ---------- Ficha da cliente (abas) ----------
+  const ABAS_CLIENTE = [
+    { id: 'facial', label: 'Anamnese Facial' },
+    { id: 'corporal', label: 'Anamnese Corporal' },
+    { id: 'objetivos', label: 'Objetivos' },
+    { id: 'mapa', label: 'Mapa Corporal' },
+    { id: 'medidas', label: 'Medidas & Evolução' },
+    { id: 'protocolo', label: 'Protocolo' }
+  ];
+
+  function renderClienteDetalhe() {
+    const box = document.getElementById('clienteDetalhe');
+    const c = state.clientes.find(c => c.id === clienteSelecionadoId);
+    if (!c) { box.innerHTML = '<div class="empty-msg">Selecione uma cliente à esquerda para ver a ficha.</div>'; return; }
+    const podeGerenciar = session.tipo === 'admin';
+
+    const tabsHtml = ABAS_CLIENTE.map(a => `<button type="button" class="ficha-tab-btn ${abaAtivaCliente === a.id ? 'active' : ''}" data-aba="${a.id}">${a.label}</button>`).join('');
+
+    box.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div>
+          <h3 style="margin-bottom:4px">${c.nome} ${c.idade ? `· ${c.idade} anos` : ''}</h3>
+          <div style="font-size:13px;color:#6b7280">${c.telefone || 'sem telefone'} ${c.email ? '· ' + c.email : ''}</div>
+        </div>
+        ${podeGerenciar ? `
+        <div style="display:flex;gap:8px">
+          <button class="btn secondary small" id="btnEditarCliente">Editar</button>
+          <button class="btn danger small" id="btnExcluirCliente">Excluir</button>
+        </div>` : ''}
+      </div>
+      <div class="ficha-tabs">${tabsHtml}</div>
+      <div id="fichaAbaConteudo"></div>
+    `;
+
+    if (podeGerenciar) {
+      document.getElementById('btnEditarCliente').addEventListener('click', () => {
+        document.getElementById('modalClienteTitulo').textContent = 'Editar cliente';
+        document.getElementById('clienteId').value = c.id;
+        document.getElementById('clienteNome').value = c.nome;
+        document.getElementById('clienteIdade').value = c.idade || '';
+        document.getElementById('clienteTelefone').value = c.telefone;
+        document.getElementById('clienteEmail').value = c.email;
+        modalCliente.classList.add('open');
+      });
+      document.getElementById('btnExcluirCliente').addEventListener('click', () => {
+        state.clientes = state.clientes.filter(x => x.id !== c.id);
+        save(STORAGE_KEYS.clientes, state.clientes);
+        clienteSelecionadoId = null;
+        renderClientes();
+        populateTodosSelects();
+      });
+    }
+    document.querySelectorAll('.ficha-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => { abaAtivaCliente = btn.dataset.aba; regiaoAtivaMapa = null; renderClienteDetalhe(); });
+    });
+
+    renderAbaCliente(c);
+  }
+
+  function renderAbaCliente(c) {
+    const el = document.getElementById('fichaAbaConteudo');
+    if (abaAtivaCliente === 'facial') { renderAbaFacial(el, c); return; }
+    if (abaAtivaCliente === 'corporal') { renderAbaCorporal(el, c); return; }
+    if (abaAtivaCliente === 'objetivos') { renderAbaObjetivos(el, c); return; }
+    if (abaAtivaCliente === 'mapa') { renderAbaMapa(el, c); return; }
+    if (abaAtivaCliente === 'medidas') { renderAbaMedidas(el, c); return; }
+    if (abaAtivaCliente === 'protocolo') { renderAbaProtocolo(el, c); return; }
+  }
+
+  function renderAbaFacial(el, c) {
+    const a = c.anamneseFacial;
+    el.innerHTML = `
+      <form id="formFacial">
+        <div class="form-grid">
+          <div class="field">
+            <label>Tipo de pele</label>
+            <select id="facTipoPele">
+              <option value="">Selecione</option>
+              <option value="Seca" ${a.tipoPele === 'Seca' ? 'selected' : ''}>Seca</option>
+              <option value="Oleosa" ${a.tipoPele === 'Oleosa' ? 'selected' : ''}>Oleosa</option>
+              <option value="Mista" ${a.tipoPele === 'Mista' ? 'selected' : ''}>Mista</option>
+              <option value="Normal" ${a.tipoPele === 'Normal' ? 'selected' : ''}>Normal</option>
+              <option value="Sensível" ${a.tipoPele === 'Sensível' ? 'selected' : ''}>Sensível</option>
+            </select>
+          </div>
+          <div class="field"><label>Alergias a cosméticos</label><input type="text" id="facAlergias" value="${a.alergiasCosmeticos || ''}"></div>
+        </div>
+        <div class="checkbox-grid">
+          <label class="checkbox-item"><input type="checkbox" id="facAcne" ${a.acne ? 'checked' : ''}> Acne</label>
+          <label class="checkbox-item"><input type="checkbox" id="facManchas" ${a.manchas ? 'checked' : ''}> Manchas</label>
+          <label class="checkbox-item"><input type="checkbox" id="facRugas" ${a.rugas ? 'checked' : ''}> Rugas</label>
+          <label class="checkbox-item"><input type="checkbox" id="facRosacea" ${a.rosacea ? 'checked' : ''}> Rosácea</label>
+          <label class="checkbox-item"><input type="checkbox" id="facAcidos" ${a.usoAcidosRetinol ? 'checked' : ''}> Uso de ácidos/retinol</label>
+        </div>
+        <div class="field"><label>Histórico de procedimentos faciais</label><textarea id="facHistorico">${a.historicoProcedimentos || ''}</textarea></div>
+        <div class="btn-row"><button type="submit" class="btn">Salvar anamnese facial</button></div>
+      </form>
+    `;
+    document.getElementById('formFacial').addEventListener('submit', (e) => {
+      e.preventDefault();
+      c.anamneseFacial = {
+        tipoPele: document.getElementById('facTipoPele').value,
+        acne: document.getElementById('facAcne').checked,
+        manchas: document.getElementById('facManchas').checked,
+        rugas: document.getElementById('facRugas').checked,
+        rosacea: document.getElementById('facRosacea').checked,
+        alergiasCosmeticos: document.getElementById('facAlergias').value.trim(),
+        usoAcidosRetinol: document.getElementById('facAcidos').checked,
+        historicoProcedimentos: document.getElementById('facHistorico').value.trim()
+      };
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Anamnese facial salva!');
+    });
+  }
+
+  function classificacaoIMC(imc) {
+    if (!imc || !isFinite(imc)) return '';
+    if (imc < 18.5) return 'Abaixo do peso';
+    if (imc < 25) return 'Peso normal';
+    if (imc < 30) return 'Sobrepeso';
+    return 'Obesidade';
+  }
+  function calcularIMC(peso, altura) {
+    const p = parseFloat(peso), aCm = parseFloat(altura);
+    if (!p || !aCm) return null;
+    const aM = aCm / 100;
+    return p / (aM * aM);
+  }
+
+  function renderAbaCorporal(el, c) {
+    const a = c.anamneseCorporal;
+    const imc = calcularIMC(a.peso, a.altura);
+    el.innerHTML = `
+      <form id="formCorporal">
+        <div class="form-grid">
+          <div class="field"><label>Peso (kg)</label><input type="number" step="0.1" id="corpPeso" value="${a.peso || ''}"></div>
+          <div class="field"><label>Altura (cm)</label><input type="number" step="1" id="corpAltura" value="${a.altura || ''}"></div>
+        </div>
+        <div class="imc-box">
+          <div class="imc-valor" id="imcValor">${imc ? imc.toFixed(1) : '--'}</div>
+          <div><div style="font-size:12px;color:#6b7280">IMC</div><div class="imc-class" id="imcClasse">${classificacaoIMC(imc)}</div></div>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>Uso de medicamentos</label><input type="text" id="corpMedicamentos" value="${a.medicamentos || ''}"></div>
+          <div class="field"><label>Alergias</label><input type="text" id="corpAlergias" value="${a.alergias || ''}"></div>
+        </div>
+        <div class="field"><label>Histórico de cirurgias</label><textarea id="corpCirurgias">${a.historicoCirurgias || ''}</textarea></div>
+        <div class="checkbox-grid">
+          <label class="checkbox-item"><input type="checkbox" id="corpCirculatorios" ${a.problemasCirculatorios ? 'checked' : ''}> Problemas circulatórios</label>
+          <label class="checkbox-item"><input type="checkbox" id="corpMarcapasso" ${a.marcapasso ? 'checked' : ''}> Marca-passo</label>
+          <label class="checkbox-item"><input type="checkbox" id="corpGestante" ${a.gestante ? 'checked' : ''}> Gestante</label>
+          <label class="checkbox-item"><input type="checkbox" id="corpAmamentando" ${a.amamentando ? 'checked' : ''}> Amamentando</label>
+          <label class="checkbox-item"><input type="checkbox" id="corpDiabetes" ${a.diabetes ? 'checked' : ''}> Diabetes</label>
+          <label class="checkbox-item"><input type="checkbox" id="corpVarizes" ${a.varizes ? 'checked' : ''}> Varizes</label>
+        </div>
+        <div class="btn-row"><button type="submit" class="btn">Salvar anamnese corporal</button></div>
+      </form>
+    `;
+    const atualizarIMC = () => {
+      const novoImc = calcularIMC(document.getElementById('corpPeso').value, document.getElementById('corpAltura').value);
+      document.getElementById('imcValor').textContent = novoImc ? novoImc.toFixed(1) : '--';
+      document.getElementById('imcClasse').textContent = classificacaoIMC(novoImc);
+    };
+    document.getElementById('corpPeso').addEventListener('input', atualizarIMC);
+    document.getElementById('corpAltura').addEventListener('input', atualizarIMC);
+    document.getElementById('formCorporal').addEventListener('submit', (e) => {
+      e.preventDefault();
+      c.anamneseCorporal = {
+        peso: document.getElementById('corpPeso').value,
+        altura: document.getElementById('corpAltura').value,
+        historicoCirurgias: document.getElementById('corpCirurgias').value.trim(),
+        medicamentos: document.getElementById('corpMedicamentos').value.trim(),
+        problemasCirculatorios: document.getElementById('corpCirculatorios').checked,
+        marcapasso: document.getElementById('corpMarcapasso').checked,
+        gestante: document.getElementById('corpGestante').checked,
+        amamentando: document.getElementById('corpAmamentando').checked,
+        diabetes: document.getElementById('corpDiabetes').checked,
+        varizes: document.getElementById('corpVarizes').checked,
+        alergias: document.getElementById('corpAlergias').value.trim()
+      };
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Anamnese corporal salva!');
+    });
+  }
+
+  function renderAbaObjetivos(el, c) {
+    const o = c.objetivos;
+    el.innerHTML = `
+      <form id="formObjetivos">
+        <div class="checkbox-grid">
+          <label class="checkbox-item"><input type="checkbox" id="objReducao" ${o.reducaoMedidas ? 'checked' : ''}> Redução de medidas</label>
+          <label class="checkbox-item"><input type="checkbox" id="objCelulite" ${o.celulite ? 'checked' : ''}> Celulite</label>
+          <label class="checkbox-item"><input type="checkbox" id="objFlacidez" ${o.flacidez ? 'checked' : ''}> Flacidez</label>
+          <label class="checkbox-item"><input type="checkbox" id="objGordura" ${o.gorduraLocalizada ? 'checked' : ''}> Gordura localizada</label>
+          <label class="checkbox-item"><input type="checkbox" id="objModelagem" ${o.modelagemCorporal ? 'checked' : ''}> Modelagem corporal</label>
+        </div>
+        <div class="btn-row"><button type="submit" class="btn">Salvar objetivos</button></div>
+      </form>
+    `;
+    document.getElementById('formObjetivos').addEventListener('submit', (e) => {
+      e.preventDefault();
+      c.objetivos = {
+        reducaoMedidas: document.getElementById('objReducao').checked,
+        celulite: document.getElementById('objCelulite').checked,
+        flacidez: document.getElementById('objFlacidez').checked,
+        gorduraLocalizada: document.getElementById('objGordura').checked,
+        modelagemCorporal: document.getElementById('objModelagem').checked
+      };
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Objetivos salvos!');
+    });
+  }
+
+  function silhuetaSvg() {
+    return `
+      <circle cx="100" cy="28" r="18" fill="#e8eaf0" stroke="var(--cor-borda)"></circle>
+      <path d="M75,50 Q100,44 125,50 L132,160 Q100,176 68,160 Z" fill="#e8eaf0" stroke="var(--cor-borda)"></path>
+      <path d="M75,55 Q54,92 58,150 L70,148 Q69,96 84,58 Z" fill="#e8eaf0" stroke="var(--cor-borda)"></path>
+      <path d="M125,55 Q146,92 142,150 L130,148 Q131,96 116,58 Z" fill="#e8eaf0" stroke="var(--cor-borda)"></path>
+      <path d="M68,158 Q100,180 132,158 L127,202 Q100,212 73,202 Z" fill="#e8eaf0" stroke="var(--cor-borda)"></path>
+      <path d="M73,200 Q65,282 62,362 L84,362 Q86,282 92,202 Z" fill="#e8eaf0" stroke="var(--cor-borda)"></path>
+      <path d="M127,200 Q135,282 138,362 L116,362 Q114,282 108,202 Z" fill="#e8eaf0" stroke="var(--cor-borda)"></path>
+    `;
+  }
+
+  function hotspotsFrente(c) {
+    const m = c.mapaCorporal;
+    const cls = (id) => 'mapa-regiao' + (m[id].marcada ? ' marcada' : '');
+    return `
+      <ellipse class="${cls('bracos')}" data-regiao="bracos" cx="63" cy="110" rx="10" ry="30"></ellipse>
+      <ellipse class="${cls('bracos')}" data-regiao="bracos" cx="137" cy="110" rx="10" ry="30"></ellipse>
+      <ellipse class="${cls('abdomen')}" data-regiao="abdomen" cx="100" cy="130" rx="24" ry="24"></ellipse>
+      <ellipse class="${cls('flancos')}" data-regiao="flancos" cx="72" cy="150" rx="10" ry="18"></ellipse>
+      <ellipse class="${cls('flancos')}" data-regiao="flancos" cx="128" cy="150" rx="10" ry="18"></ellipse>
+      <ellipse class="${cls('coxas')}" data-regiao="coxas" cx="80" cy="250" rx="15" ry="38"></ellipse>
+      <ellipse class="${cls('coxas')}" data-regiao="coxas" cx="120" cy="250" rx="15" ry="38"></ellipse>
+      <circle class="${cls('joelhos')}" data-regiao="joelhos" cx="80" cy="308" r="9"></circle>
+      <circle class="${cls('joelhos')}" data-regiao="joelhos" cx="120" cy="308" r="9"></circle>
+    `;
+  }
+  function hotspotsCostas(c) {
+    const m = c.mapaCorporal;
+    const cls = (id) => 'mapa-regiao' + (m[id].marcada ? ' marcada' : '');
+    return `
+      <rect class="${cls('costas')}" data-regiao="costas" x="76" y="60" width="48" height="80" rx="10"></rect>
+      <ellipse class="${cls('bumbum')}" data-regiao="bumbum" cx="100" cy="185" rx="26" ry="20"></ellipse>
+      <ellipse class="${cls('culote')}" data-regiao="culote" cx="72" cy="205" rx="10" ry="20"></ellipse>
+      <ellipse class="${cls('culote')}" data-regiao="culote" cx="128" cy="205" rx="10" ry="20"></ellipse>
+    `;
+  }
+
+  function renderAbaMapa(el, c) {
+    const nomeRegiao = (id) => (REGIOES_MAPA.find(r => r.id === id) || {}).nome || '';
+    const marcadas = REGIOES_MAPA.filter(r => c.mapaCorporal[r.id].marcada);
+    el.innerHTML = `
+      <div class="mapa-wrap">
+        <div class="mapa-view">
+          <h4>Frente</h4>
+          <svg viewBox="0 0 200 380">${silhuetaSvg()}${hotspotsFrente(c)}</svg>
+        </div>
+        <div class="mapa-view">
+          <h4>Costas</h4>
+          <svg viewBox="0 0 200 380">${silhuetaSvg()}${hotspotsCostas(c)}</svg>
+        </div>
+      </div>
+      <div class="mapa-lista-marcadas">
+        ${marcadas.length ? marcadas.map(r => `<span class="badge">${r.nome}</span>`).join('') : '<span class="empty-msg" style="padding:0">Nenhuma região marcada ainda. Clique no mapa acima.</span>'}
+      </div>
+      <div class="mapa-obs-box" id="mapaObsBox"></div>
+    `;
+    document.querySelectorAll('.mapa-regiao').forEach(shape => {
+      shape.addEventListener('click', () => {
+        const regiao = shape.dataset.regiao;
+        c.mapaCorporal[regiao].marcada = !c.mapaCorporal[regiao].marcada;
+        regiaoAtivaMapa = regiao;
+        save(STORAGE_KEYS.clientes, state.clientes);
+        renderAbaMapa(el, c);
+      });
+    });
+    const obsBox = document.getElementById('mapaObsBox');
+    if (regiaoAtivaMapa) {
+      obsBox.innerHTML = `
+        <h4>Observação — ${nomeRegiao(regiaoAtivaMapa)}</h4>
+        <textarea id="mapaObsTexto">${c.mapaCorporal[regiaoAtivaMapa].obs || ''}</textarea>
+        <div class="btn-row"><button type="button" class="btn small" id="btnSalvarObsMapa">Salvar observação</button></div>
+      `;
+      document.getElementById('btnSalvarObsMapa').addEventListener('click', () => {
+        c.mapaCorporal[regiaoAtivaMapa].obs = document.getElementById('mapaObsTexto').value.trim();
+        save(STORAGE_KEYS.clientes, state.clientes);
+        showToast('Observação salva!');
+      });
+    } else {
+      obsBox.innerHTML = '<div class="empty-msg">Clique em uma região do mapa para adicionar uma observação.</div>';
+    }
+  }
+
+  function renderAbaMedidas(el, c) {
+    const medidas = [...c.medidas].sort((a, b) => a.data.localeCompare(b.data));
+    const camposInputs = CAMPOS_MEDIDA.map(f => `<div class="field"><label>${f.label}</label><input type="number" step="0.1" id="med_${f.chave}"></div>`).join('');
+
+    let tabelaHtml = '<div class="empty-msg">Nenhuma medição registrada ainda.</div>';
+    let diffHtml = '';
+    if (medidas.length) {
+      tabelaHtml = `
+        <div class="tabela-scroll">
+        <table>
+          <thead><tr><th>Data</th>${CAMPOS_MEDIDA.map(f => `<th>${f.label}</th>`).join('')}<th></th></tr></thead>
+          <tbody>
+            ${medidas.map(m => `
+              <tr>
+                <td>${formatDateBR(m.data)}</td>
+                ${CAMPOS_MEDIDA.map(f => `<td>${m[f.chave] !== '' && m[f.chave] !== undefined ? m[f.chave] : '—'}</td>`).join('')}
+                <td><button class="btn danger small" data-del-medida="${m.id}">Excluir</button></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        </div>
+      `;
+      if (medidas.length >= 2) {
+        const primeira = medidas[0], ultima = medidas[medidas.length - 1];
+        diffHtml = `
+          <div class="tabela-scroll">
+          <table>
+            <thead><tr>${CAMPOS_MEDIDA.map(f => `<th>${f.label}</th>`).join('')}</tr></thead>
+            <tbody><tr>
+              ${CAMPOS_MEDIDA.map(f => {
+                const v1 = parseFloat(primeira[f.chave]), v2 = parseFloat(ultima[f.chave]);
+                if (isNaN(v1) || isNaN(v2)) return '<td>—</td>';
+                const diff = (v2 - v1);
+                const cls = diff < 0 ? 'diff-neg' : (diff > 0 ? 'diff-pos' : 'diff-zero');
+                return `<td class="${cls}">${diff > 0 ? '+' : ''}${diff.toFixed(1)}</td>`;
+              }).join('')}
+            </tr></tbody>
+          </table>
+          </div>
+        `;
+      }
+    }
+
+    el.innerHTML = `
+      <h4 style="color:var(--cor-primaria);font-size:13.5px;margin-bottom:10px">Nova medição</h4>
+      <form id="formMedida">
+        <div class="field" style="max-width:200px"><label>Data</label><input type="date" id="med_data" required></div>
+        <div class="form-grid">${camposInputs}</div>
+        <div class="btn-row"><button type="submit" class="btn">Salvar medição</button></div>
+      </form>
+      <hr style="border:none;border-top:1px solid var(--cor-borda);margin:18px 0">
+      <h4 style="color:var(--cor-primaria);font-size:13.5px;margin-bottom:10px">Histórico de medições</h4>
+      ${tabelaHtml}
+      ${diffHtml ? `<h4 style="color:var(--cor-primaria);font-size:13.5px;margin:14px 0 8px">Diferença (primeira → última medição)</h4>${diffHtml}` : ''}
+      <hr style="border:none;border-top:1px solid var(--cor-borda);margin:18px 0">
+      <h4 style="color:var(--cor-primaria);font-size:13.5px;margin-bottom:10px">Gráfico de evolução</h4>
+      <div class="field" style="max-width:220px">
+        <label>Medida</label>
+        <select id="graficoCampo">${CAMPOS_MEDIDA.map(f => `<option value="${f.chave}">${f.label}</option>`).join('')}</select>
+      </div>
+      <div id="graficoContainer"></div>
+    `;
+    document.getElementById('med_data').value = todayISO();
+
+    document.getElementById('formMedida').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const nova = { id: uid(), data: document.getElementById('med_data').value };
+      CAMPOS_MEDIDA.forEach(f => { nova[f.chave] = document.getElementById('med_' + f.chave).value; });
+      c.medidas.push(nova);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Medição registrada!');
+      renderAbaMedidas(el, c);
+    });
+    el.querySelectorAll('[data-del-medida]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        c.medidas = c.medidas.filter(m => m.id !== btn.dataset.delMedida);
+        save(STORAGE_KEYS.clientes, state.clientes);
+        renderAbaMedidas(el, c);
+      });
+    });
+    document.getElementById('graficoCampo').addEventListener('change', () => renderGraficoEvolucao(c));
+    renderGraficoEvolucao(c);
+  }
+
+  function renderGraficoEvolucao(c) {
+    const campoSel = document.getElementById('graficoCampo');
+    if (!campoSel) return;
+    const campo = campoSel.value || 'cintura';
+    const medidasOrdenadas = [...c.medidas].sort((a, b) => a.data.localeCompare(b.data));
+    const pontos = medidasOrdenadas.filter(m => m[campo] !== '' && m[campo] !== undefined && m[campo] !== null).map(m => ({ data: m.data, valor: parseFloat(m[campo]) }));
+    const container = document.getElementById('graficoContainer');
+    if (pontos.length < 2) { container.innerHTML = '<div class="empty-msg">Registre ao menos 2 medições com este campo preenchido para ver o gráfico.</div>'; return; }
+    const w = 600, h = 210, pad = 34;
+    const valores = pontos.map(p => p.valor);
+    const min = Math.min(...valores), max = Math.max(...valores);
+    const faixa = (max - min) || 1;
+    const passoX = (w - pad * 2) / (pontos.length - 1);
+    const coords = pontos.map((p, i) => ({ x: pad + i * passoX, y: h - pad - ((p.valor - min) / faixa) * (h - pad * 2), ...p }));
+    const linha = coords.map(pt => `${pt.x},${pt.y}`).join(' ');
+    const marcadores = coords.map(pt => `
+      <circle cx="${pt.x}" cy="${pt.y}" r="4" fill="var(--cor-primaria)"></circle>
+      <text x="${pt.x}" y="${pt.y - 10}" font-size="11" text-anchor="middle" fill="var(--cor-primaria)">${pt.valor}</text>
+      <text x="${pt.x}" y="${h - 10}" font-size="10" text-anchor="middle" fill="#6b7280">${formatDateBR(pt.data).slice(0, 5)}</text>
+    `).join('');
+    container.innerHTML = `
+      <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto">
+        <line x1="${pad}" y1="${h - pad}" x2="${w - pad}" y2="${h - pad}" stroke="var(--cor-borda)"></line>
+        <polyline points="${linha}" fill="none" stroke="var(--cor-secundaria)" stroke-width="3"></polyline>
+        ${marcadores}
+      </svg>
+    `;
+  }
+
+  function renderAbaProtocolo(el, c) {
+    if (c.protocolo && c.protocolo.protocoloId) {
+      const p = state.protocolos.find(x => x.id === c.protocolo.protocoloId);
+      if (!p) {
+        el.innerHTML = '<div class="empty-msg">O protocolo associado foi removido. Associe um novo protocolo.</div>';
+      } else {
+        const feitas = c.protocolo.sessoesFeitas || 0;
+        const pct = Math.min(100, Math.round((feitas / p.sessoesRecomendadas) * 100));
+        el.innerHTML = `
+          <h4 style="color:var(--cor-primaria);font-size:15px;margin-bottom:6px">${p.nome}</h4>
+          <div class="meta" style="font-size:12.5px;color:#6b7280;margin-bottom:4px">${p.frequenciaSemanal}x por semana</div>
+          ${p.equipamentos ? `<div class="meta" style="font-size:12.5px;color:#6b7280">Equipamentos/técnicas: ${p.equipamentos}</div>` : ''}
+          ${p.produtos ? `<div class="meta" style="font-size:12.5px;color:#6b7280;margin-bottom:10px">Produtos: ${p.produtos}</div>` : ''}
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+          <div style="font-size:13.5px;font-weight:600;color:var(--cor-primaria)">${feitas} de ${p.sessoesRecomendadas} sessões concluídas</div>
+          <div class="btn-row">
+            <button type="button" class="btn small" id="btnMaisSessao" ${feitas >= p.sessoesRecomendadas ? 'disabled' : ''}>+1 sessão concluída</button>
+            <button type="button" class="btn secondary small" id="btnMenosSessao" ${feitas <= 0 ? 'disabled' : ''}>-1 sessão</button>
+            <button type="button" class="btn danger small" id="btnRemoverProtocolo">Remover protocolo</button>
+          </div>
+        `;
+        document.getElementById('btnMaisSessao').addEventListener('click', () => { c.protocolo.sessoesFeitas = Math.min(p.sessoesRecomendadas, feitas + 1); save(STORAGE_KEYS.clientes, state.clientes); renderAbaProtocolo(el, c); });
+        document.getElementById('btnMenosSessao').addEventListener('click', () => { c.protocolo.sessoesFeitas = Math.max(0, feitas - 1); save(STORAGE_KEYS.clientes, state.clientes); renderAbaProtocolo(el, c); });
+        document.getElementById('btnRemoverProtocolo').addEventListener('click', () => {
+          if (!confirm('Remover o protocolo desta cliente?')) return;
+          c.protocolo = { protocoloId: '', sessoesFeitas: 0 };
+          save(STORAGE_KEYS.clientes, state.clientes);
+          renderAbaProtocolo(el, c);
+        });
+      }
+      return;
+    }
+    if (!state.protocolos.length) {
+      el.innerHTML = '<div class="empty-msg">Nenhum protocolo cadastrado. Peça ao administrador para cadastrar em "Protocolos".</div>';
+      return;
+    }
+    el.innerHTML = `
+      <div class="field" style="max-width:280px"><label>Protocolo</label><select id="selProtocolo">${state.protocolos.map(p => `<option value="${p.id}">${p.nome}</option>`).join('')}</select></div>
+      <div class="btn-row"><button type="button" class="btn" id="btnAssociarProtocolo">Associar protocolo</button></div>
+    `;
+    document.getElementById('btnAssociarProtocolo').addEventListener('click', () => {
+      c.protocolo = { protocoloId: document.getElementById('selProtocolo').value, sessoesFeitas: 0 };
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Protocolo associado!');
+      renderAbaProtocolo(el, c);
+    });
+  }
+
+  // ---------- Agendamentos ----------
+  document.getElementById('agendaData').value = todayISO();
+
+  function renderAgendamentos() {
+    let lista = state.agendamentos.filter(a => a.data >= todayISO());
+    if (session.tipo === 'profissional') {
+      lista = lista.filter(a => a.profissionalId === session.profissionalId);
+    } else {
+      const filtro = document.getElementById('filtroProfissional').value;
+      if (filtro) lista = lista.filter(a => a.profissionalId === filtro);
+    }
+    lista.sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
+    document.getElementById('listaAgendamentos').innerHTML = lista.length ? lista.map(a => {
+      const cli = state.clientes.find(c => c.id === a.clienteId);
+      const serv = state.servicos.find(s => s.id === a.servicoId);
+      const prof = state.profissionais.find(p => p.id === a.profissionalId);
+      const profTxt = session.tipo === 'admin' ? ` · ${prof ? prof.nome : 'Não atribuído'}` : '';
+      return `<div class="list-row">
+        <span>${formatDateBR(a.data)} às ${a.hora} — ${cli ? cli.nome : 'Cliente'} (${serv ? serv.nome : 'Serviço'})${profTxt}${a.origem === 'online' ? '<span class="badge">Online</span>' : ''}</span>
+        <span style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn gold small" data-whats-agenda="${a.id}" title="Enviar WhatsApp">🟢</button>
+          <button class="btn danger small" data-cancel-list="${a.id}">Cancelar</button>
+        </span>
+      </div>`;
+    }).join('') : '<div class="empty-msg">Nenhum agendamento futuro.</div>';
+  }
+  function renderAgendaCompleta() {
+    renderAgendamentos();
+    renderDisponibilidade();
+    renderTimeline();
+  }
+  document.getElementById('filtroProfissional').addEventListener('change', renderAgendaCompleta);
+  document.getElementById('listaAgendamentos').addEventListener('click', (e) => {
+    const whatsBtn = e.target.closest('[data-whats-agenda]');
+    if (whatsBtn) {
+      const a = state.agendamentos.find(x => x.id === whatsBtn.dataset.whatsAgenda);
+      abrirModalWhatsapp(a);
+      return;
+    }
+    const id = e.target.dataset.cancelList;
+    if (!id) return;
+    if (confirm('Deseja cancelar este agendamento?')) {
+      const cancelado = state.agendamentos.find(a => a.id === id);
+      state.agendamentos = state.agendamentos.filter(a => a.id !== id);
+      save(STORAGE_KEYS.agendamentos, state.agendamentos);
+      renderAgendaCompleta();
+      renderDashboard();
+      if (cancelado && confirm('Deseja avisar a cliente pelo WhatsApp sobre o cancelamento?')) {
+        abrirModalWhatsapp(cancelado, 'cancelamento');
+      }
+    }
+  });
+  document.getElementById('formAgendamento').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const clienteId = document.getElementById('agendaCliente').value;
+    const servicoId = document.getElementById('agendaServico').value;
+    let profissionalId;
+    if (session.tipo === 'profissional') { profissionalId = session.profissionalId; }
+    else {
+      profissionalId = document.getElementById('agendaProfissional').value;
+      if (!profissionalId) { alert('Cadastre e selecione um profissional antes de agendar.'); return; }
+    }
+    if (!clienteId) { alert('Cadastre ao menos uma cliente antes de agendar.'); return; }
+    if (!servicoId) { alert('Cadastre ao menos um serviço antes de agendar.'); return; }
+    state.agendamentos.push({ id: uid(), data: document.getElementById('agendaData').value, hora: document.getElementById('agendaHora').value, clienteId, servicoId, profissionalId, origem: 'manual' });
+    save(STORAGE_KEYS.agendamentos, state.agendamentos);
+    document.getElementById('agendaHora').value = '';
+    renderAgendaCompleta();
+    renderDashboard();
+    showToast('Agendamento adicionado!');
+  });
+
+  // ---------- Disponibilidade (bloqueios + exceção do dia) ----------
+  function renderDisponibilidade() {
+    const alvo = profissionalAlvoAgenda();
+    const avisoEl = document.getElementById('disponibilidadeAlvoAviso');
+    const contEl = document.getElementById('disponibilidadeConteudo');
+    if (!alvo) {
+      avisoEl.innerHTML = '<div class="empty-msg">Selecione um profissional no filtro acima para gerenciar bloqueios e horários especiais.</div>';
+      contEl.innerHTML = '';
+      return;
+    }
+    const prof = state.profissionais.find(p => p.id === alvo);
+    if (!prof) { avisoEl.innerHTML = ''; contEl.innerHTML = ''; return; }
+    avisoEl.innerHTML = '';
+
+    const bloqueiosFuturos = (prof.bloqueios || []).filter(b => b.data >= todayISO()).sort((a, b) => (a.data + a.horaInicio).localeCompare(b.data + b.horaInicio));
+    const excecoesFuturas = Object.keys(prof.excecoesDia || {}).filter(d => d >= todayISO()).sort();
+
+    contEl.innerHTML = `
+      <h4 style="font-size:13px;color:var(--cor-primaria);margin:12px 0 8px">Bloquear horário pontual</h4>
+      <form id="formBloqueio">
+        <div class="form-grid">
+          <div class="field"><label>Data</label><input type="date" id="bloqData" required></div>
+          <div class="field"><label>Hora início</label><input type="time" id="bloqInicio" required></div>
+          <div class="field"><label>Hora fim</label><input type="time" id="bloqFim" required></div>
+          <div class="field"><label>Motivo</label><input type="text" id="bloqMotivo" placeholder="Ex: Reunião, Folga"></div>
+        </div>
+        <div class="btn-row"><button type="submit" class="btn small">Bloquear horário</button></div>
+      </form>
+      <div style="margin-top:10px">
+        ${bloqueiosFuturos.length ? bloqueiosFuturos.map(b => `
+          <div class="list-row"><span>${formatDateBR(b.data)}, ${b.horaInicio} às ${b.horaFim}${b.motivo ? ' — ' + b.motivo : ''}</span>
+          <button class="btn danger small" data-del-bloqueio="${b.id}">Remover</button></div>
+        `).join('') : '<div class="empty-msg">Nenhum bloqueio futuro.</div>'}
+      </div>
+      <h4 style="font-size:13px;color:var(--cor-primaria);margin:20px 0 8px">Agenda personalizada para um dia específico</h4>
+      <form id="formExcecaoDia">
+        <div class="form-grid">
+          <div class="field"><label>Data</label><input type="date" id="excData" required></div>
+          <div class="field"><label class="checkbox-item" style="margin-top:8px"><input type="checkbox" id="excAtivo" checked> Atende neste dia</label></div>
+          <div class="field"><label>Início</label><input type="time" id="excInicio"></div>
+          <div class="field"><label>Fim</label><input type="time" id="excFim"></div>
+        </div>
+        <div class="btn-row"><button type="submit" class="btn small">Salvar horário do dia</button></div>
+      </form>
+      <div style="margin-top:10px">
+        ${excecoesFuturas.length ? excecoesFuturas.map(d => {
+          const ex = prof.excecoesDia[d];
+          return `<div class="list-row"><span>${formatDateBR(d)} — ${ex.ativo ? `${ex.inicio} às ${ex.fim}` : 'Não atende (folga)'}</span>
+          <button class="btn danger small" data-del-excecao="${d}">Remover</button></div>`;
+        }).join('') : '<div class="empty-msg">Nenhuma agenda personalizada futura.</div>'}
+      </div>
+    `;
+    document.getElementById('bloqData').value = todayISO();
+    document.getElementById('excData').value = todayISO();
+
+    document.getElementById('formBloqueio').addEventListener('submit', (e) => {
+      e.preventDefault();
+      prof.bloqueios = prof.bloqueios || [];
+      prof.bloqueios.push({ id: uid(), data: document.getElementById('bloqData').value, horaInicio: document.getElementById('bloqInicio').value, horaFim: document.getElementById('bloqFim').value, motivo: document.getElementById('bloqMotivo').value.trim() });
+      save(STORAGE_KEYS.profissionais, state.profissionais);
+      renderDisponibilidade();
+      renderTimeline();
+      showToast('Horário bloqueado!');
+    });
+    contEl.querySelectorAll('[data-del-bloqueio]').forEach(btn => btn.addEventListener('click', () => {
+      prof.bloqueios = prof.bloqueios.filter(b => b.id !== btn.dataset.delBloqueio);
+      save(STORAGE_KEYS.profissionais, state.profissionais);
+      renderDisponibilidade();
+      renderTimeline();
+    }));
+
+    document.getElementById('formExcecaoDia').addEventListener('submit', (e) => {
+      e.preventDefault();
+      prof.excecoesDia = prof.excecoesDia || {};
+      const ativo = document.getElementById('excAtivo').checked;
+      const data = document.getElementById('excData').value;
+      if (ativo && (!document.getElementById('excInicio').value || !document.getElementById('excFim').value)) {
+        alert('Informe o horário de início e fim para este dia.');
+        return;
+      }
+      prof.excecoesDia[data] = { ativo, inicio: document.getElementById('excInicio').value, fim: document.getElementById('excFim').value };
+      save(STORAGE_KEYS.profissionais, state.profissionais);
+      renderDisponibilidade();
+      renderTimeline();
+      showToast('Agenda do dia salva!');
+    });
+    contEl.querySelectorAll('[data-del-excecao]').forEach(btn => btn.addEventListener('click', () => {
+      delete prof.excecoesDia[btn.dataset.delExcecao];
+      save(STORAGE_KEYS.profissionais, state.profissionais);
+      renderDisponibilidade();
+      renderTimeline();
+    }));
+  }
+
+  // ---------- Visão da Agenda (timeline) ----------
+  document.getElementById('btnModoDia').addEventListener('click', () => { timelineModo = 'dia'; renderTimeline(); });
+  document.getElementById('btnModoSemana').addEventListener('click', () => { timelineModo = 'semana'; renderTimeline(); });
+
+  function renderTimelineNav() {
+    document.getElementById('btnModoDia').classList.toggle('gold', timelineModo === 'dia');
+    document.getElementById('btnModoSemana').classList.toggle('gold', timelineModo === 'semana');
+    const nav = document.getElementById('timelineNav');
+    if (timelineModo === 'dia') {
+      nav.innerHTML = `
+        <button type="button" class="btn secondary small" id="btnDiaAnterior">◀</button>
+        <input type="date" id="timelineDataInput" value="${timelineData}" style="max-width:170px">
+        <button type="button" class="btn secondary small" id="btnDiaProximo">▶</button>
+      `;
+      document.getElementById('btnDiaAnterior').addEventListener('click', () => { timelineData = somarDias(timelineData, -1); renderTimeline(); });
+      document.getElementById('btnDiaProximo').addEventListener('click', () => { timelineData = somarDias(timelineData, 1); renderTimeline(); });
+      document.getElementById('timelineDataInput').addEventListener('change', (e) => { timelineData = e.target.value; renderTimeline(); });
+    } else {
+      const inicioSemana = inicioDaSemana(timelineData);
+      const fimSemana = somarDias(inicioSemana, 6);
+      nav.innerHTML = `
+        <button type="button" class="btn secondary small" id="btnSemanaAnterior">◀</button>
+        <span style="font-size:13px;color:var(--cor-primaria);font-weight:600">${formatDateBR(inicioSemana)} — ${formatDateBR(fimSemana)}</span>
+        <button type="button" class="btn secondary small" id="btnSemanaProxima">▶</button>
+      `;
+      document.getElementById('btnSemanaAnterior').addEventListener('click', () => { timelineData = somarDias(timelineData, -7); renderTimeline(); });
+      document.getElementById('btnSemanaProxima').addEventListener('click', () => { timelineData = somarDias(timelineData, 7); renderTimeline(); });
+    }
+  }
+
+  function renderTimelineDia(profissionalId, dataISO) {
+    const janelas = janelaDoDia(profissionalId, dataISO);
+    if (!janelas) return '<div class="empty-msg">Profissional não atende neste dia.</div>';
+    const intervalo = state.config.intervaloGrade || 30;
+    const linhas = [];
+    janelas.forEach(j => { for (let t = j.inicio; t < j.fim; t += intervalo) linhas.push(t); });
+    linhas.sort((a, b) => a - b);
+    if (!linhas.length) return '<div class="empty-msg">Nenhum horário configurado para este dia.</div>';
+    return linhas.map(t => {
+      const status = statusDoSlot(profissionalId, dataISO, t, intervalo);
+      const cor = status.tipo === 'ocupado' ? '#c9701a' : (status.tipo === 'bloqueado' ? '#9aa0ab' : '#1a7d3a');
+      const corFundo = status.tipo === 'ocupado' ? 'rgba(201,112,26,0.12)' : (status.tipo === 'bloqueado' ? 'rgba(154,160,171,0.15)' : 'rgba(26,125,58,0.1)');
+      return `
+        <div style="display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:6px;background:${corFundo};margin-bottom:4px">
+          <strong style="min-width:48px;color:var(--cor-primaria);font-size:12.5px">${minParaHora(t)}</strong>
+          <span style="width:8px;height:8px;border-radius:50%;background:${cor};flex-shrink:0"></span>
+          <span style="font-size:12.5px;color:#4b5162">${status.texto}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderTimelineDiaCompacto(profissionalId, dataISO) {
+    const janelas = janelaDoDia(profissionalId, dataISO);
+    if (!janelas) return '<div style="font-size:10.5px;color:#9aa0ab;text-align:center;padding:6px 0">Fechado</div>';
+    const intervalo = state.config.intervaloGrade || 30;
+    const linhas = [];
+    janelas.forEach(j => { for (let t = j.inicio; t < j.fim; t += intervalo) linhas.push(t); });
+    linhas.sort((a, b) => a - b);
+    if (!linhas.length) return '<div style="font-size:10.5px;color:#9aa0ab;text-align:center;padding:6px 0">Fechado</div>';
+    return linhas.map(t => {
+      const status = statusDoSlot(profissionalId, dataISO, t, intervalo);
+      const cor = status.tipo === 'ocupado' ? '#c9701a' : (status.tipo === 'bloqueado' ? '#9aa0ab' : '#1a7d3a');
+      return `<div title="${minParaHora(t)} — ${status.texto}" style="height:14px;border-radius:3px;background:${cor};margin-bottom:2px"></div>`;
+    }).join('');
+  }
+
+  function renderTimeline() {
+    renderTimelineNav();
+    const alvo = profissionalAlvoAgenda();
+    const cont = document.getElementById('timelineConteudo');
+    if (!alvo) { cont.innerHTML = '<div class="empty-msg">Selecione um profissional para visualizar a agenda.</div>'; return; }
+    if (timelineModo === 'dia') {
+      cont.innerHTML = renderTimelineDia(alvo, timelineData);
+    } else {
+      const inicioSemana = inicioDaSemana(timelineData);
+      const dias = [];
+      for (let i = 0; i < 7; i++) dias.push(somarDias(inicioSemana, i));
+      const nomesDias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+      cont.innerHTML = `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;overflow-x:auto">${dias.map(d => `
+        <div>
+          <div style="font-size:11px;color:#6b7280;text-align:center;margin-bottom:6px;font-weight:600">${nomesDias[new Date(d + 'T00:00:00').getDay()]}<br>${formatDateBR(d).slice(0, 5)}</div>
+          ${renderTimelineDiaCompacto(alvo, d)}
+        </div>
+      `).join('')}</div>`;
+    }
+  }
+
+  function ensureNegocioId() { if (!state.config.negocioId) { state.config.negocioId = uid(); save(STORAGE_KEYS.config, state.config); } }
+  function getClienteLinkURL() {
+    ensureNegocioId();
+    const url = new URL('agendamento-estetica.html', window.location.href);
+    url.searchParams.set('negocio', state.config.negocioId);
+    return url.toString();
+  }
+  const modalLink = document.getElementById('modalLink');
+  document.getElementById('btnCompartilharLink').addEventListener('click', () => {
+    document.getElementById('linkCompartilhavel').value = getClienteLinkURL();
+    modalLink.classList.add('open');
+  });
+  document.getElementById('btnFecharModalLink').addEventListener('click', () => modalLink.classList.remove('open'));
+  modalLink.addEventListener('click', (e) => { if (e.target === modalLink) modalLink.classList.remove('open'); });
+  document.getElementById('btnCopiarLink').addEventListener('click', async () => {
+    const input = document.getElementById('linkCompartilhavel');
+    input.select();
+    try { await navigator.clipboard.writeText(input.value); showToast('Link copiado!'); }
+    catch (e) { document.execCommand('copy'); showToast('Link copiado!'); }
+  });
+
+  // ---------- WhatsApp ----------
+  function linhaAgendamentoDashboard(a, tipo) {
+    const cli = state.clientes.find(c => c.id === a.clienteId);
+    const serv = state.servicos.find(s => s.id === a.servicoId);
+    return `<div class="list-row">
+      <span>${a.hora} — ${cli ? cli.nome : 'Cliente'} (${serv ? serv.nome : ''})</span>
+      <button class="btn gold small" data-whats-agenda="${a.id}" data-whats-tipo="${tipo}">🟢 WhatsApp</button>
+    </div>`;
+  }
+  document.getElementById('agendamentosHoje').addEventListener('click', whatsDashboardClick);
+  document.getElementById('agendamentosAmanha').addEventListener('click', whatsDashboardClick);
+  function whatsDashboardClick(e) {
+    const btn = e.target.closest('[data-whats-agenda]');
+    if (!btn) return;
+    const a = state.agendamentos.find(x => x.id === btn.dataset.whatsAgenda);
+    abrirModalWhatsapp(a, btn.dataset.whatsTipo);
+  }
+
+  function limparTelefoneWhats(tel) {
+    let digits = (tel || '').replace(/\D/g, '');
+    if (!digits) return '';
+    if (!digits.startsWith('55')) digits = '55' + digits;
+    return digits;
+  }
+  function montarMensagemWhatsapp(tipo, d) {
+    if (tipo === 'confirmacao') return `Olá ${d.nome}! Confirmando seu agendamento para ${d.servico} no dia ${d.data} às ${d.hora}. Qualquer dúvida estamos à disposição! 😊`;
+    if (tipo === 'lembreteAmanha') return `Olá ${d.nome}! Lembrando que amanhã você tem ${d.servico} às ${d.hora}. Te esperamos! 😊`;
+    if (tipo === 'lembreteHoje') return `Olá ${d.nome}! Hoje é o dia do seu ${d.servico} às ${d.hora}. Te esperamos! 😊`;
+    if (tipo === 'cancelamento') return `Olá ${d.nome}, precisamos cancelar seu agendamento de ${d.servico} do dia ${d.data}. Entre em contato para reagendar. 😊`;
+    if (tipo === 'posAtendimento') return `Olá ${d.nome}! Esperamos que tenha gostado do seu ${d.servico}! Seu próximo retorno recomendado é em ${d.dataRetorno}. Agende pelo link: ${d.link}`;
+    return '';
+  }
+  function tipoSugeridoPorData(dataISO) {
+    const hoje = todayISO();
+    if (dataISO === hoje) return 'lembreteHoje';
+    if (dataISO === somarDias(hoje, 1)) return 'lembreteAmanha';
+    if (dataISO < hoje) return 'posAtendimento';
+    return 'confirmacao';
+  }
+
+  let whatsAgendamentoAtual = null;
+  const modalWhatsapp = document.getElementById('modalWhatsapp');
+  function abrirModalWhatsapp(agendamento, tipoForcado) {
+    if (!agendamento) return;
+    const cli = state.clientes.find(c => c.id === agendamento.clienteId);
+    if (!cli) { alert('Cliente não encontrada.'); return; }
+    whatsAgendamentoAtual = agendamento;
+    document.getElementById('whatsCliente').value = cli.nome;
+    document.getElementById('whatsTelefone').value = cli.telefone || '';
+    document.getElementById('whatsTipo').value = tipoForcado || tipoSugeridoPorData(agendamento.data);
+    document.getElementById('whatsDataRetorno').value = somarDias(agendamento.data, 30);
+    atualizarCampoRetornoWhats();
+    atualizarMensagemWhats();
+    modalWhatsapp.classList.add('open');
+    if (!cli.telefone) showToast('Esta cliente não tem telefone cadastrado. Informe antes de enviar.');
+  }
+  function atualizarCampoRetornoWhats() {
+    document.getElementById('campoWhatsRetorno').style.display = document.getElementById('whatsTipo').value === 'posAtendimento' ? 'block' : 'none';
+  }
+  function atualizarMensagemWhats() {
+    const a = whatsAgendamentoAtual;
+    if (!a) return;
+    const cli = state.clientes.find(c => c.id === a.clienteId);
+    const serv = state.servicos.find(s => s.id === a.servicoId);
+    const tipo = document.getElementById('whatsTipo').value;
+    const dados = {
+      nome: cli ? cli.nome : '',
+      servico: serv ? serv.nome : 'seu atendimento',
+      data: formatDateBR(a.data),
+      hora: a.hora,
+      dataRetorno: formatDateBR(document.getElementById('whatsDataRetorno').value),
+      link: getClienteLinkURL()
+    };
+    document.getElementById('whatsMensagem').value = montarMensagemWhatsapp(tipo, dados);
+  }
+  document.getElementById('whatsTipo').addEventListener('change', () => { atualizarCampoRetornoWhats(); atualizarMensagemWhats(); });
+  document.getElementById('whatsDataRetorno').addEventListener('change', atualizarMensagemWhats);
+  document.getElementById('btnFecharModalWhatsapp').addEventListener('click', () => modalWhatsapp.classList.remove('open'));
+  modalWhatsapp.addEventListener('click', (e) => { if (e.target === modalWhatsapp) modalWhatsapp.classList.remove('open'); });
+  document.getElementById('btnAbrirWhatsapp').addEventListener('click', () => {
+    const telefone = document.getElementById('whatsTelefone').value.trim();
+    if (!telefone) { alert('Informe o telefone da cliente para enviar a mensagem.'); return; }
+    const cli = state.clientes.find(c => c.id === whatsAgendamentoAtual.clienteId);
+    if (cli && cli.telefone !== telefone) {
+      cli.telefone = telefone;
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderClientes();
+    }
+    const digits = limparTelefoneWhats(telefone);
+    const mensagem = document.getElementById('whatsMensagem').value;
+    window.open(`https://wa.me/${digits}?text=${encodeURIComponent(mensagem)}`, '_blank');
+    modalWhatsapp.classList.remove('open');
+  });
+
+  // ---------- Galeria ----------
+  let pendingAntes = '', pendingDepois = '';
+  document.getElementById('galAntes').addEventListener('change', async (e) => { pendingAntes = await fileToBase64(e.target.files[0]); });
+  document.getElementById('galDepois').addEventListener('change', async (e) => { pendingDepois = await fileToBase64(e.target.files[0]); });
+  document.getElementById('galData').value = todayISO();
+
+  function populateRegiaoGaleria() {
+    const tipo = document.getElementById('galTipo').value;
+    const lista = tipo === 'facial' ? FACIAL_REGIOES : CORPORAL_REGIOES;
+    document.getElementById('galRegiao').innerHTML = lista.map(r => `<option value="${r}">${r}</option>`).join('');
+  }
+  document.getElementById('galTipo').addEventListener('change', populateRegiaoGaleria);
+
+  document.getElementById('formGaleria').addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!pendingAntes || !pendingDepois) { alert('Envie as duas fotos (antes e depois).'); return; }
+    const clienteId = document.getElementById('galCliente').value;
+    if (!clienteId) { alert('Selecione uma cliente.'); return; }
+    state.galeria.push({
+      id: uid(), clienteId, profissionalId: session.tipo === 'profissional' ? session.profissionalId : '',
+      tipo: document.getElementById('galTipo').value, regiao: document.getElementById('galRegiao').value,
+      data: document.getElementById('galData').value, antes: pendingAntes, depois: pendingDepois,
+      observacao: document.getElementById('galObs').value.trim()
+    });
+    save(STORAGE_KEYS.galeria, state.galeria);
+    e.target.reset();
+    document.getElementById('galData').value = todayISO();
+    populateRegiaoGaleria();
+    pendingAntes = ''; pendingDepois = '';
+    renderGaleria();
+    showToast('Registro de evolução salvo!');
+  });
+
+  function populateTodosSelects() {
+    const clientesOptions = state.clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('') || '<option value="">Cadastre uma cliente</option>';
+    document.getElementById('agendaCliente').innerHTML = clientesOptions;
+
+    const servicosOptions = state.servicos.map(s => `<option value="${s.id}">${s.nome}</option>`).join('') || '<option value="">Cadastre um serviço</option>';
+    document.getElementById('agendaServico').innerHTML = servicosOptions;
+
+    const profissionaisOptions = state.profissionais.map(p => `<option value="${p.id}">${p.nome}</option>`).join('') || '<option value="">Cadastre um profissional</option>';
+    document.getElementById('agendaProfissional').innerHTML = profissionaisOptions;
+    document.getElementById('filtroProfissional').innerHTML = '<option value="">Todos os profissionais</option>' + profissionaisOptions;
+
+    let clientesGaleria = state.clientes;
+    if (session && session.tipo === 'profissional') {
+      const meusIds = new Set(state.agendamentos.filter(a => a.profissionalId === session.profissionalId).map(a => a.clienteId));
+      clientesGaleria = state.clientes.filter(c => meusIds.has(c.id));
+    }
+    document.getElementById('galCliente').innerHTML = clientesGaleria.map(c => `<option value="${c.id}">${c.nome}</option>`).join('') || '<option value="">Nenhuma cliente disponível</option>';
+    populateRegiaoGaleria();
+  }
+
+  function renderGaleria() {
+    const container = document.getElementById('galeriaLista');
+    let entradas = state.galeria;
+    if (session.tipo === 'profissional') entradas = entradas.filter(g => g.profissionalId === session.profissionalId);
+    if (!entradas.length) { container.innerHTML = '<div class="empty-msg">Nenhum registro de evolução ainda.</div>'; return; }
+    const porCliente = {};
+    entradas.forEach(g => { (porCliente[g.clienteId] = porCliente[g.clienteId] || []).push(g); });
+    container.innerHTML = Object.keys(porCliente).map(clienteId => {
+      const cli = state.clientes.find(c => c.id === clienteId);
+      const registros = porCliente[clienteId];
+      const porRegiao = {};
+      registros.forEach(g => { const chave = `${g.tipo === 'facial' ? 'Facial' : 'Corporal'} — ${g.regiao}`; (porRegiao[chave] = porRegiao[chave] || []).push(g); });
+      return `
+        <div class="galeria-cliente-block card">
+          <h3>${cli ? cli.nome : 'Cliente removida'}</h3>
+          ${Object.keys(porRegiao).map(chave => `
+            <div class="galeria-regiao-block">
+              <h4>${chave}</h4>
+              <div class="items-grid">
+                ${porRegiao[chave].sort((a, b) => b.data.localeCompare(a.data)).map(g => `
+                  <div class="item-card">
+                    <div class="before-after" style="padding:10px">
+                      <div class="ba-item"><img src="${g.antes}"><span>Antes</span></div>
+                      <div class="ba-item"><img src="${g.depois}"><span>Depois</span></div>
+                    </div>
+                    <div class="body">
+                      <div class="meta">${formatDateBR(g.data)}</div>
+                      ${g.observacao ? `<div class="meta">${g.observacao}</div>` : ''}
+                      <div class="actions"><button class="btn danger small" data-del-gal="${g.id}">Excluir</button></div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }).join('');
+  }
+  document.getElementById('galeriaLista').addEventListener('click', (e) => {
+    const id = e.target.dataset.delGal;
+    if (!id) return;
+    state.galeria = state.galeria.filter(g => g.id !== id);
+    save(STORAGE_KEYS.galeria, state.galeria);
+    renderGaleria();
+  });
+
+  // ---------- Financeiro ----------
+  document.getElementById('finData').value = todayISO();
+  document.getElementById('formFinanceiro').addEventListener('submit', (e) => {
+    e.preventDefault();
+    state.financeiro.push({ id: uid(), tipo: document.getElementById('finTipo').value, descricao: document.getElementById('finDescricao').value.trim(), valor: parseFloat(document.getElementById('finValor').value), data: document.getElementById('finData').value });
+    save(STORAGE_KEYS.financeiro, state.financeiro);
+    e.target.reset();
+    document.getElementById('finData').value = todayISO();
+    renderFinanceiro();
+    renderDashboard();
+    showToast('Lançamento adicionado!');
+  });
+  function renderFinanceiro() {
+    const receitas = state.financeiro.filter(f => f.tipo === 'receita').reduce((s, f) => s + Number(f.valor), 0);
+    const despesas = state.financeiro.filter(f => f.tipo === 'despesa').reduce((s, f) => s + Number(f.valor), 0);
+    document.getElementById('finReceitas').textContent = formatMoney(receitas);
+    document.getElementById('finDespesas').textContent = formatMoney(despesas);
+    document.getElementById('finSaldo').textContent = formatMoney(receitas - despesas);
+    const tbody = document.querySelector('#finTabela tbody');
+    const ordenado = [...state.financeiro].sort((a, b) => b.data.localeCompare(a.data));
+    tbody.innerHTML = ordenado.length ? ordenado.map(f => `
+      <tr>
+        <td>${formatDateBR(f.data)}</td><td>${f.descricao}</td>
+        <td class="${f.tipo}">${f.tipo === 'receita' ? 'Receita' : 'Despesa'}</td>
+        <td class="${f.tipo}">${formatMoney(f.valor)}</td>
+        <td><button class="btn danger small" data-del-fin="${f.id}">Excluir</button></td>
+      </tr>
+    `).join('') : '<tr><td colspan="5" class="empty-msg">Nenhum lançamento ainda.</td></tr>';
+  }
+  document.querySelector('#finTabela tbody').addEventListener('click', (e) => {
+    const id = e.target.dataset.delFin;
+    if (!id) return;
+    state.financeiro = state.financeiro.filter(f => f.id !== id);
+    save(STORAGE_KEYS.financeiro, state.financeiro);
+    renderFinanceiro();
+    renderDashboard();
+  });
+
+  // ---------- Autenticação / Login ----------
+  function applyLoginBranding() {
+    const wrap = document.getElementById('loginLogoWrap');
+    wrap.innerHTML = state.config.logo ? `<img src="${state.config.logo}" alt="">` : `<div class="logo-placeholder">${(state.config.nomeNegocio || 'C').trim().charAt(0).toUpperCase()}</div>`;
+    document.getElementById('loginNomeNegocio').textContent = state.config.nomeNegocio || 'Clínica de Estética';
+    document.documentElement.style.setProperty('--cor-primaria', state.config.corPrimaria || DEFAULT_CONFIG.corPrimaria);
+    document.documentElement.style.setProperty('--cor-secundaria', state.config.corSecundaria || DEFAULT_CONFIG.corSecundaria);
+  }
+  function renderSetupForm() {
+    const box = document.getElementById('loginConteudo');
+    box.innerHTML = `
+      <p style="font-size:13px;color:#6b7280;margin-bottom:16px">Primeiro acesso — crie a senha do administrador.</p>
+      <form id="formSetupAdmin">
+        <div class="field"><label>Nome da clínica</label><input type="text" id="setupNomeNegocio" value="${state.config.nomeNegocio || 'Clínica de Estética'}"></div>
+        <div class="field"><label>Crie uma senha</label><input type="password" id="setupSenha" required></div>
+        <div class="field"><label>Confirme a senha</label><input type="password" id="setupSenhaConfirma" required></div>
+        <div class="error-msg" id="setupErro">As senhas não coincidem.</div>
+        <button type="submit" class="btn" style="width:100%;margin-top:8px">Criar conta de administrador</button>
+      </form>
+    `;
+    document.getElementById('formSetupAdmin').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const senha = document.getElementById('setupSenha').value;
+      const confirma = document.getElementById('setupSenhaConfirma').value;
+      if (!senha || senha !== confirma) { document.getElementById('setupErro').classList.add('show'); return; }
+      state.config.nomeNegocio = document.getElementById('setupNomeNegocio').value.trim() || 'Clínica de Estética';
+      state.config.senhaAdmin = senha;
+      state.config.codigoMaster = gerarCodigoMaster();
+      save(STORAGE_KEYS.config, state.config);
+      renderCodigoMasterReveal();
+    });
+  }
+  function renderCodigoMasterReveal() {
+    const box = document.getElementById('loginConteudo');
+    box.innerHTML = `
+      <p style="font-size:13px;color:#6b7280;margin-bottom:10px">Conta criada! Guarde o código master abaixo — ele permite redefinir senhas esquecidas.</p>
+      <div class="master-code-box">Código master<strong>${state.config.codigoMaster}</strong></div>
+      <button type="button" class="btn" id="btnContinuarSetup" style="width:100%;margin-top:16px">Continuar</button>
+    `;
+    document.getElementById('btnContinuarSetup').addEventListener('click', () => { save(STORAGE_KEYS.sessao, { tipo: 'admin' }); location.reload(); });
+  }
+  function renderLoginForm() {
+    const box = document.getElementById('loginConteudo');
+    box.innerHTML = `
+      <form id="formLogin">
+        <div class="field"><label>Senha</label><input type="password" id="loginSenha" required autofocus></div>
+        <div class="error-msg" id="loginErro">Senha incorreta.</div>
+        <button type="submit" class="btn" style="width:100%;margin-top:8px">Entrar</button>
+      </form>
+      <button type="button" class="link-btn" id="btnEsqueciSenha">Esqueci minha senha</button>
+    `;
+    document.getElementById('btnEsqueciSenha').addEventListener('click', abrirModalEsqueciSenha);
+    document.getElementById('formLogin').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const senha = document.getElementById('loginSenha').value;
+      if (senha && senha === state.config.senhaAdmin) { save(STORAGE_KEYS.sessao, { tipo: 'admin' }); location.reload(); return; }
+      const prof = state.profissionais.find(p => p.senha === senha);
+      if (prof) { save(STORAGE_KEYS.sessao, { tipo: 'profissional', profissionalId: prof.id }); location.reload(); return; }
+      document.getElementById('loginErro').classList.add('show');
+    });
+  }
+  const modalEsqueci = document.getElementById('modalEsqueciSenha');
+  function abrirModalEsqueciSenha() {
+    const sel = document.getElementById('recAlvo');
+    sel.innerHTML = '<option value="admin">Dono / Administrador</option>' + state.profissionais.map(p => `<option value="${p.id}">${p.nome} (Profissional)</option>`).join('');
+    document.getElementById('recErro').style.display = 'none';
+    document.getElementById('formEsqueciSenha').reset();
+    modalEsqueci.classList.add('open');
+  }
+  document.getElementById('btnFecharModalEsqueci').addEventListener('click', () => modalEsqueci.classList.remove('open'));
+  modalEsqueci.addEventListener('click', (e) => { if (e.target === modalEsqueci) modalEsqueci.classList.remove('open'); });
+  document.getElementById('formEsqueciSenha').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const codigo = document.getElementById('recCodigoMaster').value.trim();
+    const erroEl = document.getElementById('recErro');
+    if (!state.config.codigoMaster || codigo.toUpperCase() !== state.config.codigoMaster.toUpperCase()) { erroEl.style.display = 'block'; return; }
+    const alvo = document.getElementById('recAlvo').value;
+    const novaSenha = document.getElementById('recNovaSenha').value;
+    if (alvo === 'admin') { state.config.senhaAdmin = novaSenha; save(STORAGE_KEYS.config, state.config); }
+    else { const p = state.profissionais.find(x => x.id === alvo); if (p) { p.senha = novaSenha; save(STORAGE_KEYS.profissionais, state.profissionais); } }
+    modalEsqueci.classList.remove('open');
+    showToast('Senha redefinida! Faça login com a nova senha.');
+  });
+
+  function applyRoleRestrictions() {
+    if (session.tipo === 'profissional') {
+      document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+      document.getElementById('campoAgendaProfissional').style.display = 'none';
+      document.getElementById('agendaProfissional').required = false;
+      document.querySelector('button[data-page="agendamentos"] .menu-label').textContent = 'Minha Agenda';
+      document.querySelector('button[data-page="clientes"] .menu-label').textContent = 'Meus Clientes';
+      document.querySelector('button[data-page="galeria"] .menu-label').textContent = 'Galeria';
+      document.getElementById('agendaPageTitle').textContent = 'Minha Agenda';
+      document.getElementById('agendaPageSub').textContent = 'Seus horários agendados';
+      document.getElementById('clientesPageTitle').textContent = 'Meus Clientes';
+      document.getElementById('clientesPageSub').textContent = 'Clientes que você atendeu — ficha completa e protocolo';
+      document.getElementById('galeriaPageTitle').textContent = 'Galeria';
+      document.getElementById('galeriaPageSub').textContent = 'Fotos de antes/depois das suas clientes';
+    }
+  }
+  function renderUserFooter() {
+    const el = document.getElementById('sidebarFooter');
+    let nome = 'Administrador', cargo = 'Dono / Admin';
+    if (session.tipo === 'profissional') {
+      const p = state.profissionais.find(x => x.id === session.profissionalId);
+      nome = p ? p.nome : 'Profissional';
+      cargo = p && p.especialidade ? p.especialidade : 'Profissional';
+    }
+    el.innerHTML = `<div class="user-footer"><div><div class="nome">${nome}</div><div class="cargo">${cargo}</div></div><button class="btn-sair" id="btnSair">Sair</button></div>`;
+    document.getElementById('btnSair').addEventListener('click', () => {
+      if (confirm('Deseja sair?')) { localStorage.removeItem(STORAGE_KEYS.sessao); location.reload(); }
+    });
+  }
+
+  function iniciarApp() {
+    document.getElementById('telaAtivacao').style.display = 'none';
+    document.getElementById('telaLogin').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'flex';
+    applyConfig();
+    applyRoleRestrictions();
+    renderUserFooter();
+    populateTodosSelects();
+    renderServicos();
+    renderProfissionais();
+    renderProtocolos();
+    renderClientes();
+    renderAgendaCompleta();
+    renderGaleria();
+    renderFinanceiro();
+    renderDashboard();
+    verificarBannerRenovacao(licencaAtiva);
+    goToPage(session.tipo === 'admin' ? 'dashboard' : 'agendamentos');
+  }
+
+  function iniciar() {
+    applyLoginBranding();
+    if (!state.config.senhaAdmin) { renderSetupForm(); return; }
+    const sessaoSalva = load(STORAGE_KEYS.sessao, null);
+    const valida = sessaoSalva && (sessaoSalva.tipo === 'admin' || (sessaoSalva.tipo === 'profissional' && state.profissionais.some(p => p.id === sessaoSalva.profissionalId)));
+    if (valida) { session = sessaoSalva; iniciarApp(); }
+    else { localStorage.removeItem(STORAGE_KEYS.sessao); renderLoginForm(); }
+  }
+
+  // ---------- Licenciamento (ativação via admin-jv.html) ----------
+  function obterLicencasCompartilhadas() { return load(LICENCAS_SHARED_KEY, []); }
+  function obterConfigJvDatalab() { return load(JV_CONFIG_KEY, { nomeEmpresa: 'JV Datalab', whatsappSuporte: '' }); }
+  function validarCodigoAtivacao(codigo) {
+    const lic = obterLicencasCompartilhadas().find(l => l.codigo === (codigo || '').trim().toUpperCase());
+    if (!lic) return { ok: false, motivo: 'invalido' };
+    if (!ACCEPTED_SEGMENTOS.includes(lic.segmento)) return { ok: false, motivo: 'invalido' };
+    if (lic.dataVencimento < todayISO()) return { ok: false, motivo: 'expirado', licenca: lic };
+    return { ok: true, licenca: lic };
+  }
+  function licencaAtualFresca() {
+    const salva = load(STORAGE_KEYS.licenca, null);
+    if (!salva || !salva.codigo) return null;
+    return obterLicencasCompartilhadas().find(l => l.codigo === salva.codigo) || null;
+  }
+  function abrirWhatsSuporte(mensagemExtra) {
+    const cfg = obterConfigJvDatalab();
+    const numero = limparTelefoneWhats(cfg.whatsappSuporte || '');
+    if (!numero) { alert('Número de suporte não configurado. Entre em contato com a JV Datalab.'); return; }
+    const msg = mensagemExtra || 'Olá! Preciso de ajuda com meu sistema.';
+    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`, '_blank');
+  }
+  function verificarBannerRenovacao(licenca) {
+    const banner = document.getElementById('bannerRenovacao');
+    if (!licenca) { banner.style.display = 'none'; return; }
+    const hoje = todayISO();
+    const dias = Math.round((new Date(licenca.dataVencimento + 'T00:00:00') - new Date(hoje + 'T00:00:00')) / 86400000);
+    if (dias >= 0 && dias <= 7) {
+      banner.style.display = 'block';
+      banner.innerHTML = `⚠️ Sua assinatura vence em ${dias === 0 ? 'hoje' : dias + ' dia(s)'}. Renove para não perder o acesso! <button type="button" id="btnRenovarBanner" style="margin-left:10px;background:#3a2e00;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600">Renovar agora</button>`;
+      document.getElementById('btnRenovarBanner').addEventListener('click', () => abrirWhatsSuporte('Olá! Gostaria de renovar minha assinatura.'));
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+  function abrirModalLimite(licenca) {
+    document.getElementById('limitePlanoTexto').textContent = `Você atingiu o limite de ${licenca.limiteProfissionais} profissionais do plano ${licenca.plano}. Fale com a JV Datalab para fazer upgrade!`;
+    document.getElementById('modalLimitePlano').classList.add('open');
+  }
+  document.getElementById('btnFecharModalLimite').addEventListener('click', () => document.getElementById('modalLimitePlano').classList.remove('open'));
+  document.getElementById('btnWhatsLimite').addEventListener('click', () => abrirWhatsSuporte('Olá! Gostaria de aumentar o limite de profissionais do meu plano.'));
+
+  function mostrarTelaAtivacao(erro) {
+    document.getElementById('telaAtivacao').style.display = 'flex';
+    document.getElementById('telaLogin').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'none';
+    document.getElementById('ativacaoConteudo').innerHTML = `
+      <p style="font-size:13px;color:#6b7280;margin-bottom:16px">Digite o código de ativação que você recebeu para liberar o sistema.</p>
+      <form id="formAtivacao">
+        <div class="field"><label>Código de ativação</label><input type="text" id="inputCodigoAtivacao" placeholder="JV-2026-EST-XXXX" required style="text-transform:uppercase"></div>
+        <div class="error-msg ${erro ? 'show' : ''}" id="ativacaoErro">${erro || 'Código inválido.'}</div>
+        <button type="submit" class="btn" style="width:100%;margin-top:8px">Ativar sistema</button>
+      </form>
+    `;
+    document.getElementById('formAtivacao').addEventListener('submit', (e) => {
+      e.preventDefault();
+      tentarAtivarCodigo(document.getElementById('inputCodigoAtivacao').value.trim().toUpperCase());
+    });
+  }
+  function mostrarTelaExpirada() {
+    document.getElementById('telaAtivacao').style.display = 'flex';
+    document.getElementById('telaLogin').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'none';
+    const cfg = obterConfigJvDatalab();
+    document.getElementById('ativacaoConteudo').innerHTML = `
+      <div class="master-code-box" style="text-align:center">
+        <p style="margin-bottom:6px;font-weight:600;color:var(--cor-primaria)">Sua assinatura venceu.</p>
+        <p style="font-size:12.5px;color:#6b7280">Entre em contato com ${cfg.nomeEmpresa || 'a JV Datalab'} para renovar e continuar usando o sistema.</p>
+      </div>
+      <button type="button" class="btn" id="btnWhatsExpirado" style="width:100%;margin-top:14px">🟢 Falar no WhatsApp</button>
+    `;
+    document.getElementById('btnWhatsExpirado').addEventListener('click', () => abrirWhatsSuporte('Olá! Minha assinatura do sistema venceu e gostaria de renovar.'));
+  }
+  function tentarAtivarCodigo(codigo) {
+    const resultado = validarCodigoAtivacao(codigo);
+    if (!resultado.ok) {
+      if (resultado.motivo === 'expirado') { mostrarTelaExpirada(); return; }
+      mostrarTelaAtivacao('Código inválido. Verifique e tente novamente, ou entre em contato com a JV Datalab.');
+      return;
+    }
+    save(STORAGE_KEYS.licenca, { codigo: resultado.licenca.codigo });
+    licencaAtiva = resultado.licenca;
+    iniciar();
+  }
+  function iniciarComLicenca() {
+    const licencaSalva = load(STORAGE_KEYS.licenca, null);
+    const codigoUrl = new URLSearchParams(window.location.search).get('cod');
+    if (!licencaSalva && codigoUrl) { tentarAtivarCodigo(codigoUrl); return; }
+    if (!licencaSalva) { mostrarTelaAtivacao(); return; }
+    const resultado = validarCodigoAtivacao(licencaSalva.codigo);
+    if (!resultado.ok) {
+      if (resultado.motivo === 'expirado') { mostrarTelaExpirada(); return; }
+      mostrarTelaAtivacao('Código inválido. Entre em contato com a JV Datalab.');
+      return;
+    }
+    licencaAtiva = resultado.licenca;
+    iniciar();
+  }
+
+  iniciarComLicenca();
+})();
+</script>
+</body>
+</html>

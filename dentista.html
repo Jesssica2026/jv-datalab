@@ -1,0 +1,2385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel da Clínica Odontológica</title>
+<style>
+  :root {
+    --cor-primaria: #0d1b3e;
+    --cor-secundaria: #c9a24b;
+    --cor-fundo: #f4f5f8;
+    --cor-texto: #1f2430;
+    --cor-borda: #e3e5ec;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+    background: var(--cor-fundo);
+    color: var(--cor-texto);
+    min-height: 100vh;
+  }
+  .app { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 260px; background: var(--cor-primaria); color: #fff;
+    display: flex; flex-direction: column; flex-shrink: 0;
+    transition: transform .25s ease; z-index: 100;
+  }
+  .sidebar-header {
+    padding: 22px 20px; display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+  }
+  .sidebar-header img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; background: #fff; }
+  .sidebar-header .logo-placeholder {
+    width: 42px; height: 42px; border-radius: 50%; background: var(--cor-secundaria);
+    display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--cor-primaria); flex-shrink: 0;
+  }
+  .sidebar-header h1 { font-size: 15.5px; font-weight: 600; line-height: 1.3; word-break: break-word; }
+  nav.menu { flex: 1; padding: 14px 10px; overflow-y: auto; }
+  nav.menu button {
+    width: 100%; display: flex; align-items: center; gap: 12px; background: none; border: none;
+    color: rgba(255,255,255,0.78); padding: 11px 14px; border-radius: 10px; font-size: 14px;
+    text-align: left; cursor: pointer; margin-bottom: 3px; transition: background .15s, color .15s;
+  }
+  nav.menu button:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  nav.menu button.active { background: var(--cor-secundaria); color: var(--cor-primaria); font-weight: 600; }
+  nav.menu .icon { font-size: 16px; width: 20px; text-align: center; }
+  .sidebar-footer { padding: 14px 20px; font-size: 11px; color: rgba(255,255,255,0.4); border-top: 1px solid rgba(255,255,255,0.12); }
+
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .topbar { display: none; align-items: center; gap: 12px; padding: 14px 20px; background: #fff; border-bottom: 1px solid var(--cor-borda); }
+  .topbar button { background: var(--cor-primaria); color: #fff; border: none; border-radius: 8px; width: 38px; height: 38px; font-size: 18px; cursor: pointer; }
+  .content { padding: 26px 30px; flex: 1; }
+  .page { display: none; animation: fadeIn .2s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px);} to { opacity:1; transform: translateY(0);} }
+
+  h2.page-title { font-size: 23px; margin-bottom: 4px; color: var(--cor-primaria); }
+  p.page-sub { color: #6b7280; font-size: 13.5px; margin-bottom: 22px; }
+
+  .card { background: #fff; border-radius: var(--radius); border: 1px solid var(--cor-borda); padding: 20px; box-shadow: 0 1px 3px rgba(13,27,62,0.04); }
+  .card h3 { color: var(--cor-primaria); font-size: 15.5px; margin-bottom: 14px; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 26px; }
+  .stat-card { background: #fff; border-radius: var(--radius); border: 1px solid var(--cor-borda); padding: 18px; border-left: 4px solid var(--cor-secundaria); }
+  .stat-card .label { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; }
+  .stat-card .value { font-size: 26px; font-weight: 700; color: var(--cor-primaria); margin-top: 6px; }
+
+  .dash-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .dash-grid { grid-template-columns: 1fr; } }
+  .list-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--cor-borda); font-size: 13.5px; gap: 10px; }
+  .list-row:last-child { border-bottom: none; }
+  .empty-msg { color: #9aa0ab; font-size: 13.5px; padding: 14px 0; text-align: center; }
+
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px,1fr)); gap: 13px; }
+  label { display: block; font-size: 12px; color: #4b5162; font-weight: 600; margin-bottom: 5px; }
+  input[type=text], input[type=number], input[type=date], input[type=time], input[type=password],
+  input[type=tel], input[type=email], select, textarea {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--cor-borda); border-radius: 8px;
+    font-size: 13.5px; font-family: inherit; background: #fbfbfd;
+  }
+  textarea { resize: vertical; min-height: 60px; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--cor-secundaria); box-shadow: 0 0 0 3px rgba(201,162,75,0.15); }
+  input[type=file] { font-size: 12.5px; }
+  input[readonly] { background: #f0f1f5; color: #6b7280; }
+  .field { margin-bottom: 13px; }
+  .btn {
+    background: var(--cor-primaria); color: #fff; border: none; padding: 10px 18px; border-radius: 8px;
+    font-size: 13.5px; font-weight: 600; cursor: pointer; transition: opacity .15s;
+  }
+  .btn:hover { opacity: .88; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn.secondary { background: #fff; color: var(--cor-primaria); border: 1px solid var(--cor-primaria); }
+  .btn.danger { background: #b3261e; }
+  .btn.gold { background: var(--cor-secundaria); color: var(--cor-primaria); }
+  .btn.small { padding: 6px 11px; font-size: 12px; }
+  .btn-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+
+  .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px,1fr)); gap: 10px; margin-bottom: 14px; }
+  .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .checkbox-item input { width: auto; }
+
+  .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 15px; margin-top: 18px; }
+  .item-card { background: #fff; border: 1px solid var(--cor-borda); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
+  .item-card .thumb { width: 100%; height: 120px; object-fit: cover; background: #eceef3; display: flex; align-items: center; justify-content: center; color: #a7acb8; font-size: 12.5px; }
+  .item-card .body { padding: 13px; flex: 1; display: flex; flex-direction: column; gap: 5px; }
+  .item-card .name { font-weight: 700; color: var(--cor-primaria); font-size: 14.5px; }
+  .item-card .meta { font-size: 12.5px; color: #6b7280; }
+  .item-card .actions { display: flex; gap: 8px; margin-top: auto; padding-top: 8px; }
+
+  .clientes-layout { display: grid; grid-template-columns: 280px 1fr; gap: 18px; }
+  @media (max-width: 950px) { .clientes-layout { grid-template-columns: 1fr; } }
+  .cliente-list-item { padding: 11px 13px; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 13.5px; }
+  .cliente-list-item:hover { background: #f0f1f5; }
+  .cliente-list-item.selected { background: var(--cor-primaria); color: #fff; }
+  .cliente-list-item .sub { font-size: 11.5px; opacity: .7; }
+  .search-box { margin-bottom: 12px; }
+
+  .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--cor-secundaria); color: var(--cor-primaria); margin-left: 6px; vertical-align: middle; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(13,27,62,0.5); align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: var(--radius); padding: 22px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; }
+  .modal h3 { color: var(--cor-primaria); margin-bottom: 15px; }
+
+  .before-after { display: flex; gap: 10px; }
+  .before-after .ba-item { flex: 1; text-align: center; }
+  .before-after img { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; background: #eceef3; }
+  .before-after .ba-item span { font-size: 11px; color: #6b7280; display: block; margin-top: 4px; }
+  .galeria-cliente-block { margin-bottom: 24px; }
+  .galeria-cliente-block h3 { color: var(--cor-primaria); margin-bottom: 4px; }
+  .galeria-regiao-block { margin-top: 12px; }
+  .galeria-regiao-block h4 { font-size: 13px; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .03em; }
+
+  .custom-layout { display: grid; grid-template-columns: 1fr 300px; gap: 22px; }
+  @media (max-width: 900px) { .custom-layout { grid-template-columns: 1fr; } }
+  .preview-box { background: var(--cor-primaria); border-radius: var(--radius); padding: 22px; color: #fff; position: sticky; top: 20px; }
+  .preview-box .p-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .preview-box .p-header img, .preview-box .p-header .logo-placeholder { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+  .preview-box .p-header .logo-placeholder { display: flex; align-items: center; justify-content: center; font-weight: 700; }
+  .preview-box .p-menu-item { padding: 9px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 6px; }
+  .color-row { display: flex; align-items: center; gap: 12px; margin-bottom: 13px; }
+  input[type=color] { width: 44px; height: 34px; border: 1px solid var(--cor-borda); border-radius: 6px; cursor: pointer; padding: 2px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 13px; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--cor-borda); white-space: nowrap; }
+  th { color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; }
+  td.receita { color: #1a7d3a; font-weight: 600; }
+  td.despesa { color: #b3261e; font-weight: 600; }
+  .fin-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+  .tabela-scroll { overflow-x: auto; }
+  .diff-neg { color: #1a7d3a; font-weight: 700; }
+  .diff-pos { color: #b3261e; font-weight: 700; }
+
+  .toast {
+    position: fixed; bottom: 22px; right: 22px; background: var(--cor-primaria); color: #fff; padding: 12px 18px;
+    border-radius: 8px; font-size: 13.5px; box-shadow: 0 4px 14px rgba(0,0,0,0.2); z-index: 2000; opacity: 0;
+    transform: translateY(10px); transition: opacity .2s, transform .2s; pointer-events: none; max-width: 320px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  .login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--cor-primaria); padding: 20px; }
+  .login-box { background: #fff; border-radius: 16px; padding: 34px 30px; width: 100%; max-width: 380px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); text-align: center; }
+  .login-box .logo-wrap { margin-bottom: 14px; }
+  .login-box .logo-wrap img, .login-box .logo-wrap .logo-placeholder { width: 62px; height: 62px; border-radius: 50%; object-fit: cover; margin: 0 auto; }
+  .login-box .logo-wrap .logo-placeholder { background: var(--cor-secundaria); color: var(--cor-primaria); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 22px; }
+  .login-box h1 { font-size: 18px; color: var(--cor-primaria); margin-bottom: 20px; }
+  .login-box .field { text-align: left; }
+  .login-box .error-msg { color: #b3261e; font-size: 12.5px; margin-top: 6px; margin-bottom: 4px; display: none; text-align: left; }
+  .login-box .error-msg.show { display: block; }
+  .login-box .link-btn { background: none; border: none; color: var(--cor-primaria); font-size: 12.5px; cursor: pointer; text-decoration: underline; margin-top: 14px; }
+  .login-box .master-code-box { background: var(--cor-fundo); border: 1px dashed var(--cor-borda); border-radius: 8px; padding: 14px; margin-top: 4px; font-size: 12.5px; text-align: left; }
+  .login-box .master-code-box strong { font-size: 19px; letter-spacing: 3px; color: var(--cor-primaria); display: block; margin-top: 6px; }
+
+  .user-footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .user-footer .nome { font-weight: 600; color: #fff; font-size: 12px; }
+  .user-footer .cargo { font-size: 10.5px; }
+  .user-footer .btn-sair { background: none; border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 10.5px; cursor: pointer; }
+  .user-footer .btn-sair:hover { background: rgba(255,255,255,0.1); }
+
+  .ficha-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; border-bottom: 1px solid var(--cor-borda); padding-bottom: 10px; }
+  .ficha-tab-btn {
+    background: none; border: 1px solid var(--cor-borda); color: #4b5162; padding: 7px 13px; border-radius: 999px;
+    font-size: 12.5px; cursor: pointer; font-weight: 600;
+  }
+  .ficha-tab-btn.active { background: var(--cor-primaria); color: #fff; border-color: var(--cor-primaria); }
+
+  /* Odontograma */
+  .dente { cursor: pointer; stroke: var(--cor-borda); stroke-width: 1.5; transition: fill .15s, stroke .15s; }
+  .dente.saudavel { fill: #ffffff; }
+  .dente.carie { fill: #e53935; }
+  .dente.restauracao { fill: #f2c94c; }
+  .dente.coroa { fill: #2f80ed; }
+  .dente.ausente { fill: #3a3f4a; fill-opacity: .55; }
+  .dente.canal { fill: #e67e22; }
+  .dente.implante { fill: #27ae60; }
+  .dente:hover { stroke: var(--cor-secundaria); stroke-width: 2.5; }
+  .dente.selecionado { stroke: var(--cor-primaria); stroke-width: 3; }
+  .dente-numero { font-size: 9px; fill: #4b5162; text-anchor: middle; pointer-events: none; }
+
+  .progress-bar-wrap { background: var(--cor-fundo); border-radius: 999px; height: 12px; overflow: hidden; margin: 10px 0; }
+  .progress-bar-fill { background: var(--cor-secundaria); height: 100%; transition: width .2s; }
+
+  #areaImpressaoReceita { display: none; }
+  @media print {
+    body.modo-impressao-receita > *:not(#areaImpressaoReceita) { display: none !important; }
+    body.modo-impressao-receita #areaImpressaoReceita { display: block !important; }
+  }
+
+  @media (max-width: 860px) {
+    .sidebar { position: fixed; top: 0; bottom: 0; left: 0; transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .topbar { display: flex; }
+    .content { padding: 18px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="telaAtivacao" style="display:none">
+  <div class="login-box">
+    <div class="logo-wrap"><div class="logo-placeholder">JV</div></div>
+    <h1>Ativação do sistema</h1>
+    <div id="ativacaoConteudo"></div>
+  </div>
+</div>
+
+<div class="login-screen" id="telaLogin">
+  <div class="login-box">
+    <div class="logo-wrap" id="loginLogoWrap"></div>
+    <h1 id="loginNomeNegocio">Clínica Odontológica</h1>
+    <div id="loginConteudo"></div>
+  </div>
+</div>
+
+<div class="app" id="appContainer" style="display:none">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header" id="sidebarHeader"></div>
+    <nav class="menu" id="menuNav">
+      <button data-page="dashboard" class="admin-only"><span class="icon">📊</span><span class="menu-label">Dashboard</span></button>
+      <button data-page="servicos" class="admin-only"><span class="icon">🦷</span><span class="menu-label">Serviços</span></button>
+      <button data-page="profissionais" class="admin-only"><span class="icon">🧑‍⚕️</span><span class="menu-label">Dentistas</span></button>
+      <button data-page="agendamentos"><span class="icon">📅</span><span class="menu-label">Agendamentos</span></button>
+      <button data-page="clientes"><span class="icon">👥</span><span class="menu-label">Pacientes</span></button>
+      <button data-page="galeria"><span class="icon">📸</span><span class="menu-label">Galeria</span></button>
+      <button data-page="personalizacao" class="admin-only"><span class="icon">🎨</span><span class="menu-label">Personalização</span></button>
+      <button data-page="financeiro" class="admin-only"><span class="icon">💰</span><span class="menu-label">Financeiro</span></button>
+    </nav>
+    <div class="sidebar-footer" id="sidebarFooter"></div>
+  </aside>
+
+  <div class="main">
+    <div id="bannerRenovacao" style="display:none;background:#f5c542;color:#3a2e00;padding:10px 20px;text-align:center;font-size:13px;font-weight:600"></div>
+    <div class="topbar">
+      <button id="toggleSidebar">☰</button>
+      <strong id="topbarTitle" style="color:var(--cor-primaria)">Painel</strong>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <section class="page admin-only" id="page-dashboard">
+        <h2 class="page-title">Dashboard</h2>
+        <p class="page-sub">Visão geral da clínica</p>
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="dash-grid">
+          <div class="card">
+            <h3>Agendamentos de hoje</h3>
+            <div id="agendamentosHoje"></div>
+          </div>
+          <div class="card">
+            <h3>Resumo financeiro do mês</h3>
+            <div id="resumoFinMes"></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <h3>Agendamentos de amanhã</h3>
+          <div id="agendamentosAmanha"></div>
+        </div>
+      </section>
+
+      <!-- SERVICOS -->
+      <section class="page admin-only" id="page-servicos">
+        <h2 class="page-title">Serviços</h2>
+        <p class="page-sub">Cadastre os procedimentos oferecidos pela clínica</p>
+        <div class="card">
+          <h3>Novo serviço</h3>
+          <form id="formServico">
+            <div class="form-grid">
+              <div class="field"><label>Nome do serviço</label><input type="text" id="servNome" required placeholder="Ex: Restauração Resina"></div>
+              <div class="field"><label>Preço (R$)</label><input type="number" id="servPreco" min="0" step="0.01" required></div>
+              <div class="field"><label>Duração (minutos)</label><input type="number" id="servDuracao" min="5" step="5" required></div>
+              <div class="field"><label>Foto do serviço</label><input type="file" id="servFoto" accept="image/*"></div>
+            </div>
+            <div class="btn-row"><button type="submit" class="btn">Salvar serviço</button></div>
+          </form>
+        </div>
+        <div class="items-grid" id="servicosGrid"></div>
+      </section>
+
+      <!-- PROFISSIONAIS -->
+      <section class="page admin-only" id="page-profissionais">
+        <h2 class="page-title">Dentistas</h2>
+        <p class="page-sub">Cadastre a equipe e defina quantos atendimentos simultâneos cada um realiza</p>
+        <div class="card">
+          <h3 id="profissionalFormTitulo">Novo dentista</h3>
+          <form id="formProfissional">
+            <input type="hidden" id="profissionalId">
+            <div class="form-grid">
+              <div class="field"><label>Nome</label><input type="text" id="profNome" required></div>
+              <div class="field"><label>CRO</label><input type="text" id="profCro" placeholder="Ex: CRO-SP 12345"></div>
+              <div class="field"><label>Especialidade</label><input type="text" id="profEspecialidade" placeholder="Ex: Ortodontista, Endodontista"></div>
+              <div class="field"><label>Senha de acesso</label><input type="text" id="profSenha" required></div>
+              <div class="field"><label>Cadeiras/vagas simultâneas</label><input type="number" id="profCadeiras" min="1" step="1" value="1" required></div>
+              <div class="field"><label>Foto</label><input type="file" id="profFoto" accept="image/*"></div>
+            </div>
+            <div class="btn-row">
+              <button type="submit" class="btn">Salvar dentista</button>
+              <button type="button" class="btn secondary" id="btnCancelarEdicaoProf" style="display:none">Cancelar edição</button>
+            </div>
+          </form>
+        </div>
+        <div class="items-grid" id="profissionaisGrid"></div>
+      </section>
+
+      <!-- AGENDAMENTOS -->
+      <section class="page" id="page-agendamentos">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+          <div>
+            <h2 class="page-title" id="agendaPageTitle">Agendamentos</h2>
+            <p class="page-sub" id="agendaPageSub">Cadastre horários livremente e acompanhe os agendamentos de todos os dentistas</p>
+          </div>
+          <button class="btn gold admin-only" id="btnCompartilharLink" type="button">🔗 Compartilhar link de agendamento</button>
+        </div>
+        <div class="card">
+          <h3>Novo agendamento</h3>
+          <form id="formAgendamento">
+            <div class="form-grid">
+              <div class="field" id="campoAgendaProfissional"><label>Dentista</label><select id="agendaProfissional" required></select></div>
+              <div class="field"><label>Paciente</label><select id="agendaCliente" required></select></div>
+              <div class="field"><label>Serviço</label><select id="agendaServico" required></select></div>
+              <div class="field"><label>Data</label><input type="date" id="agendaData" required></div>
+              <div class="field"><label>Horário</label><input type="time" id="agendaHora" required></div>
+            </div>
+            <div class="btn-row"><button type="submit" class="btn">Adicionar agendamento</button></div>
+          </form>
+        </div>
+        <div class="card admin-only" style="margin-top:18px" id="campoFiltroProfissional">
+          <label>Filtrar por dentista</label>
+          <select id="filtroProfissional" style="max-width:280px"></select>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <h3>Disponibilidade</h3>
+          <div id="disponibilidadeAlvoAviso"></div>
+          <div id="disponibilidadeConteudo"></div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+            <h3 style="margin-bottom:0">Visão da Agenda</h3>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button type="button" class="btn secondary small gold" id="btnModoDia">Dia</button>
+              <button type="button" class="btn secondary small" id="btnModoSemana">Semana</button>
+            </div>
+          </div>
+          <div id="timelineNav" style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap"></div>
+          <div id="timelineConteudo"></div>
+          <div style="display:flex;gap:16px;margin-top:14px;font-size:12.5px;color:#6b7280;flex-wrap:wrap">
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#1a7d3a;margin-right:5px"></span>Disponível</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#c9701a;margin-right:5px"></span>Ocupado</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#9aa0ab;margin-right:5px"></span>Bloqueado / Fechado</span>
+          </div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <h3>Todos os agendamentos futuros</h3>
+          <div id="listaAgendamentos"></div>
+        </div>
+      </section>
+
+      <!-- PACIENTES -->
+      <section class="page" id="page-clientes">
+        <h2 class="page-title" id="clientesPageTitle">Pacientes</h2>
+        <p class="page-sub" id="clientesPageSub">Ficha completa, odontograma, plano de tratamento, prontuário e receituário</p>
+        <div class="clientes-layout">
+          <div class="card">
+            <div class="search-box"><input type="text" id="buscaCliente" placeholder="Buscar paciente..."></div>
+            <button class="btn gold small admin-only" id="btnNovoCliente" style="width:100%;margin-bottom:12px">+ Novo paciente</button>
+            <div id="listaClientes"></div>
+          </div>
+          <div class="card" id="clienteDetalhe">
+            <div class="empty-msg">Selecione um paciente à esquerda para ver a ficha.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- GALERIA -->
+      <section class="page" id="page-galeria">
+        <h2 class="page-title" id="galeriaPageTitle">Galeria</h2>
+        <p class="page-sub" id="galeriaPageSub">Antes/depois, radiografias e fotos intrabucais</p>
+        <div class="card">
+          <h3>Adicionar registro</h3>
+          <form id="formGaleria">
+            <div class="form-grid">
+              <div class="field"><label>Paciente</label><select id="galCliente" required></select></div>
+              <div class="field">
+                <label>Categoria</label>
+                <select id="galCategoria">
+                  <option value="antes-depois">Antes/Depois de Tratamento</option>
+                  <option value="radiografia">Radiografia</option>
+                  <option value="intrabucal">Foto Intrabucal</option>
+                </select>
+              </div>
+              <div class="field" id="campoGalRegiao"><label>Região</label><select id="galRegiao"></select></div>
+              <div class="field"><label>Data</label><input type="date" id="galData" required></div>
+            </div>
+            <div class="form-grid" id="camposAntesDepois">
+              <div class="field"><label>Foto - Antes</label><input type="file" id="galAntes" accept="image/*"></div>
+              <div class="field"><label>Foto - Depois</label><input type="file" id="galDepois" accept="image/*"></div>
+            </div>
+            <div class="form-grid" id="camposUnico" style="display:none">
+              <div class="field"><label>Foto</label><input type="file" id="galUnica" accept="image/*"></div>
+            </div>
+            <div class="field"><label>Observação</label><input type="text" id="galObs" placeholder="Ex: Clareamento a laser, 3ª sessão"></div>
+            <div class="btn-row"><button type="submit" class="btn">Salvar registro</button></div>
+          </form>
+        </div>
+        <div id="galeriaLista" style="margin-top:22px"></div>
+      </section>
+
+      <!-- PERSONALIZACAO -->
+      <section class="page admin-only" id="page-personalizacao">
+        <h2 class="page-title">Personalização</h2>
+        <p class="page-sub">Personalize o nome, a logo e as cores do painel</p>
+        <div class="custom-layout">
+          <div class="card">
+            <div class="field"><label>Nome da clínica</label><input type="text" id="custNome" placeholder="Nome da sua clínica"></div>
+            <div class="field"><label>Logo</label><input type="file" id="custLogo" accept="image/*"></div>
+            <div class="color-row"><input type="color" id="custCorPrimaria"><label style="margin:0">Cor primária (menu lateral)</label></div>
+            <div class="color-row"><input type="color" id="custCorSecundaria"><label style="margin:0">Cor de destaque</label></div>
+            <div class="btn-row">
+              <button class="btn" id="btnSalvarCustom">Salvar personalização</button>
+              <button class="btn secondary" id="btnResetCustom">Restaurar padrão</button>
+            </div>
+          </div>
+          <div class="preview-box">
+            <div class="p-header"><div id="previewLogoWrap"></div><strong id="previewNome">Clínica Odontológica</strong></div>
+            <div class="p-menu-item" style="background:var(--cor-secundaria);color:var(--cor-primaria);font-weight:600">📊 Dashboard</div>
+            <div class="p-menu-item" style="color:rgba(255,255,255,0.8)">🦷 Serviços</div>
+            <div class="p-menu-item" style="color:rgba(255,255,255,0.8)">📅 Agendamentos</div>
+            <div class="p-menu-item" style="color:rgba(255,255,255,0.8)">👥 Pacientes</div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <h3>Configuração de Agenda</h3>
+          <p style="font-size:12.5px;color:#6b7280;margin-bottom:14px">Defina os dias e horários padrão de atendimento da clínica. Cada dentista pode ainda bloquear horários pontuais ou ajustar um dia específico na página Agendamentos.</p>
+          <div id="configAgendaDias"></div>
+          <hr style="border:none;border-top:1px solid var(--cor-borda);margin:16px 0">
+          <label class="checkbox-item" style="margin-bottom:10px"><input type="checkbox" id="almocoAtivo"> Bloquear intervalo de almoço</label>
+          <div class="form-grid" style="max-width:400px">
+            <div class="field"><label>Almoço - início</label><input type="time" id="almocoInicio"></div>
+            <div class="field"><label>Almoço - fim</label><input type="time" id="almocoFim"></div>
+          </div>
+          <div class="btn-row"><button type="button" class="btn" id="btnSalvarConfigAgenda">Salvar configuração de agenda</button></div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <h3>Segurança</h3>
+          <div class="field">
+            <label>Código master (recuperação de senha)</label>
+            <div style="display:flex;gap:8px">
+              <input type="text" id="codigoMasterDisplay" readonly>
+              <button type="button" class="btn secondary small" id="btnRegenerarCodigo" style="white-space:nowrap">Gerar novo</button>
+            </div>
+            <p style="font-size:12px;color:#6b7280;margin-top:6px">Guarde este código em local seguro — necessário para redefinir senhas esquecidas.</p>
+          </div>
+          <hr style="border:none;border-top:1px solid var(--cor-borda);margin:18px 0">
+          <h3>Alterar senha do administrador</h3>
+          <form id="formSenhaAdmin">
+            <div class="form-grid">
+              <div class="field"><label>Senha atual</label><input type="password" id="senhaAtual" required></div>
+              <div class="field"><label>Nova senha</label><input type="password" id="senhaNova" required></div>
+            </div>
+            <div class="btn-row"><button type="submit" class="btn">Atualizar senha</button></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- FINANCEIRO -->
+      <section class="page admin-only" id="page-financeiro">
+        <h2 class="page-title">Financeiro</h2>
+        <p class="page-sub">Controle de receitas, despesas, convênios e parcelas de tratamento</p>
+        <div class="fin-summary">
+          <div class="stat-card"><div class="label">Receitas</div><div class="value" id="finReceitas" style="color:#1a7d3a">R$ 0,00</div></div>
+          <div class="stat-card"><div class="label">Despesas</div><div class="value" id="finDespesas" style="color:#b3261e">R$ 0,00</div></div>
+          <div class="stat-card"><div class="label">Saldo</div><div class="value" id="finSaldo">R$ 0,00</div></div>
+        </div>
+        <div class="card">
+          <h3>Relatório por período</h3>
+          <div class="form-grid" style="max-width:420px">
+            <div class="field"><label>Data início</label><input type="date" id="finPeriodoInicio"></div>
+            <div class="field"><label>Data fim</label><input type="date" id="finPeriodoFim"></div>
+          </div>
+          <div class="btn-row"><button type="button" class="btn secondary small" id="btnFiltrarPeriodo">Filtrar</button></div>
+          <div id="resumoPeriodo" style="margin-top:10px"></div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <h3>Novo lançamento</h3>
+          <form id="formFinanceiro">
+            <div class="form-grid">
+              <div class="field"><label>Tipo</label><select id="finTipo"><option value="receita">Receita</option><option value="despesa">Despesa</option></select></div>
+              <div class="field"><label>Descrição</label><input type="text" id="finDescricao" required></div>
+              <div class="field"><label>Valor (R$)</label><input type="number" id="finValor" min="0" step="0.01" required></div>
+              <div class="field"><label>Data</label><input type="date" id="finData" required></div>
+              <div class="field" id="campoFinOrigem"><label>Origem</label><select id="finOrigem"><option value="particular">Particular</option><option value="convenio">Convênio</option></select></div>
+              <div class="field" id="campoFinConvenio" style="display:none"><label>Nome do convênio</label><input type="text" id="finConvenioNome"></div>
+            </div>
+            <div class="btn-row"><button type="submit" class="btn">Adicionar lançamento</button></div>
+          </form>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <h3>Lançamentos</h3>
+          <div class="tabela-scroll">
+          <table id="finTabela">
+            <thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Origem</th><th>Valor</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+          </div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <h3>Parcelas de planos de tratamento</h3>
+          <div class="tabela-scroll">
+          <table id="tabelaParcelasGlobais">
+            <thead><tr><th>Paciente</th><th>Parcela</th><th>Valor</th><th>Status</th><th>Pagamento</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal: novo/editar paciente -->
+<div class="modal-overlay" id="modalCliente">
+  <div class="modal">
+    <h3 id="modalClienteTitulo">Novo paciente</h3>
+    <form id="formCliente">
+      <input type="hidden" id="clienteId">
+      <div class="field"><label>Nome</label><input type="text" id="clienteNome" required></div>
+      <div class="form-grid">
+        <div class="field"><label>Data de nascimento</label><input type="date" id="clienteNascimento"></div>
+        <div class="field"><label>CPF</label><input type="text" id="clienteCpf" placeholder="000.000.000-00"></div>
+      </div>
+      <div class="field"><label>Telefone</label><input type="tel" id="clienteTelefone" placeholder="(11) 99999-9999"></div>
+      <div class="field"><label>E-mail</label><input type="email" id="clienteEmail"></div>
+      <div class="field"><label>Convênio</label><input type="text" id="clienteConvenio" placeholder="Ex: Particular, Amil, Bradesco Dental"></div>
+      <div class="btn-row">
+        <button type="submit" class="btn">Salvar</button>
+        <button type="button" class="btn secondary" id="btnFecharModalCliente">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: compartilhar link -->
+<div class="modal-overlay" id="modalLink">
+  <div class="modal">
+    <h3>Compartilhar link de agendamento</h3>
+    <p style="font-size:12.5px;color:#6b7280;margin-bottom:14px">
+      Envie este link para os pacientes agendarem online. Funciona quando <strong>dentista.html</strong> e
+      <strong>agendamento-dentista.html</strong> estão salvos na mesma pasta e abertos no mesmo navegador.
+    </p>
+    <div class="field"><input type="text" id="linkCompartilhavel" readonly></div>
+    <div class="btn-row">
+      <button type="button" class="btn" id="btnCopiarLink">Copiar link</button>
+      <button type="button" class="btn secondary" id="btnFecharModalLink">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: esqueci a senha -->
+<div class="modal-overlay" id="modalEsqueciSenha">
+  <div class="modal">
+    <h3>Redefinir senha</h3>
+    <form id="formEsqueciSenha">
+      <div class="field"><label>Código master</label><input type="text" id="recCodigoMaster" required></div>
+      <div class="field"><label>Redefinir senha de</label><select id="recAlvo"></select></div>
+      <div class="field"><label>Nova senha</label><input type="password" id="recNovaSenha" required></div>
+      <div class="error-msg" id="recErro" style="color:#b3261e;font-size:12.5px;margin-bottom:10px">Código master incorreto.</div>
+      <div class="btn-row">
+        <button type="submit" class="btn">Redefinir senha</button>
+        <button type="button" class="btn secondary" id="btnFecharModalEsqueci">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: limite do plano -->
+<div class="modal-overlay" id="modalLimitePlano">
+  <div class="modal">
+    <h3>Limite do plano atingido</h3>
+    <p id="limitePlanoTexto" style="font-size:13.5px;color:#4b5162;margin-bottom:16px"></p>
+    <div class="btn-row">
+      <button type="button" class="btn gold" id="btnWhatsLimite">🟢 Falar com a JV Datalab</button>
+      <button type="button" class="btn secondary" id="btnFecharModalLimite">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: WhatsApp -->
+<div class="modal-overlay" id="modalWhatsapp">
+  <div class="modal">
+    <h3>Enviar mensagem no WhatsApp</h3>
+    <div class="field"><label>Paciente</label><input type="text" id="whatsCliente" readonly></div>
+    <div class="field"><label>Telefone</label><input type="text" id="whatsTelefone" placeholder="(11) 99999-9999"></div>
+    <div class="field">
+      <label>Tipo de mensagem</label>
+      <select id="whatsTipo">
+        <option value="confirmacao">Confirmação</option>
+        <option value="lembreteAmanha">Lembrete (1 dia antes)</option>
+        <option value="lembreteHoje">Lembrete (no dia)</option>
+        <option value="cancelamento">Cancelamento</option>
+        <option value="posAtendimento">Pós-atendimento</option>
+      </select>
+    </div>
+    <div class="field" id="campoWhatsRetorno" style="display:none">
+      <label>Data de retorno recomendada</label>
+      <input type="date" id="whatsDataRetorno">
+    </div>
+    <div class="field"><label>Mensagem</label><textarea id="whatsMensagem" style="min-height:110px"></textarea></div>
+    <div class="btn-row">
+      <button type="button" class="btn gold" id="btnAbrirWhatsapp">🟢 Abrir WhatsApp</button>
+      <button type="button" class="btn secondary" id="btnFecharModalWhatsapp">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div id="areaImpressaoReceita"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  const STORAGE_KEYS = {
+    config: 'dentista_config',
+    servicos: 'dentista_servicos',
+    profissionais: 'dentista_profissionais',
+    clientes: 'dentista_pacientes',
+    agendamentos: 'dentista_agendamentos',
+    galeria: 'dentista_galeria',
+    financeiro: 'dentista_financeiro',
+    sessao: 'dentista_sessao',
+    licenca: 'dentista_licenca'
+  };
+
+  const LICENCAS_SHARED_KEY = 'jv_datalab_licencas';
+  const JV_CONFIG_KEY = 'jv_datalab_config';
+  const ACCEPTED_SEGMENTOS = ['DEN'];
+
+  const DEFAULT_CONFIG = {
+    nomeNegocio: 'Clínica Odontológica',
+    logo: '', corPrimaria: '#0d1b3e', corSecundaria: '#c9a24b',
+    negocioId: '', senhaAdmin: '', codigoMaster: '',
+    horarioAbertura: '08:00', horarioFechamento: '19:00', intervaloGrade: 30,
+    horarioPadrao: {
+      dias: {
+        seg: { ativo: true, inicio: '08:00', fim: '18:00' },
+        ter: { ativo: true, inicio: '08:00', fim: '18:00' },
+        qua: { ativo: true, inicio: '08:00', fim: '18:00' },
+        qui: { ativo: true, inicio: '08:00', fim: '18:00' },
+        sex: { ativo: true, inicio: '08:00', fim: '18:00' },
+        sab: { ativo: false, inicio: '08:00', fim: '13:00' },
+        dom: { ativo: false, inicio: '08:00', fim: '13:00' }
+      },
+      almoco: { ativo: true, inicio: '12:00', fim: '13:00' }
+    }
+  };
+
+  const DIAS_SEMANA = [
+    { chave: 'seg', label: 'Segunda-feira' }, { chave: 'ter', label: 'Terça-feira' },
+    { chave: 'qua', label: 'Quarta-feira' }, { chave: 'qui', label: 'Quinta-feira' },
+    { chave: 'sex', label: 'Sexta-feira' }, { chave: 'sab', label: 'Sábado' }, { chave: 'dom', label: 'Domingo' }
+  ];
+
+  const SERVICOS_PADRAO = [
+    { nome: 'Consulta Inicial', preco: 150, duracao: 60 },
+    { nome: 'Limpeza/Profilaxia', preco: 120, duracao: 60 },
+    { nome: 'Restauração Resina', preco: 180, duracao: 60 },
+    { nome: 'Extração Simples', preco: 150, duracao: 45 },
+    { nome: 'Extração Siso', preco: 350, duracao: 90 },
+    { nome: 'Tratamento de Canal', preco: 600, duracao: 120 },
+    { nome: 'Clareamento', preco: 500, duracao: 90 },
+    { nome: 'Instalação de Aparelho', preco: 1200, duracao: 90 },
+    { nome: 'Manutenção de Aparelho', preco: 150, duracao: 30 },
+    { nome: 'Facetas de Porcelana', preco: 800, duracao: 120 },
+    { nome: 'Implante', preco: 2500, duracao: 120 },
+    { nome: 'Raio-X', preco: 80, duracao: 15 }
+  ];
+
+  const CONDICOES_DENTE = [
+    { id: 'saudavel', label: 'Saudável', cor: '#ffffff' },
+    { id: 'carie', label: 'Cárie', cor: '#e53935' },
+    { id: 'restauracao', label: 'Restauração', cor: '#f2c94c' },
+    { id: 'coroa', label: 'Coroa', cor: '#2f80ed' },
+    { id: 'ausente', label: 'Ausente/Extraído', cor: '#3a3f4a' },
+    { id: 'canal', label: 'Tratamento de Canal', cor: '#e67e22' },
+    { id: 'implante', label: 'Implante', cor: '#27ae60' }
+  ];
+  const DENTES_PERM_SUP = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
+  const DENTES_PERM_INF = [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+  const DENTES_DECID_SUP = [55,54,53,52,51,61,62,63,64,65];
+  const DENTES_DECID_INF = [85,84,83,82,81,71,72,73,74,75];
+
+  const MODELOS_RECEITA = [
+    { id: 'analgesico', label: 'Analgésico', medicamento: 'Paracetamol 750mg', dose: '1 comprimido', posologia: 'A cada 6 horas se dor, por até 3 dias' },
+    { id: 'antibiotico', label: 'Antibiótico', medicamento: 'Amoxicilina 500mg', dose: '1 cápsula', posologia: 'A cada 8 horas, por 7 dias' },
+    { id: 'antiinflamatorio', label: 'Anti-inflamatório', medicamento: 'Nimesulida 100mg', dose: '1 comprimido', posologia: 'A cada 12 horas, por 3 dias' }
+  ];
+
+  const REGIOES_INTRABUCAL = ['Anterior', 'Lateral Direita', 'Lateral Esquerda', 'Superior', 'Inferior'];
+
+  const ADMIN_ONLY_PAGES = ['dashboard', 'servicos', 'profissionais', 'personalizacao', 'financeiro'];
+
+  function load(key, fallback) {
+    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
+    catch (e) { return fallback; }
+  }
+  function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function gerarCodigoMaster() { return Math.random().toString(36).slice(2, 8).toUpperCase(); }
+  function formatMoney(v) { return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function formatDateBR(iso) { if (!iso) return ''; const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; }
+  function todayISO() { return new Date().toISOString().slice(0, 10); }
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      if (!file) { resolve(''); return; }
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => t.classList.remove('show'), 2300);
+  }
+
+  function fichaVaziaPaciente() {
+    return {
+      anamnese: { hipertensao: false, diabetes: false, cardiopatia: false, anticoagulantes: false, alergiaAnestesia: false, alergiaLatex: false, gestante: false, amamentando: false, medicamentos: '', ultimaVisita: '', motivoConsulta: '', historicoProcedimentos: '' },
+      odontogramaAtual: { tipo: 'permanente', dentes: {} },
+      odontogramaHistorico: [],
+      planoTratamento: { itens: [], parcelas: [], aceite: { aceito: false, data: '' } },
+      consultas: [],
+      receitas: []
+    };
+  }
+
+  let state = {
+    config: load(STORAGE_KEYS.config, DEFAULT_CONFIG),
+    servicos: load(STORAGE_KEYS.servicos, null),
+    profissionais: load(STORAGE_KEYS.profissionais, []),
+    clientes: load(STORAGE_KEYS.clientes, []),
+    agendamentos: load(STORAGE_KEYS.agendamentos, []),
+    galeria: load(STORAGE_KEYS.galeria, []),
+    financeiro: load(STORAGE_KEYS.financeiro, [])
+  };
+  state.config = Object.assign({}, DEFAULT_CONFIG, state.config);
+  if (state.servicos === null) {
+    state.servicos = SERVICOS_PADRAO.map(s => ({ id: uid(), nome: s.nome, preco: s.preco, duracao: s.duracao, foto: '' }));
+    save(STORAGE_KEYS.servicos, state.servicos);
+  }
+  state.clientes.forEach(c => {
+    const vazia = fichaVaziaPaciente();
+    if (!c.anamnese) c.anamnese = vazia.anamnese;
+    if (!c.odontogramaAtual) c.odontogramaAtual = vazia.odontogramaAtual;
+    if (!c.odontogramaHistorico) c.odontogramaHistorico = [];
+    if (!c.planoTratamento) c.planoTratamento = vazia.planoTratamento;
+    if (!c.consultas) c.consultas = [];
+    if (!c.receitas) c.receitas = [];
+  });
+  state.profissionais.forEach(p => {
+    if (!p.bloqueios) p.bloqueios = [];
+    if (!p.excecoesDia) p.excecoesDia = {};
+  });
+
+  let session = null;
+  let licencaAtiva = null;
+  let clienteSelecionadoId = null;
+  let abaAtivaCliente = 'anamnese';
+  let denteAtivo = null;
+  let timelineModo = 'dia';
+  let timelineData = todayISO();
+
+  // ---------- Disponibilidade: helpers ----------
+  function horaParaMin(hhmm) { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; }
+  function minParaHora(min) { const h = Math.floor(min / 60); const m = min % 60; return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'); }
+  function duracaoDoServico(servicoId) { const s = state.servicos.find(sv => sv.id === servicoId); return s ? s.duracao : 30; }
+  function diaSemanaChave(dataISO) { const dias = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab']; return dias[new Date(dataISO + 'T00:00:00').getDay()]; }
+  function somarDias(iso, n) { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
+  function inicioDaSemana(iso) { const d = new Date(iso + 'T00:00:00'); const dia = d.getDay(); const offset = dia === 0 ? -6 : 1 - dia; d.setDate(d.getDate() + offset); return d.toISOString().slice(0, 10); }
+  function subtrairIntervalo(janelas, subInicio, subFim) {
+    const resultado = [];
+    janelas.forEach(j => {
+      if (subFim <= j.inicio || subInicio >= j.fim) { resultado.push(j); return; }
+      if (subInicio > j.inicio) resultado.push({ inicio: j.inicio, fim: Math.min(subInicio, j.fim) });
+      if (subFim < j.fim) resultado.push({ inicio: Math.max(subFim, j.inicio), fim: j.fim });
+    });
+    return resultado.filter(j => j.fim > j.inicio);
+  }
+  function janelaDoDia(profissionalId, dataISO) {
+    const prof = state.profissionais.find(p => p.id === profissionalId);
+    const excecao = prof && prof.excecoesDia && prof.excecoesDia[dataISO];
+    if (excecao) {
+      if (!excecao.ativo || !excecao.inicio || !excecao.fim) return null;
+      return [{ inicio: horaParaMin(excecao.inicio), fim: horaParaMin(excecao.fim) }];
+    }
+    const chave = diaSemanaChave(dataISO);
+    const diaCfg = state.config.horarioPadrao.dias[chave];
+    if (!diaCfg || !diaCfg.ativo) return null;
+    let janelas = [{ inicio: horaParaMin(diaCfg.inicio), fim: horaParaMin(diaCfg.fim) }];
+    const almoco = state.config.horarioPadrao.almoco;
+    if (almoco && almoco.ativo && almoco.inicio && almoco.fim) janelas = subtrairIntervalo(janelas, horaParaMin(almoco.inicio), horaParaMin(almoco.fim));
+    return janelas;
+  }
+  function statusDoSlot(profissionalId, dataISO, inicioMin, duracaoMin) {
+    const fimMin = inicioMin + duracaoMin;
+    const prof = state.profissionais.find(p => p.id === profissionalId);
+    const bloqueio = (prof.bloqueios || []).find(b => b.data === dataISO && inicioMin < horaParaMin(b.horaFim) && horaParaMin(b.horaInicio) < fimMin);
+    if (bloqueio) return { tipo: 'bloqueado', texto: `Bloqueado${bloqueio.motivo ? ' — ' + bloqueio.motivo : ''}` };
+    const agendamentosSlot = state.agendamentos.filter(a => {
+      if (a.profissionalId !== profissionalId || a.data !== dataISO) return false;
+      const durAg = duracaoDoServico(a.servicoId);
+      const aInicio = horaParaMin(a.hora), aFim = aInicio + durAg;
+      return inicioMin < aFim && aInicio < fimMin;
+    });
+    if (agendamentosSlot.length) {
+      const nomes = agendamentosSlot.map(a => { const cli = state.clientes.find(c => c.id === a.clienteId); return cli ? cli.nome : 'Paciente'; }).join(', ');
+      return { tipo: 'ocupado', texto: nomes };
+    }
+    return { tipo: 'disponivel', texto: 'Disponível' };
+  }
+  function profissionalAlvoAgenda() {
+    if (session && session.tipo === 'profissional') return session.profissionalId;
+    const el = document.getElementById('filtroProfissional');
+    return el ? el.value : '';
+  }
+
+  // ---------- Navigation ----------
+  document.getElementById('menuNav').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-page]');
+    if (!btn) return;
+    goToPage(btn.dataset.page);
+    document.getElementById('sidebar').classList.remove('open');
+  });
+
+  function goToPage(pageId) {
+    if (session && session.tipo !== 'admin' && ADMIN_ONLY_PAGES.includes(pageId)) pageId = 'agendamentos';
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + pageId).classList.add('active');
+    document.querySelectorAll('nav.menu button').forEach(b => b.classList.toggle('active', b.dataset.page === pageId));
+    document.getElementById('topbarTitle').textContent = document.querySelector('#page-' + pageId + ' .page-title').textContent;
+    if (pageId === 'dashboard') renderDashboard();
+    if (pageId === 'agendamentos') renderAgendaCompleta();
+    if (pageId === 'clientes') renderClientes();
+    if (pageId === 'galeria') renderGaleria();
+    if (pageId === 'profissionais') renderProfissionais();
+    if (pageId === 'financeiro') { renderFinanceiro(); renderParcelasGlobais(); }
+  }
+  document.getElementById('toggleSidebar').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
+
+  // ---------- Config / Personalização ----------
+  function applyConfig() {
+    const c = state.config;
+    document.documentElement.style.setProperty('--cor-primaria', c.corPrimaria);
+    document.documentElement.style.setProperty('--cor-secundaria', c.corSecundaria);
+    const header = document.getElementById('sidebarHeader');
+    header.innerHTML = '';
+    if (c.logo) { const img = document.createElement('img'); img.src = c.logo; header.appendChild(img); }
+    else { const div = document.createElement('div'); div.className = 'logo-placeholder'; div.textContent = (c.nomeNegocio || 'C').trim().charAt(0).toUpperCase(); header.appendChild(div); }
+    const h1 = document.createElement('h1'); h1.textContent = c.nomeNegocio || 'Clínica Odontológica'; header.appendChild(h1);
+    document.getElementById('custNome').value = c.nomeNegocio || '';
+    document.getElementById('custCorPrimaria').value = c.corPrimaria;
+    document.getElementById('custCorSecundaria').value = c.corSecundaria;
+    document.getElementById('codigoMasterDisplay').value = c.codigoMaster || '';
+    document.getElementById('almocoAtivo').checked = !!c.horarioPadrao.almoco.ativo;
+    document.getElementById('almocoInicio').value = c.horarioPadrao.almoco.inicio || '';
+    document.getElementById('almocoFim').value = c.horarioPadrao.almoco.fim || '';
+    renderConfigAgendaDias();
+    updatePreview();
+  }
+  function renderConfigAgendaDias() {
+    const cfg = state.config.horarioPadrao;
+    document.getElementById('configAgendaDias').innerHTML = DIAS_SEMANA.map(d => {
+      const dc = cfg.dias[d.chave];
+      return `
+        <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--cor-borda);flex-wrap:wrap">
+          <label class="checkbox-item" style="min-width:150px"><input type="checkbox" class="dia-ativo" data-dia="${d.chave}" ${dc.ativo ? 'checked' : ''}> ${d.label}</label>
+          <input type="time" class="dia-inicio" data-dia="${d.chave}" value="${dc.inicio}" style="max-width:120px" ${dc.ativo ? '' : 'disabled'}>
+          <span style="font-size:12px;color:#6b7280">até</span>
+          <input type="time" class="dia-fim" data-dia="${d.chave}" value="${dc.fim}" style="max-width:120px" ${dc.ativo ? '' : 'disabled'}>
+        </div>
+      `;
+    }).join('');
+    document.querySelectorAll('.dia-ativo').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const row = cb.closest('div');
+        row.querySelectorAll('input[type=time]').forEach(inp => inp.disabled = !cb.checked);
+      });
+    });
+  }
+  document.getElementById('btnSalvarConfigAgenda').addEventListener('click', () => {
+    const dias = {};
+    DIAS_SEMANA.forEach(d => {
+      dias[d.chave] = {
+        ativo: document.querySelector(`.dia-ativo[data-dia="${d.chave}"]`).checked,
+        inicio: document.querySelector(`.dia-inicio[data-dia="${d.chave}"]`).value || '08:00',
+        fim: document.querySelector(`.dia-fim[data-dia="${d.chave}"]`).value || '18:00'
+      };
+    });
+    state.config.horarioPadrao = {
+      dias,
+      almoco: { ativo: document.getElementById('almocoAtivo').checked, inicio: document.getElementById('almocoInicio').value || '12:00', fim: document.getElementById('almocoFim').value || '13:00' }
+    };
+    save(STORAGE_KEYS.config, state.config);
+    showToast('Configuração de agenda salva!');
+  });
+  function updatePreview() {
+    const nome = document.getElementById('custNome').value || 'Clínica Odontológica';
+    const corP = document.getElementById('custCorPrimaria').value;
+    const corS = document.getElementById('custCorSecundaria').value;
+    document.getElementById('previewNome').textContent = nome;
+    document.querySelector('.preview-box').style.background = corP;
+    document.querySelector('.preview-box .p-menu-item').style.background = corS;
+    document.querySelector('.preview-box .p-menu-item').style.color = corP;
+    const wrap = document.getElementById('previewLogoWrap');
+    wrap.innerHTML = '';
+    if (pendingLogoBase64 || state.config.logo) { const img = document.createElement('img'); img.src = pendingLogoBase64 || state.config.logo; wrap.appendChild(img); }
+    else { const div = document.createElement('div'); div.className = 'logo-placeholder'; div.style.background = corS; div.style.color = corP; div.textContent = nome.trim().charAt(0).toUpperCase(); wrap.appendChild(div); }
+  }
+  let pendingLogoBase64 = '';
+  document.getElementById('custNome').addEventListener('input', updatePreview);
+  document.getElementById('custCorPrimaria').addEventListener('input', updatePreview);
+  document.getElementById('custCorSecundaria').addEventListener('input', updatePreview);
+  document.getElementById('custLogo').addEventListener('change', async (e) => { pendingLogoBase64 = await fileToBase64(e.target.files[0]); updatePreview(); });
+  document.getElementById('btnSalvarCustom').addEventListener('click', () => {
+    state.config.nomeNegocio = document.getElementById('custNome').value.trim() || 'Clínica Odontológica';
+    state.config.corPrimaria = document.getElementById('custCorPrimaria').value;
+    state.config.corSecundaria = document.getElementById('custCorSecundaria').value;
+    if (pendingLogoBase64) state.config.logo = pendingLogoBase64;
+    save(STORAGE_KEYS.config, state.config);
+    pendingLogoBase64 = '';
+    applyConfig();
+    showToast('Personalização salva com sucesso!');
+  });
+  document.getElementById('btnResetCustom').addEventListener('click', () => {
+    const manter = { senhaAdmin: state.config.senhaAdmin, codigoMaster: state.config.codigoMaster, negocioId: state.config.negocioId, horarioPadrao: state.config.horarioPadrao };
+    state.config = Object.assign({}, DEFAULT_CONFIG, manter);
+    pendingLogoBase64 = '';
+    save(STORAGE_KEYS.config, state.config);
+    document.getElementById('custLogo').value = '';
+    applyConfig();
+    showToast('Personalização restaurada.');
+  });
+  document.getElementById('btnRegenerarCodigo').addEventListener('click', () => {
+    if (!confirm('Gerar um novo código master? O código atual deixará de funcionar.')) return;
+    state.config.codigoMaster = gerarCodigoMaster();
+    save(STORAGE_KEYS.config, state.config);
+    document.getElementById('codigoMasterDisplay').value = state.config.codigoMaster;
+    showToast('Novo código master gerado!');
+  });
+  document.getElementById('formSenhaAdmin').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const atual = document.getElementById('senhaAtual').value;
+    const nova = document.getElementById('senhaNova').value;
+    if (atual !== state.config.senhaAdmin) { alert('Senha atual incorreta.'); return; }
+    state.config.senhaAdmin = nova;
+    save(STORAGE_KEYS.config, state.config);
+    e.target.reset();
+    showToast('Senha do administrador atualizada!');
+  });
+
+  // ---------- Dashboard ----------
+  function renderDashboard() {
+    const hojeISO = todayISO();
+    const agendHoje = state.agendamentos.filter(a => a.data === hojeISO).length;
+    const mesAtual = hojeISO.slice(0, 7);
+    const faturamentoMes = state.financeiro.filter(f => f.tipo === 'receita' && f.data.slice(0, 7) === mesAtual).reduce((s, f) => s + Number(f.valor), 0);
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card"><div class="label">Pacientes cadastrados</div><div class="value">${state.clientes.length}</div></div>
+      <div class="stat-card"><div class="label">Agendamentos hoje</div><div class="value">${agendHoje}</div></div>
+      <div class="stat-card"><div class="label">Faturamento do mês</div><div class="value">${formatMoney(faturamentoMes)}</div></div>
+      <div class="stat-card"><div class="label">Serviços cadastrados</div><div class="value">${state.servicos.length}</div></div>
+    `;
+    const amanhaISO = somarDias(hojeISO, 1);
+    const agendHojeLista = state.agendamentos.filter(a => a.data === hojeISO).sort((a, b) => a.hora.localeCompare(b.hora));
+    document.getElementById('agendamentosHoje').innerHTML = agendHojeLista.length ? agendHojeLista.map(a => linhaAgendamentoDashboard(a, 'lembreteHoje')).join('') : '<div class="empty-msg">Nenhum agendamento hoje.</div>';
+    const agendAmanhaLista = state.agendamentos.filter(a => a.data === amanhaISO).sort((a, b) => a.hora.localeCompare(b.hora));
+    document.getElementById('agendamentosAmanha').innerHTML = agendAmanhaLista.length ? agendAmanhaLista.map(a => linhaAgendamentoDashboard(a, 'lembreteAmanha')).join('') : '<div class="empty-msg">Nenhum agendamento amanhã.</div>';
+    const receitasMes = faturamentoMes;
+    const despesasMes = state.financeiro.filter(f => f.tipo === 'despesa' && f.data.slice(0, 7) === mesAtual).reduce((s, f) => s + Number(f.valor), 0);
+    document.getElementById('resumoFinMes').innerHTML = `
+      <div class="list-row"><span>Receitas</span><span style="color:#1a7d3a;font-weight:600">${formatMoney(receitasMes)}</span></div>
+      <div class="list-row"><span>Despesas</span><span style="color:#b3261e;font-weight:600">${formatMoney(despesasMes)}</span></div>
+      <div class="list-row"><span>Saldo</span><span style="font-weight:700">${formatMoney(receitasMes - despesasMes)}</span></div>
+    `;
+  }
+
+  // ---------- Serviços ----------
+  let pendingServicoFoto = '';
+  document.getElementById('servFoto').addEventListener('change', async (e) => { pendingServicoFoto = await fileToBase64(e.target.files[0]); });
+  document.getElementById('formServico').addEventListener('submit', (e) => {
+    e.preventDefault();
+    state.servicos.push({ id: uid(), nome: document.getElementById('servNome').value.trim(), preco: parseFloat(document.getElementById('servPreco').value), duracao: parseInt(document.getElementById('servDuracao').value, 10), foto: pendingServicoFoto });
+    save(STORAGE_KEYS.servicos, state.servicos);
+    e.target.reset();
+    pendingServicoFoto = '';
+    renderServicos();
+    populateTodosSelects();
+    showToast('Serviço cadastrado!');
+  });
+  function renderServicos() {
+    const grid = document.getElementById('servicosGrid');
+    if (!state.servicos.length) { grid.innerHTML = '<div class="empty-msg">Nenhum serviço cadastrado ainda.</div>'; return; }
+    grid.innerHTML = state.servicos.map(s => `
+      <div class="item-card">
+        ${s.foto ? `<img class="thumb" src="${s.foto}" alt="${s.nome}">` : `<div class="thumb">Sem foto</div>`}
+        <div class="body">
+          <div class="name">${s.nome}</div>
+          <div class="meta">${formatMoney(s.preco)} · ${s.duracao} min</div>
+          <div class="actions"><button class="btn danger small" data-del-servico="${s.id}">Excluir</button></div>
+        </div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('servicosGrid').addEventListener('click', (e) => {
+    const id = e.target.dataset.delServico;
+    if (!id) return;
+    state.servicos = state.servicos.filter(s => s.id !== id);
+    save(STORAGE_KEYS.servicos, state.servicos);
+    renderServicos();
+    populateTodosSelects();
+  });
+
+  // ---------- Profissionais (dentistas) ----------
+  let pendingProfFoto = '';
+  document.getElementById('profFoto').addEventListener('change', async (e) => { pendingProfFoto = await fileToBase64(e.target.files[0]); });
+  document.getElementById('formProfissional').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = document.getElementById('profissionalId').value;
+    const nome = document.getElementById('profNome').value.trim();
+    const cro = document.getElementById('profCro').value.trim();
+    const especialidade = document.getElementById('profEspecialidade').value.trim();
+    const senha = document.getElementById('profSenha').value.trim();
+    const cadeiras = Math.max(1, parseInt(document.getElementById('profCadeiras').value, 10) || 1);
+    if (id) {
+      const p = state.profissionais.find(x => x.id === id);
+      p.nome = nome; p.cro = cro; p.especialidade = especialidade; p.senha = senha; p.cadeiras = cadeiras;
+      if (pendingProfFoto) p.foto = pendingProfFoto;
+    } else {
+      const lic = licencaAtualFresca();
+      if (lic && state.profissionais.length >= (lic.limiteProfissionais || 0)) {
+        abrirModalLimite(lic);
+        return;
+      }
+      state.profissionais.push({ id: uid(), nome, cro, especialidade, senha, cadeiras, foto: pendingProfFoto, bloqueios: [], excecoesDia: {} });
+    }
+    save(STORAGE_KEYS.profissionais, state.profissionais);
+    e.target.reset();
+    document.getElementById('profissionalId').value = '';
+    document.getElementById('profissionalFormTitulo').textContent = 'Novo dentista';
+    document.getElementById('btnCancelarEdicaoProf').style.display = 'none';
+    pendingProfFoto = '';
+    renderProfissionais();
+    populateTodosSelects();
+    showToast('Dentista salvo!');
+  });
+  document.getElementById('btnCancelarEdicaoProf').addEventListener('click', () => {
+    document.getElementById('formProfissional').reset();
+    document.getElementById('profissionalId').value = '';
+    document.getElementById('profissionalFormTitulo').textContent = 'Novo dentista';
+    document.getElementById('btnCancelarEdicaoProf').style.display = 'none';
+    pendingProfFoto = '';
+  });
+  function renderProfissionais() {
+    const grid = document.getElementById('profissionaisGrid');
+    if (!state.profissionais.length) { grid.innerHTML = '<div class="empty-msg">Nenhum dentista cadastrado ainda.</div>'; return; }
+    grid.innerHTML = state.profissionais.map(p => `
+      <div class="item-card">
+        ${p.foto ? `<img class="thumb" src="${p.foto}" alt="${p.nome}">` : `<div class="thumb">Sem foto</div>`}
+        <div class="body">
+          <div class="name">${p.nome}</div>
+          <div class="meta">${p.cro || 'CRO não informado'}</div>
+          <div class="meta">${p.especialidade || 'Sem especialidade definida'}</div>
+          <div class="meta">${p.cadeiras} cadeira(s) simultânea(s)</div>
+          <div class="actions">
+            <button class="btn secondary small" data-edit-prof="${p.id}">Editar</button>
+            <button class="btn danger small" data-del-prof="${p.id}">Excluir</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('profissionaisGrid').addEventListener('click', (e) => {
+    const editId = e.target.dataset.editProf, delId = e.target.dataset.delProf;
+    if (editId) {
+      const p = state.profissionais.find(x => x.id === editId);
+      if (!p) return;
+      document.getElementById('profissionalFormTitulo').textContent = 'Editar dentista';
+      document.getElementById('profissionalId').value = p.id;
+      document.getElementById('profNome').value = p.nome;
+      document.getElementById('profCro').value = p.cro || '';
+      document.getElementById('profEspecialidade').value = p.especialidade;
+      document.getElementById('profSenha').value = p.senha;
+      document.getElementById('profCadeiras').value = p.cadeiras;
+      pendingProfFoto = '';
+      document.getElementById('btnCancelarEdicaoProf').style.display = 'inline-block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (delId) {
+      if (confirm('Excluir este dentista? Agendamentos e registros já feitos serão mantidos, mas ficarão sem dentista vinculado.')) {
+        state.profissionais = state.profissionais.filter(p => p.id !== delId);
+        save(STORAGE_KEYS.profissionais, state.profissionais);
+        renderProfissionais();
+        populateTodosSelects();
+      }
+    }
+  });
+
+  // ---------- Pacientes: lista e cadastro básico ----------
+  const modalCliente = document.getElementById('modalCliente');
+  document.getElementById('btnNovoCliente').addEventListener('click', () => {
+    document.getElementById('modalClienteTitulo').textContent = 'Novo paciente';
+    document.getElementById('formCliente').reset();
+    document.getElementById('clienteId').value = '';
+    modalCliente.classList.add('open');
+  });
+  document.getElementById('btnFecharModalCliente').addEventListener('click', () => modalCliente.classList.remove('open'));
+  modalCliente.addEventListener('click', (e) => { if (e.target === modalCliente) modalCliente.classList.remove('open'); });
+
+  document.getElementById('formCliente').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = document.getElementById('clienteId').value;
+    const nome = document.getElementById('clienteNome').value.trim();
+    const nascimento = document.getElementById('clienteNascimento').value;
+    const cpf = document.getElementById('clienteCpf').value.trim();
+    const telefone = document.getElementById('clienteTelefone').value.trim();
+    const email = document.getElementById('clienteEmail').value.trim();
+    const convenio = document.getElementById('clienteConvenio').value.trim();
+    if (id) {
+      const c = state.clientes.find(c => c.id === id);
+      c.nome = nome; c.nascimento = nascimento; c.cpf = cpf; c.telefone = telefone; c.email = email; c.convenio = convenio;
+    } else {
+      state.clientes.push(Object.assign({ id: uid(), nome, nascimento, cpf, telefone, email, convenio }, fichaVaziaPaciente()));
+    }
+    save(STORAGE_KEYS.clientes, state.clientes);
+    modalCliente.classList.remove('open');
+    renderClientes();
+    populateTodosSelects();
+    showToast('Paciente salvo!');
+  });
+
+  function renderClientes() {
+    const busca = (document.getElementById('buscaCliente').value || '').toLowerCase();
+    let base = state.clientes;
+    if (session.tipo === 'profissional') {
+      const meusIds = new Set(state.agendamentos.filter(a => a.profissionalId === session.profissionalId).map(a => a.clienteId));
+      base = base.filter(c => meusIds.has(c.id));
+    }
+    const lista = document.getElementById('listaClientes');
+    const filtrados = base.filter(c => c.nome.toLowerCase().includes(busca));
+    lista.innerHTML = filtrados.length ? filtrados.map(c => `
+      <div class="cliente-list-item ${c.id === clienteSelecionadoId ? 'selected' : ''}" data-cliente="${c.id}">
+        <span>${c.nome}</span><span class="sub">${c.telefone || ''}</span>
+      </div>
+    `).join('') : '<div class="empty-msg">Nenhum paciente encontrado.</div>';
+    renderClienteDetalhe();
+  }
+  document.getElementById('buscaCliente').addEventListener('input', renderClientes);
+  document.getElementById('listaClientes').addEventListener('click', (e) => {
+    const row = e.target.closest('[data-cliente]');
+    if (!row) return;
+    clienteSelecionadoId = row.dataset.cliente;
+    abaAtivaCliente = 'anamnese';
+    denteAtivo = null;
+    renderClientes();
+  });
+
+  const ABAS_CLIENTE = [
+    { id: 'anamnese', label: 'Anamnese' },
+    { id: 'odontograma', label: 'Odontograma' },
+    { id: 'plano', label: 'Plano de Tratamento' },
+    { id: 'prontuario', label: 'Prontuário' },
+    { id: 'receituario', label: 'Receituário' }
+  ];
+
+  function renderClienteDetalhe() {
+    const box = document.getElementById('clienteDetalhe');
+    const c = state.clientes.find(c => c.id === clienteSelecionadoId);
+    if (!c) { box.innerHTML = '<div class="empty-msg">Selecione um paciente à esquerda para ver a ficha.</div>'; return; }
+    const podeGerenciar = session.tipo === 'admin';
+    const idade = c.nascimento ? Math.floor((Date.now() - new Date(c.nascimento + 'T00:00:00').getTime()) / (365.25 * 24 * 3600 * 1000)) : null;
+
+    box.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div>
+          <h3 style="margin-bottom:4px">${c.nome} ${idade !== null ? `· ${idade} anos` : ''}</h3>
+          <div style="font-size:13px;color:#6b7280">${c.telefone || 'sem telefone'} ${c.email ? '· ' + c.email : ''} ${c.convenio ? '· ' + c.convenio : ''}</div>
+        </div>
+        ${podeGerenciar ? `<div style="display:flex;gap:8px"><button class="btn secondary small" id="btnEditarCliente">Editar</button><button class="btn danger small" id="btnExcluirCliente">Excluir</button></div>` : ''}
+      </div>
+      <div class="ficha-tabs">${ABAS_CLIENTE.map(a => `<button type="button" class="ficha-tab-btn ${abaAtivaCliente === a.id ? 'active' : ''}" data-aba="${a.id}">${a.label}</button>`).join('')}</div>
+      <div id="fichaAbaConteudo"></div>
+    `;
+
+    if (podeGerenciar) {
+      document.getElementById('btnEditarCliente').addEventListener('click', () => {
+        document.getElementById('modalClienteTitulo').textContent = 'Editar paciente';
+        document.getElementById('clienteId').value = c.id;
+        document.getElementById('clienteNome').value = c.nome;
+        document.getElementById('clienteNascimento').value = c.nascimento || '';
+        document.getElementById('clienteCpf').value = c.cpf || '';
+        document.getElementById('clienteTelefone').value = c.telefone;
+        document.getElementById('clienteEmail').value = c.email;
+        document.getElementById('clienteConvenio').value = c.convenio || '';
+        modalCliente.classList.add('open');
+      });
+      document.getElementById('btnExcluirCliente').addEventListener('click', () => {
+        state.clientes = state.clientes.filter(x => x.id !== c.id);
+        save(STORAGE_KEYS.clientes, state.clientes);
+        clienteSelecionadoId = null;
+        renderClientes();
+        populateTodosSelects();
+      });
+    }
+    document.querySelectorAll('.ficha-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => { abaAtivaCliente = btn.dataset.aba; denteAtivo = null; renderClienteDetalhe(); });
+    });
+    renderAbaCliente(c);
+  }
+
+  function renderAbaCliente(c) {
+    const el = document.getElementById('fichaAbaConteudo');
+    if (abaAtivaCliente === 'anamnese') return renderAbaAnamnese(el, c);
+    if (abaAtivaCliente === 'odontograma') return renderAbaOdontograma(el, c);
+    if (abaAtivaCliente === 'plano') return renderAbaPlano(el, c);
+    if (abaAtivaCliente === 'prontuario') return renderAbaProntuario(el, c);
+    if (abaAtivaCliente === 'receituario') return renderAbaReceituario(el, c);
+  }
+
+  function renderAbaAnamnese(el, c) {
+    const a = c.anamnese;
+    el.innerHTML = `
+      <form id="formAnamnese">
+        <div class="checkbox-grid">
+          <label class="checkbox-item"><input type="checkbox" id="anaHipertensao" ${a.hipertensao ? 'checked' : ''}> Hipertensão</label>
+          <label class="checkbox-item"><input type="checkbox" id="anaDiabetes" ${a.diabetes ? 'checked' : ''}> Diabetes</label>
+          <label class="checkbox-item"><input type="checkbox" id="anaCardiopatia" ${a.cardiopatia ? 'checked' : ''}> Cardiopatia</label>
+          <label class="checkbox-item"><input type="checkbox" id="anaAnticoagulantes" ${a.anticoagulantes ? 'checked' : ''}> Uso de anticoagulantes</label>
+          <label class="checkbox-item"><input type="checkbox" id="anaAlergiaAnestesia" ${a.alergiaAnestesia ? 'checked' : ''}> Alergia a anestesia</label>
+          <label class="checkbox-item"><input type="checkbox" id="anaAlergiaLatex" ${a.alergiaLatex ? 'checked' : ''}> Alergia a látex</label>
+          <label class="checkbox-item"><input type="checkbox" id="anaGestante" ${a.gestante ? 'checked' : ''}> Gestante</label>
+          <label class="checkbox-item"><input type="checkbox" id="anaAmamentando" ${a.amamentando ? 'checked' : ''}> Amamentando</label>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>Medicamentos em uso</label><input type="text" id="anaMedicamentos" value="${a.medicamentos || ''}"></div>
+          <div class="field"><label>Última visita ao dentista</label><input type="date" id="anaUltimaVisita" value="${a.ultimaVisita || ''}"></div>
+        </div>
+        <div class="field"><label>Motivo da consulta</label><textarea id="anaMotivo">${a.motivoConsulta || ''}</textarea></div>
+        <div class="field"><label>Histórico de procedimentos anteriores</label><textarea id="anaHistorico">${a.historicoProcedimentos || ''}</textarea></div>
+        <div class="btn-row"><button type="submit" class="btn">Salvar anamnese</button></div>
+      </form>
+    `;
+    document.getElementById('formAnamnese').addEventListener('submit', (e) => {
+      e.preventDefault();
+      c.anamnese = {
+        hipertensao: document.getElementById('anaHipertensao').checked,
+        diabetes: document.getElementById('anaDiabetes').checked,
+        cardiopatia: document.getElementById('anaCardiopatia').checked,
+        anticoagulantes: document.getElementById('anaAnticoagulantes').checked,
+        alergiaAnestesia: document.getElementById('anaAlergiaAnestesia').checked,
+        alergiaLatex: document.getElementById('anaAlergiaLatex').checked,
+        gestante: document.getElementById('anaGestante').checked,
+        amamentando: document.getElementById('anaAmamentando').checked,
+        medicamentos: document.getElementById('anaMedicamentos').value.trim(),
+        ultimaVisita: document.getElementById('anaUltimaVisita').value,
+        motivoConsulta: document.getElementById('anaMotivo').value.trim(),
+        historicoProcedimentos: document.getElementById('anaHistorico').value.trim()
+      };
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Anamnese salva!');
+    });
+  }
+
+  function gerarSvgArco(numeros, dentes) {
+    const largura = numeros.length * 34 + 16;
+    const itens = numeros.map((n, i) => {
+      const x = 8 + i * 34;
+      const estado = (dentes[n] && dentes[n].condicao) || 'saudavel';
+      return `<rect class="dente ${estado}" data-dente="${n}" x="${x}" y="8" width="28" height="34" rx="8"></rect><text class="dente-numero" x="${x + 14}" y="56">${n}</text>`;
+    }).join('');
+    return `<svg viewBox="0 0 ${largura} 64" style="width:100%;height:auto;min-width:${largura}px">${itens}</svg>`;
+  }
+
+  function renderAbaOdontograma(el, p) {
+    const tipo = p.odontogramaAtual.tipo;
+    const sup = tipo === 'permanente' ? DENTES_PERM_SUP : DENTES_DECID_SUP;
+    const inf = tipo === 'permanente' ? DENTES_PERM_INF : DENTES_DECID_INF;
+    const legenda = CONDICOES_DENTE.map(cd => `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:#6b7280;margin-right:12px;margin-bottom:4px"><span style="width:12px;height:12px;border-radius:3px;background:${cd.cor};border:1px solid var(--cor-borda);display:inline-block"></span>${cd.label}</span>`).join('');
+    el.innerHTML = `
+      <div class="btn-row" style="margin-bottom:14px">
+        <button type="button" class="btn small ${tipo === 'permanente' ? '' : 'secondary'}" id="btnDenticaoPermanente">Dentição Permanente (32)</button>
+        <button type="button" class="btn small ${tipo === 'decidua' ? '' : 'secondary'}" id="btnDenticaoDecidua">Dentição Decídua</button>
+      </div>
+      <div style="margin-bottom:10px">${legenda}</div>
+      <div style="overflow-x:auto">
+        <div style="margin-bottom:14px">${gerarSvgArco(sup, p.odontogramaAtual.dentes)}</div>
+        <div>${gerarSvgArco(inf, p.odontogramaAtual.dentes)}</div>
+      </div>
+      <div id="denteEditor" style="margin-top:16px"></div>
+      <div class="btn-row" style="margin-top:16px"><button type="button" class="btn gold small" id="btnRegistrarOdontograma">Registrar odontograma de hoje no histórico</button></div>
+      <h4 style="font-size:13px;color:var(--cor-primaria);margin:18px 0 8px">Histórico de odontogramas</h4>
+      <div id="odontogramaHistorico"></div>
+    `;
+    document.getElementById('btnDenticaoPermanente').addEventListener('click', () => { p.odontogramaAtual.tipo = 'permanente'; save(STORAGE_KEYS.clientes, state.clientes); renderAbaOdontograma(el, p); });
+    document.getElementById('btnDenticaoDecidua').addEventListener('click', () => { p.odontogramaAtual.tipo = 'decidua'; save(STORAGE_KEYS.clientes, state.clientes); renderAbaOdontograma(el, p); });
+    el.querySelectorAll('.dente').forEach(shape => {
+      shape.addEventListener('click', () => {
+        denteAtivo = shape.dataset.dente;
+        el.querySelectorAll('.dente').forEach(s => s.classList.remove('selecionado'));
+        shape.classList.add('selecionado');
+        renderDenteEditor(el, p);
+      });
+    });
+    renderDenteEditor(el, p);
+    renderOdontogramaHistorico(el, p);
+    document.getElementById('btnRegistrarOdontograma').addEventListener('click', () => {
+      p.odontogramaHistorico.push({ id: uid(), data: todayISO(), tipo: p.odontogramaAtual.tipo, dentes: JSON.parse(JSON.stringify(p.odontogramaAtual.dentes)) });
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Odontograma registrado no histórico!');
+      renderOdontogramaHistorico(el, p);
+    });
+  }
+
+  function renderDenteEditor(el, p) {
+    const box = el.querySelector('#denteEditor');
+    if (!denteAtivo) { box.innerHTML = '<div class="empty-msg">Clique em um dente para marcar a condição.</div>'; return; }
+    const registro = p.odontogramaAtual.dentes[denteAtivo] || { condicao: 'saudavel', obs: '' };
+    box.innerHTML = `
+      <h4 style="color:var(--cor-primaria);font-size:14px;margin-bottom:8px">Dente ${denteAtivo}</h4>
+      <div class="checkbox-grid">${CONDICOES_DENTE.map(cd => `<label class="checkbox-item"><input type="radio" name="condicaoDente" value="${cd.id}" ${registro.condicao === cd.id ? 'checked' : ''}> ${cd.label}</label>`).join('')}</div>
+      <div class="field"><label>Observação</label><textarea id="denteObs">${registro.obs || ''}</textarea></div>
+      <div class="btn-row"><button type="button" class="btn small" id="btnSalvarDente">Salvar dente</button></div>
+    `;
+    document.getElementById('btnSalvarDente').addEventListener('click', () => {
+      const condicao = box.querySelector('input[name=condicaoDente]:checked').value;
+      p.odontogramaAtual.dentes[denteAtivo] = { condicao, obs: document.getElementById('denteObs').value.trim() };
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Dente atualizado!');
+      renderAbaOdontograma(el, p);
+    });
+  }
+
+  function renderOdontogramaHistorico(el, p) {
+    const box = el.querySelector('#odontogramaHistorico');
+    const hist = [...p.odontogramaHistorico].sort((a, b) => b.data.localeCompare(a.data));
+    if (!hist.length) { box.innerHTML = '<div class="empty-msg">Nenhum registro histórico ainda.</div>'; return; }
+    box.innerHTML = hist.map(h => {
+      const alterados = Object.keys(h.dentes).filter(n => h.dentes[n].condicao !== 'saudavel');
+      return `
+        <div class="card" style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong style="color:var(--cor-primaria);font-size:13px">${formatDateBR(h.data)} — ${h.tipo === 'permanente' ? 'Permanente' : 'Decídua'}</strong>
+            <button class="btn danger small" data-del-odonto-hist="${h.id}">Excluir</button>
+          </div>
+          <div style="font-size:12.5px;color:#6b7280;margin-top:6px">${alterados.length ? alterados.map(n => `${n}: ${(CONDICOES_DENTE.find(x => x.id === h.dentes[n].condicao) || {}).label}`).join(' · ') : 'Todos os dentes saudáveis'}</div>
+        </div>
+      `;
+    }).join('');
+    box.querySelectorAll('[data-del-odonto-hist]').forEach(btn => btn.addEventListener('click', () => {
+      p.odontogramaHistorico = p.odontogramaHistorico.filter(h => h.id !== btn.dataset.delOdontoHist);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderOdontogramaHistorico(el, p);
+    }));
+  }
+
+  function renderAbaPlano(el, p) {
+    const plano = p.planoTratamento;
+    const total = plano.itens.reduce((s, i) => s + Number(i.valor || 0), 0);
+    el.innerHTML = `
+      <h4 style="font-size:13px;color:var(--cor-primaria);margin-bottom:8px">Procedimentos do plano</h4>
+      <form id="formItemPlano">
+        <div class="form-grid">
+          <div class="field"><label>Dente</label><input type="text" id="itemDente" placeholder="Ex: 26 ou Geral"></div>
+          <div class="field"><label>Procedimento</label><input type="text" id="itemProcedimento" required></div>
+          <div class="field"><label>Valor (R$)</label><input type="number" id="itemValor" min="0" step="0.01" required></div>
+          <div class="field"><label>Status</label><select id="itemStatus"><option value="pendente">Pendente</option><option value="andamento">Em andamento</option><option value="concluido">Concluído</option></select></div>
+        </div>
+        <div class="btn-row"><button type="submit" class="btn small">Adicionar procedimento</button></div>
+      </form>
+      <div class="tabela-scroll" style="margin-top:14px">
+        <table>
+          <thead><tr><th>Dente</th><th>Procedimento</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            ${plano.itens.length ? plano.itens.map(i => `
+              <tr>
+                <td>${i.dente || 'Geral'}</td><td>${i.procedimento}</td><td>${formatMoney(i.valor)}</td>
+                <td><select class="status-item" data-item="${i.id}">
+                  <option value="pendente" ${i.status === 'pendente' ? 'selected' : ''}>Pendente</option>
+                  <option value="andamento" ${i.status === 'andamento' ? 'selected' : ''}>Em andamento</option>
+                  <option value="concluido" ${i.status === 'concluido' ? 'selected' : ''}>Concluído</option>
+                </select></td>
+                <td><button class="btn danger small" data-del-item="${i.id}">Excluir</button></td>
+              </tr>
+            `).join('') : '<tr><td colspan="5" class="empty-msg">Nenhum procedimento adicionado.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+      <div style="text-align:right;font-weight:700;color:var(--cor-primaria);margin-top:10px;font-size:15px">Total do orçamento: ${formatMoney(total)}</div>
+      <hr style="border:none;border-top:1px solid var(--cor-borda);margin:18px 0">
+      <h4 style="font-size:13px;color:var(--cor-primaria);margin-bottom:8px">Aceite do paciente</h4>
+      <label class="checkbox-item"><input type="checkbox" id="planoAceite" ${plano.aceite.aceito ? 'checked' : ''}> Paciente aceitou o plano de tratamento</label>
+      ${plano.aceite.aceito ? `<div style="font-size:12.5px;color:#6b7280;margin-top:6px">Aceito em ${formatDateBR(plano.aceite.data)}</div>` : ''}
+      <hr style="border:none;border-top:1px solid var(--cor-borda);margin:18px 0">
+      <h4 style="font-size:13px;color:var(--cor-primaria);margin-bottom:8px">Parcelamento</h4>
+      <div class="form-grid" style="max-width:320px"><div class="field"><label>Quantidade de parcelas</label><input type="number" id="qtdParcelas" min="1" step="1" value="${plano.parcelas.length || 1}"></div></div>
+      <div class="btn-row"><button type="button" class="btn small" id="btnGerarParcelas">Gerar parcelas (com base no total)</button></div>
+      <div class="tabela-scroll" style="margin-top:14px">
+        <table>
+          <thead><tr><th>Parcela</th><th>Valor</th><th>Status</th><th>Data pagamento</th><th></th></tr></thead>
+          <tbody>
+            ${plano.parcelas.length ? plano.parcelas.map(pc => `
+              <tr>
+                <td>${pc.numero}/${plano.parcelas.length}</td><td>${formatMoney(pc.valor)}</td>
+                <td>${pc.pago ? '<span style="color:#1a7d3a;font-weight:600">Paga</span>' : '<span style="color:#b3261e;font-weight:600">Pendente</span>'}</td>
+                <td>${pc.dataPagamento ? formatDateBR(pc.dataPagamento) : '—'}</td>
+                <td><button class="btn ${pc.pago ? 'secondary' : 'gold'} small" data-toggle-parcela="${pc.numero}">${pc.pago ? 'Desfazer' : 'Marcar como paga'}</button></td>
+              </tr>
+            `).join('') : '<tr><td colspan="5" class="empty-msg">Nenhuma parcela gerada ainda.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    `;
+    document.getElementById('formItemPlano').addEventListener('submit', (e) => {
+      e.preventDefault();
+      plano.itens.push({ id: uid(), dente: document.getElementById('itemDente').value.trim(), procedimento: document.getElementById('itemProcedimento').value.trim(), valor: parseFloat(document.getElementById('itemValor').value) || 0, status: document.getElementById('itemStatus').value });
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderAbaPlano(el, p);
+      showToast('Procedimento adicionado ao plano!');
+    });
+    el.querySelectorAll('.status-item').forEach(sel => sel.addEventListener('change', () => {
+      const item = plano.itens.find(i => i.id === sel.dataset.item);
+      if (item) { item.status = sel.value; save(STORAGE_KEYS.clientes, state.clientes); showToast('Status atualizado!'); }
+    }));
+    el.querySelectorAll('[data-del-item]').forEach(btn => btn.addEventListener('click', () => {
+      plano.itens = plano.itens.filter(i => i.id !== btn.dataset.delItem);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderAbaPlano(el, p);
+    }));
+    document.getElementById('planoAceite').addEventListener('change', (e) => {
+      plano.aceite.aceito = e.target.checked;
+      plano.aceite.data = e.target.checked ? todayISO() : '';
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderAbaPlano(el, p);
+    });
+    document.getElementById('btnGerarParcelas').addEventListener('click', () => {
+      const qtd = Math.max(1, parseInt(document.getElementById('qtdParcelas').value, 10) || 1);
+      const totalAtual = plano.itens.reduce((s, i) => s + Number(i.valor || 0), 0);
+      const valorBase = Math.floor((totalAtual / qtd) * 100) / 100;
+      const parcelas = [];
+      let soma = 0;
+      for (let n = 1; n <= qtd; n++) {
+        const valor = n === qtd ? Math.round((totalAtual - soma) * 100) / 100 : valorBase;
+        soma += valor;
+        parcelas.push({ numero: n, valor, pago: false, dataPagamento: '' });
+      }
+      plano.parcelas = parcelas;
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderAbaPlano(el, p);
+      showToast('Parcelas geradas!');
+    });
+    el.querySelectorAll('[data-toggle-parcela]').forEach(btn => btn.addEventListener('click', () => {
+      const pc = plano.parcelas.find(x => String(x.numero) === btn.dataset.toggleParcela);
+      if (pc) { pc.pago = !pc.pago; pc.dataPagamento = pc.pago ? todayISO() : ''; save(STORAGE_KEYS.clientes, state.clientes); renderAbaPlano(el, p); }
+    }));
+  }
+
+  function renderAbaProntuario(el, p) {
+    const consultas = [...p.consultas].sort((a, b) => b.data.localeCompare(a.data));
+    el.innerHTML = `
+      <h4 style="font-size:13px;color:var(--cor-primaria);margin-bottom:8px">Nova consulta</h4>
+      <form id="formConsulta">
+        <div class="form-grid">
+          <div class="field"><label>Data</label><input type="date" id="consData" required></div>
+          <div class="field"><label>Dente(s) tratado(s)</label><input type="text" id="consDentes" placeholder="Ex: 16, 17"></div>
+          <div class="field"><label>Retorno recomendado</label><input type="date" id="consRetorno"></div>
+        </div>
+        <div class="field"><label>Queixas</label><textarea id="consQueixas"></textarea></div>
+        <div class="field"><label>Procedimento realizado</label><textarea id="consProcedimento"></textarea></div>
+        <div class="form-grid">
+          <div class="field"><label>Materiais usados</label><input type="text" id="consMateriais"></div>
+          <div class="field"><label>Prescrição</label><input type="text" id="consPrescricao"></div>
+        </div>
+        <div class="field"><label>Anexar radiografias/fotos</label><input type="file" id="consAnexos" accept="image/*" multiple></div>
+        <div class="btn-row"><button type="submit" class="btn small">Salvar consulta</button></div>
+      </form>
+      <hr style="border:none;border-top:1px solid var(--cor-borda);margin:18px 0">
+      <h4 style="font-size:13px;color:var(--cor-primaria);margin-bottom:10px">Histórico de consultas</h4>
+      <div id="listaConsultas"></div>
+    `;
+    document.getElementById('consData').value = todayISO();
+    const listaEl = el.querySelector('#listaConsultas');
+    listaEl.innerHTML = consultas.length ? consultas.map(c => {
+      const dent = state.profissionais.find(pr => pr.id === c.dentistaId);
+      return `
+        <div class="card" style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <strong style="color:var(--cor-primaria)">${formatDateBR(c.data)}${dent ? ' — ' + dent.nome : ''}</strong>
+            <button class="btn danger small" data-del-consulta="${c.id}">Excluir</button>
+          </div>
+          ${c.dentes ? `<div class="meta">Dente(s): ${c.dentes}</div>` : ''}
+          ${c.queixas ? `<div class="meta">Queixas: ${c.queixas}</div>` : ''}
+          ${c.procedimento ? `<div class="meta">Procedimento: ${c.procedimento}</div>` : ''}
+          ${c.materiais ? `<div class="meta">Materiais: ${c.materiais}</div>` : ''}
+          ${c.prescricao ? `<div class="meta">Prescrição: ${c.prescricao}</div>` : ''}
+          ${c.retorno ? `<div class="meta">Retorno recomendado: ${formatDateBR(c.retorno)}</div>` : ''}
+          ${c.anexos && c.anexos.length ? `<div class="items-grid" style="margin-top:10px">${c.anexos.map(a => `<img src="${a}" style="width:100%;height:100px;object-fit:cover;border-radius:8px">`).join('')}</div>` : ''}
+        </div>
+      `;
+    }).join('') : '<div class="empty-msg">Nenhuma consulta registrada ainda.</div>';
+    listaEl.querySelectorAll('[data-del-consulta]').forEach(btn => btn.addEventListener('click', () => {
+      p.consultas = p.consultas.filter(c => c.id !== btn.dataset.delConsulta);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderAbaProntuario(el, p);
+    }));
+    document.getElementById('formConsulta').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const files = document.getElementById('consAnexos').files;
+      const anexos = [];
+      for (let i = 0; i < files.length; i++) anexos.push(await fileToBase64(files[i]));
+      p.consultas.push({
+        id: uid(), data: document.getElementById('consData').value,
+        dentistaId: session.tipo === 'profissional' ? session.profissionalId : '',
+        queixas: document.getElementById('consQueixas').value.trim(),
+        procedimento: document.getElementById('consProcedimento').value.trim(),
+        dentes: document.getElementById('consDentes').value.trim(),
+        materiais: document.getElementById('consMateriais').value.trim(),
+        prescricao: document.getElementById('consPrescricao').value.trim(),
+        retorno: document.getElementById('consRetorno').value,
+        anexos
+      });
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Consulta registrada!');
+      renderAbaProntuario(el, p);
+    });
+  }
+
+  function renderAbaReceituario(el, p) {
+    const receitas = [...p.receitas].sort((a, b) => b.data.localeCompare(a.data));
+    el.innerHTML = `
+      <h4 style="font-size:13px;color:var(--cor-primaria);margin-bottom:8px">Novo modelo</h4>
+      <div class="btn-row" style="margin-bottom:14px">${MODELOS_RECEITA.map(m => `<button type="button" class="btn secondary small" data-modelo="${m.id}">${m.label}</button>`).join('')}</div>
+      <form id="formReceita">
+        <div class="field"><label>Medicamento</label><input type="text" id="recMedicamento" required></div>
+        <div class="form-grid">
+          <div class="field"><label>Dose</label><input type="text" id="recDose"></div>
+          <div class="field"><label>Posologia</label><input type="text" id="recPosologia"></div>
+        </div>
+        <div class="btn-row"><button type="submit" class="btn small">Gerar receita</button></div>
+      </form>
+      <hr style="border:none;border-top:1px solid var(--cor-borda);margin:18px 0">
+      <h4 style="font-size:13px;color:var(--cor-primaria);margin-bottom:10px">Receitas emitidas</h4>
+      <div id="listaReceitas"></div>
+    `;
+    el.querySelectorAll('[data-modelo]').forEach(btn => btn.addEventListener('click', () => {
+      const m = MODELOS_RECEITA.find(x => x.id === btn.dataset.modelo);
+      document.getElementById('recMedicamento').value = m.medicamento;
+      document.getElementById('recDose').value = m.dose;
+      document.getElementById('recPosologia').value = m.posologia;
+    }));
+    const listaEl = el.querySelector('#listaReceitas');
+    listaEl.innerHTML = receitas.length ? receitas.map(r => `
+      <div class="list-row">
+        <span>${formatDateBR(r.data)} — ${r.medicamento} · ${r.dose} · ${r.posologia}</span>
+        <span style="display:flex;gap:6px;flex-shrink:0"><button class="btn secondary small" data-print-receita="${r.id}">Imprimir</button><button class="btn danger small" data-del-receita="${r.id}">Excluir</button></span>
+      </div>
+    `).join('') : '<div class="empty-msg">Nenhuma receita emitida ainda.</div>';
+    listaEl.querySelectorAll('[data-print-receita]').forEach(btn => btn.addEventListener('click', () => {
+      const r = p.receitas.find(x => x.id === btn.dataset.printReceita);
+      imprimirReceita(r, p);
+    }));
+    listaEl.querySelectorAll('[data-del-receita]').forEach(btn => btn.addEventListener('click', () => {
+      p.receitas = p.receitas.filter(r => r.id !== btn.dataset.delReceita);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderAbaReceituario(el, p);
+    }));
+    document.getElementById('formReceita').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const r = { id: uid(), data: todayISO(), dentistaId: session.tipo === 'profissional' ? session.profissionalId : '', medicamento: document.getElementById('recMedicamento').value.trim(), dose: document.getElementById('recDose').value.trim(), posologia: document.getElementById('recPosologia').value.trim() };
+      p.receitas.push(r);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Receita gerada!');
+      renderAbaReceituario(el, p);
+      imprimirReceita(r, p);
+    });
+  }
+
+  function imprimirReceita(r, p) {
+    const dent = state.profissionais.find(pr => pr.id === r.dentistaId);
+    const area = document.getElementById('areaImpressaoReceita');
+    area.innerHTML = `
+      <div style="max-width:600px;margin:40px auto;font-family:'Segoe UI',Arial,sans-serif;color:#1f2430">
+        <div style="text-align:center;margin-bottom:30px">
+          <h2 style="color:#0d1b3e">${state.config.nomeNegocio}</h2>
+          <div style="font-size:13px;color:#666">Receituário Odontológico</div>
+        </div>
+        <p><strong>Paciente:</strong> ${p.nome}</p>
+        <p><strong>Data:</strong> ${formatDateBR(r.data)}</p>
+        <hr style="margin:20px 0">
+        <p style="font-size:16px;margin-bottom:8px"><strong>${r.medicamento}</strong></p>
+        <p>Dose: ${r.dose}</p>
+        <p>Posologia: ${r.posologia}</p>
+        <div style="margin-top:60px;text-align:center">
+          <div style="border-top:1px solid #333;width:280px;margin:0 auto;padding-top:6px">${dent ? dent.nome + (dent.cro ? ' — ' + dent.cro : '') : 'Dentista responsável'}</div>
+        </div>
+      </div>
+    `;
+    document.body.classList.add('modo-impressao-receita');
+    window.print();
+    setTimeout(() => document.body.classList.remove('modo-impressao-receita'), 500);
+  }
+
+  // ---------- Agendamentos ----------
+  document.getElementById('agendaData').value = todayISO();
+  function renderAgendamentos() {
+    let lista = state.agendamentos.filter(a => a.data >= todayISO());
+    if (session.tipo === 'profissional') lista = lista.filter(a => a.profissionalId === session.profissionalId);
+    else { const filtro = document.getElementById('filtroProfissional').value; if (filtro) lista = lista.filter(a => a.profissionalId === filtro); }
+    lista.sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
+    document.getElementById('listaAgendamentos').innerHTML = lista.length ? lista.map(a => {
+      const cli = state.clientes.find(c => c.id === a.clienteId);
+      const serv = state.servicos.find(s => s.id === a.servicoId);
+      const prof = state.profissionais.find(p => p.id === a.profissionalId);
+      const profTxt = session.tipo === 'admin' ? ` · ${prof ? prof.nome : 'Não atribuído'}` : '';
+      return `<div class="list-row"><span>${formatDateBR(a.data)} às ${a.hora} — ${cli ? cli.nome : 'Paciente'} (${serv ? serv.nome : 'Serviço'})${profTxt}${a.origem === 'online' ? '<span class="badge">Online</span>' : ''}</span><span style="display:flex;gap:6px;flex-shrink:0"><button class="btn gold small" data-whats-agenda="${a.id}" title="Enviar WhatsApp">🟢</button><button class="btn danger small" data-cancel-list="${a.id}">Cancelar</button></span></div>`;
+    }).join('') : '<div class="empty-msg">Nenhum agendamento futuro.</div>';
+  }
+  function renderAgendaCompleta() { renderAgendamentos(); renderDisponibilidade(); renderTimeline(); }
+  document.getElementById('filtroProfissional').addEventListener('change', renderAgendaCompleta);
+  document.getElementById('listaAgendamentos').addEventListener('click', (e) => {
+    const whatsBtn = e.target.closest('[data-whats-agenda]');
+    if (whatsBtn) {
+      const a = state.agendamentos.find(x => x.id === whatsBtn.dataset.whatsAgenda);
+      abrirModalWhatsapp(a);
+      return;
+    }
+    const id = e.target.dataset.cancelList;
+    if (!id) return;
+    if (confirm('Deseja cancelar este agendamento?')) {
+      const cancelado = state.agendamentos.find(a => a.id === id);
+      state.agendamentos = state.agendamentos.filter(a => a.id !== id);
+      save(STORAGE_KEYS.agendamentos, state.agendamentos);
+      renderAgendaCompleta();
+      renderDashboard();
+      if (cancelado && confirm('Deseja avisar o paciente pelo WhatsApp sobre o cancelamento?')) {
+        abrirModalWhatsapp(cancelado, 'cancelamento');
+      }
+    }
+  });
+  document.getElementById('formAgendamento').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const clienteId = document.getElementById('agendaCliente').value;
+    const servicoId = document.getElementById('agendaServico').value;
+    let profissionalId;
+    if (session.tipo === 'profissional') profissionalId = session.profissionalId;
+    else { profissionalId = document.getElementById('agendaProfissional').value; if (!profissionalId) { alert('Cadastre e selecione um dentista antes de agendar.'); return; } }
+    if (!clienteId) { alert('Cadastre ao menos um paciente antes de agendar.'); return; }
+    if (!servicoId) { alert('Cadastre ao menos um serviço antes de agendar.'); return; }
+    state.agendamentos.push({ id: uid(), data: document.getElementById('agendaData').value, hora: document.getElementById('agendaHora').value, clienteId, servicoId, profissionalId, origem: 'manual' });
+    save(STORAGE_KEYS.agendamentos, state.agendamentos);
+    document.getElementById('agendaHora').value = '';
+    renderAgendaCompleta();
+    renderDashboard();
+    showToast('Agendamento adicionado!');
+  });
+
+  function ensureNegocioId() { if (!state.config.negocioId) { state.config.negocioId = uid(); save(STORAGE_KEYS.config, state.config); } }
+  function getClienteLinkURL() {
+    ensureNegocioId();
+    const url = new URL('agendamento-dentista.html', window.location.href);
+    url.searchParams.set('negocio', state.config.negocioId);
+    return url.toString();
+  }
+  const modalLink = document.getElementById('modalLink');
+  document.getElementById('btnCompartilharLink').addEventListener('click', () => { document.getElementById('linkCompartilhavel').value = getClienteLinkURL(); modalLink.classList.add('open'); });
+  document.getElementById('btnFecharModalLink').addEventListener('click', () => modalLink.classList.remove('open'));
+  modalLink.addEventListener('click', (e) => { if (e.target === modalLink) modalLink.classList.remove('open'); });
+  document.getElementById('btnCopiarLink').addEventListener('click', async () => {
+    const input = document.getElementById('linkCompartilhavel');
+    input.select();
+    try { await navigator.clipboard.writeText(input.value); showToast('Link copiado!'); }
+    catch (e) { document.execCommand('copy'); showToast('Link copiado!'); }
+  });
+
+  // ---------- WhatsApp ----------
+  function linhaAgendamentoDashboard(a, tipo) {
+    const cli = state.clientes.find(c => c.id === a.clienteId);
+    const serv = state.servicos.find(s => s.id === a.servicoId);
+    return `<div class="list-row">
+      <span>${a.hora} — ${cli ? cli.nome : 'Paciente'} (${serv ? serv.nome : ''})</span>
+      <button class="btn gold small" data-whats-agenda="${a.id}" data-whats-tipo="${tipo}">🟢 WhatsApp</button>
+    </div>`;
+  }
+  document.getElementById('agendamentosHoje').addEventListener('click', whatsDashboardClick);
+  document.getElementById('agendamentosAmanha').addEventListener('click', whatsDashboardClick);
+  function whatsDashboardClick(e) {
+    const btn = e.target.closest('[data-whats-agenda]');
+    if (!btn) return;
+    const a = state.agendamentos.find(x => x.id === btn.dataset.whatsAgenda);
+    abrirModalWhatsapp(a, btn.dataset.whatsTipo);
+  }
+
+  function limparTelefoneWhats(tel) {
+    let digits = (tel || '').replace(/\D/g, '');
+    if (!digits) return '';
+    if (!digits.startsWith('55')) digits = '55' + digits;
+    return digits;
+  }
+  function montarMensagemWhatsapp(tipo, d) {
+    if (tipo === 'confirmacao') return `Olá ${d.nome}! Confirmando seu agendamento para ${d.servico} no dia ${d.data} às ${d.hora}. Qualquer dúvida estamos à disposição! 😊`;
+    if (tipo === 'lembreteAmanha') return `Olá ${d.nome}! Lembrando que amanhã você tem ${d.servico} às ${d.hora}. Te esperamos! 😊`;
+    if (tipo === 'lembreteHoje') return `Olá ${d.nome}! Hoje é o dia do seu ${d.servico} às ${d.hora}. Te esperamos! 😊`;
+    if (tipo === 'cancelamento') return `Olá ${d.nome}, precisamos cancelar seu agendamento de ${d.servico} do dia ${d.data}. Entre em contato para reagendar. 😊`;
+    if (tipo === 'posAtendimento') return `Olá ${d.nome}! Esperamos que tenha gostado do seu ${d.servico}! Seu próximo retorno recomendado é em ${d.dataRetorno}. Agende pelo link: ${d.link}`;
+    return '';
+  }
+  function tipoSugeridoPorData(dataISO) {
+    const hoje = todayISO();
+    if (dataISO === hoje) return 'lembreteHoje';
+    if (dataISO === somarDias(hoje, 1)) return 'lembreteAmanha';
+    if (dataISO < hoje) return 'posAtendimento';
+    return 'confirmacao';
+  }
+
+  let whatsAgendamentoAtual = null;
+  const modalWhatsapp = document.getElementById('modalWhatsapp');
+  function abrirModalWhatsapp(agendamento, tipoForcado) {
+    if (!agendamento) return;
+    const cli = state.clientes.find(c => c.id === agendamento.clienteId);
+    if (!cli) { alert('Paciente não encontrado.'); return; }
+    whatsAgendamentoAtual = agendamento;
+    document.getElementById('whatsCliente').value = cli.nome;
+    document.getElementById('whatsTelefone').value = cli.telefone || '';
+    document.getElementById('whatsTipo').value = tipoForcado || tipoSugeridoPorData(agendamento.data);
+    document.getElementById('whatsDataRetorno').value = somarDias(agendamento.data, 30);
+    atualizarCampoRetornoWhats();
+    atualizarMensagemWhats();
+    modalWhatsapp.classList.add('open');
+    if (!cli.telefone) showToast('Este paciente não tem telefone cadastrado. Informe antes de enviar.');
+  }
+  function atualizarCampoRetornoWhats() {
+    document.getElementById('campoWhatsRetorno').style.display = document.getElementById('whatsTipo').value === 'posAtendimento' ? 'block' : 'none';
+  }
+  function atualizarMensagemWhats() {
+    const a = whatsAgendamentoAtual;
+    if (!a) return;
+    const cli = state.clientes.find(c => c.id === a.clienteId);
+    const serv = state.servicos.find(s => s.id === a.servicoId);
+    const tipo = document.getElementById('whatsTipo').value;
+    const dados = {
+      nome: cli ? cli.nome : '',
+      servico: serv ? serv.nome : 'seu atendimento',
+      data: formatDateBR(a.data),
+      hora: a.hora,
+      dataRetorno: formatDateBR(document.getElementById('whatsDataRetorno').value),
+      link: getClienteLinkURL()
+    };
+    document.getElementById('whatsMensagem').value = montarMensagemWhatsapp(tipo, dados);
+  }
+  document.getElementById('whatsTipo').addEventListener('change', () => { atualizarCampoRetornoWhats(); atualizarMensagemWhats(); });
+  document.getElementById('whatsDataRetorno').addEventListener('change', atualizarMensagemWhats);
+  document.getElementById('btnFecharModalWhatsapp').addEventListener('click', () => modalWhatsapp.classList.remove('open'));
+  modalWhatsapp.addEventListener('click', (e) => { if (e.target === modalWhatsapp) modalWhatsapp.classList.remove('open'); });
+  document.getElementById('btnAbrirWhatsapp').addEventListener('click', () => {
+    const telefone = document.getElementById('whatsTelefone').value.trim();
+    if (!telefone) { alert('Informe o telefone do paciente para enviar a mensagem.'); return; }
+    const cli = state.clientes.find(c => c.id === whatsAgendamentoAtual.clienteId);
+    if (cli && cli.telefone !== telefone) {
+      cli.telefone = telefone;
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderClientes();
+    }
+    const digits = limparTelefoneWhats(telefone);
+    const mensagem = document.getElementById('whatsMensagem').value;
+    window.open(`https://wa.me/${digits}?text=${encodeURIComponent(mensagem)}`, '_blank');
+    modalWhatsapp.classList.remove('open');
+  });
+
+  // ---------- Disponibilidade (bloqueios + exceção do dia) ----------
+  function renderDisponibilidade() {
+    const alvo = profissionalAlvoAgenda();
+    const avisoEl = document.getElementById('disponibilidadeAlvoAviso');
+    const contEl = document.getElementById('disponibilidadeConteudo');
+    if (!alvo) { avisoEl.innerHTML = '<div class="empty-msg">Selecione um dentista no filtro acima para gerenciar bloqueios e horários especiais.</div>'; contEl.innerHTML = ''; return; }
+    const prof = state.profissionais.find(p => p.id === alvo);
+    if (!prof) { avisoEl.innerHTML = ''; contEl.innerHTML = ''; return; }
+    avisoEl.innerHTML = '';
+    const bloqueiosFuturos = (prof.bloqueios || []).filter(b => b.data >= todayISO()).sort((a, b) => (a.data + a.horaInicio).localeCompare(b.data + b.horaInicio));
+    const excecoesFuturas = Object.keys(prof.excecoesDia || {}).filter(d => d >= todayISO()).sort();
+    contEl.innerHTML = `
+      <h4 style="font-size:13px;color:var(--cor-primaria);margin:12px 0 8px">Bloquear horário pontual</h4>
+      <form id="formBloqueio">
+        <div class="form-grid">
+          <div class="field"><label>Data</label><input type="date" id="bloqData" required></div>
+          <div class="field"><label>Hora início</label><input type="time" id="bloqInicio" required></div>
+          <div class="field"><label>Hora fim</label><input type="time" id="bloqFim" required></div>
+          <div class="field"><label>Motivo</label><input type="text" id="bloqMotivo" placeholder="Ex: Reunião, Folga"></div>
+        </div>
+        <div class="btn-row"><button type="submit" class="btn small">Bloquear horário</button></div>
+      </form>
+      <div style="margin-top:10px">${bloqueiosFuturos.length ? bloqueiosFuturos.map(b => `<div class="list-row"><span>${formatDateBR(b.data)}, ${b.horaInicio} às ${b.horaFim}${b.motivo ? ' — ' + b.motivo : ''}</span><button class="btn danger small" data-del-bloqueio="${b.id}">Remover</button></div>`).join('') : '<div class="empty-msg">Nenhum bloqueio futuro.</div>'}</div>
+      <h4 style="font-size:13px;color:var(--cor-primaria);margin:20px 0 8px">Agenda personalizada para um dia específico</h4>
+      <form id="formExcecaoDia">
+        <div class="form-grid">
+          <div class="field"><label>Data</label><input type="date" id="excData" required></div>
+          <div class="field"><label class="checkbox-item" style="margin-top:8px"><input type="checkbox" id="excAtivo" checked> Atende neste dia</label></div>
+          <div class="field"><label>Início</label><input type="time" id="excInicio"></div>
+          <div class="field"><label>Fim</label><input type="time" id="excFim"></div>
+        </div>
+        <div class="btn-row"><button type="submit" class="btn small">Salvar horário do dia</button></div>
+      </form>
+      <div style="margin-top:10px">${excecoesFuturas.length ? excecoesFuturas.map(d => { const ex = prof.excecoesDia[d]; return `<div class="list-row"><span>${formatDateBR(d)} — ${ex.ativo ? `${ex.inicio} às ${ex.fim}` : 'Não atende (folga)'}</span><button class="btn danger small" data-del-excecao="${d}">Remover</button></div>`; }).join('') : '<div class="empty-msg">Nenhuma agenda personalizada futura.</div>'}</div>
+    `;
+    document.getElementById('bloqData').value = todayISO();
+    document.getElementById('excData').value = todayISO();
+    document.getElementById('formBloqueio').addEventListener('submit', (e) => {
+      e.preventDefault();
+      prof.bloqueios = prof.bloqueios || [];
+      prof.bloqueios.push({ id: uid(), data: document.getElementById('bloqData').value, horaInicio: document.getElementById('bloqInicio').value, horaFim: document.getElementById('bloqFim').value, motivo: document.getElementById('bloqMotivo').value.trim() });
+      save(STORAGE_KEYS.profissionais, state.profissionais);
+      renderDisponibilidade(); renderTimeline();
+      showToast('Horário bloqueado!');
+    });
+    contEl.querySelectorAll('[data-del-bloqueio]').forEach(btn => btn.addEventListener('click', () => {
+      prof.bloqueios = prof.bloqueios.filter(b => b.id !== btn.dataset.delBloqueio);
+      save(STORAGE_KEYS.profissionais, state.profissionais);
+      renderDisponibilidade(); renderTimeline();
+    }));
+    document.getElementById('formExcecaoDia').addEventListener('submit', (e) => {
+      e.preventDefault();
+      prof.excecoesDia = prof.excecoesDia || {};
+      const ativo = document.getElementById('excAtivo').checked;
+      const data = document.getElementById('excData').value;
+      if (ativo && (!document.getElementById('excInicio').value || !document.getElementById('excFim').value)) { alert('Informe o horário de início e fim para este dia.'); return; }
+      prof.excecoesDia[data] = { ativo, inicio: document.getElementById('excInicio').value, fim: document.getElementById('excFim').value };
+      save(STORAGE_KEYS.profissionais, state.profissionais);
+      renderDisponibilidade(); renderTimeline();
+      showToast('Agenda do dia salva!');
+    });
+    contEl.querySelectorAll('[data-del-excecao]').forEach(btn => btn.addEventListener('click', () => {
+      delete prof.excecoesDia[btn.dataset.delExcecao];
+      save(STORAGE_KEYS.profissionais, state.profissionais);
+      renderDisponibilidade(); renderTimeline();
+    }));
+  }
+
+  // ---------- Visão da Agenda (timeline) ----------
+  document.getElementById('btnModoDia').addEventListener('click', () => { timelineModo = 'dia'; renderTimeline(); });
+  document.getElementById('btnModoSemana').addEventListener('click', () => { timelineModo = 'semana'; renderTimeline(); });
+  function renderTimelineNav() {
+    document.getElementById('btnModoDia').classList.toggle('gold', timelineModo === 'dia');
+    document.getElementById('btnModoSemana').classList.toggle('gold', timelineModo === 'semana');
+    const nav = document.getElementById('timelineNav');
+    if (timelineModo === 'dia') {
+      nav.innerHTML = `<button type="button" class="btn secondary small" id="btnDiaAnterior">◀</button><input type="date" id="timelineDataInput" value="${timelineData}" style="max-width:170px"><button type="button" class="btn secondary small" id="btnDiaProximo">▶</button>`;
+      document.getElementById('btnDiaAnterior').addEventListener('click', () => { timelineData = somarDias(timelineData, -1); renderTimeline(); });
+      document.getElementById('btnDiaProximo').addEventListener('click', () => { timelineData = somarDias(timelineData, 1); renderTimeline(); });
+      document.getElementById('timelineDataInput').addEventListener('change', (e) => { timelineData = e.target.value; renderTimeline(); });
+    } else {
+      const inicioSemana = inicioDaSemana(timelineData), fimSemana = somarDias(inicioSemana, 6);
+      nav.innerHTML = `<button type="button" class="btn secondary small" id="btnSemanaAnterior">◀</button><span style="font-size:13px;color:var(--cor-primaria);font-weight:600">${formatDateBR(inicioSemana)} — ${formatDateBR(fimSemana)}</span><button type="button" class="btn secondary small" id="btnSemanaProxima">▶</button>`;
+      document.getElementById('btnSemanaAnterior').addEventListener('click', () => { timelineData = somarDias(timelineData, -7); renderTimeline(); });
+      document.getElementById('btnSemanaProxima').addEventListener('click', () => { timelineData = somarDias(timelineData, 7); renderTimeline(); });
+    }
+  }
+  function renderTimelineDia(profissionalId, dataISO) {
+    const janelas = janelaDoDia(profissionalId, dataISO);
+    if (!janelas) return '<div class="empty-msg">Dentista não atende neste dia.</div>';
+    const intervalo = state.config.intervaloGrade || 30;
+    const linhas = [];
+    janelas.forEach(j => { for (let t = j.inicio; t < j.fim; t += intervalo) linhas.push(t); });
+    linhas.sort((a, b) => a - b);
+    if (!linhas.length) return '<div class="empty-msg">Nenhum horário configurado para este dia.</div>';
+    return linhas.map(t => {
+      const status = statusDoSlot(profissionalId, dataISO, t, intervalo);
+      const cor = status.tipo === 'ocupado' ? '#c9701a' : (status.tipo === 'bloqueado' ? '#9aa0ab' : '#1a7d3a');
+      const corFundo = status.tipo === 'ocupado' ? 'rgba(201,112,26,0.12)' : (status.tipo === 'bloqueado' ? 'rgba(154,160,171,0.15)' : 'rgba(26,125,58,0.1)');
+      return `<div style="display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:6px;background:${corFundo};margin-bottom:4px"><strong style="min-width:48px;color:var(--cor-primaria);font-size:12.5px">${minParaHora(t)}</strong><span style="width:8px;height:8px;border-radius:50%;background:${cor};flex-shrink:0"></span><span style="font-size:12.5px;color:#4b5162">${status.texto}</span></div>`;
+    }).join('');
+  }
+  function renderTimelineDiaCompacto(profissionalId, dataISO) {
+    const janelas = janelaDoDia(profissionalId, dataISO);
+    if (!janelas) return '<div style="font-size:10.5px;color:#9aa0ab;text-align:center;padding:6px 0">Fechado</div>';
+    const intervalo = state.config.intervaloGrade || 30;
+    const linhas = [];
+    janelas.forEach(j => { for (let t = j.inicio; t < j.fim; t += intervalo) linhas.push(t); });
+    linhas.sort((a, b) => a - b);
+    if (!linhas.length) return '<div style="font-size:10.5px;color:#9aa0ab;text-align:center;padding:6px 0">Fechado</div>';
+    return linhas.map(t => {
+      const status = statusDoSlot(profissionalId, dataISO, t, intervalo);
+      const cor = status.tipo === 'ocupado' ? '#c9701a' : (status.tipo === 'bloqueado' ? '#9aa0ab' : '#1a7d3a');
+      return `<div title="${minParaHora(t)} — ${status.texto}" style="height:14px;border-radius:3px;background:${cor};margin-bottom:2px"></div>`;
+    }).join('');
+  }
+  function renderTimeline() {
+    renderTimelineNav();
+    const alvo = profissionalAlvoAgenda();
+    const cont = document.getElementById('timelineConteudo');
+    if (!alvo) { cont.innerHTML = '<div class="empty-msg">Selecione um dentista para visualizar a agenda.</div>'; return; }
+    if (timelineModo === 'dia') { cont.innerHTML = renderTimelineDia(alvo, timelineData); return; }
+    const inicioSemana = inicioDaSemana(timelineData);
+    const dias = []; for (let i = 0; i < 7; i++) dias.push(somarDias(inicioSemana, i));
+    const nomesDias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    cont.innerHTML = `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;overflow-x:auto">${dias.map(d => `<div><div style="font-size:11px;color:#6b7280;text-align:center;margin-bottom:6px;font-weight:600">${nomesDias[new Date(d + 'T00:00:00').getDay()]}<br>${formatDateBR(d).slice(0, 5)}</div>${renderTimelineDiaCompacto(alvo, d)}</div>`).join('')}</div>`;
+  }
+
+  // ---------- Galeria ----------
+  document.getElementById('galData').value = todayISO();
+  let pendingGalAntes = '', pendingGalDepois = '', pendingGalUnica = '';
+  document.getElementById('galAntes').addEventListener('change', async (e) => { pendingGalAntes = await fileToBase64(e.target.files[0]); });
+  document.getElementById('galDepois').addEventListener('change', async (e) => { pendingGalDepois = await fileToBase64(e.target.files[0]); });
+  document.getElementById('galUnica').addEventListener('change', async (e) => { pendingGalUnica = await fileToBase64(e.target.files[0]); });
+
+  function atualizarCamposGaleria() {
+    const cat = document.getElementById('galCategoria').value;
+    document.getElementById('camposAntesDepois').style.display = cat === 'antes-depois' ? 'grid' : 'none';
+    document.getElementById('camposUnico').style.display = cat === 'antes-depois' ? 'none' : 'grid';
+    document.getElementById('campoGalRegiao').style.display = cat === 'intrabucal' ? 'block' : 'none';
+    if (cat === 'intrabucal') document.getElementById('galRegiao').innerHTML = REGIOES_INTRABUCAL.map(r => `<option value="${r}">${r}</option>`).join('');
+  }
+  document.getElementById('galCategoria').addEventListener('change', atualizarCamposGaleria);
+
+  document.getElementById('formGaleria').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const clienteId = document.getElementById('galCliente').value;
+    if (!clienteId) { alert('Selecione um paciente.'); return; }
+    const categoria = document.getElementById('galCategoria').value;
+    if (categoria === 'antes-depois' && (!pendingGalAntes || !pendingGalDepois)) { alert('Envie as duas fotos (antes e depois).'); return; }
+    if (categoria !== 'antes-depois' && !pendingGalUnica) { alert('Envie a foto.'); return; }
+    state.galeria.push({
+      id: uid(), clienteId, profissionalId: session.tipo === 'profissional' ? session.profissionalId : '',
+      categoria, regiao: categoria === 'intrabucal' ? document.getElementById('galRegiao').value : '',
+      data: document.getElementById('galData').value,
+      fotoAntes: categoria === 'antes-depois' ? pendingGalAntes : '', fotoDepois: categoria === 'antes-depois' ? pendingGalDepois : '',
+      foto: categoria !== 'antes-depois' ? pendingGalUnica : '',
+      observacao: document.getElementById('galObs').value.trim()
+    });
+    save(STORAGE_KEYS.galeria, state.galeria);
+    e.target.reset();
+    document.getElementById('galData').value = todayISO();
+    atualizarCamposGaleria();
+    pendingGalAntes = ''; pendingGalDepois = ''; pendingGalUnica = '';
+    renderGaleria();
+    showToast('Registro salvo!');
+  });
+
+  function populateTodosSelects() {
+    const clientesOptions = state.clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('') || '<option value="">Cadastre um paciente</option>';
+    document.getElementById('agendaCliente').innerHTML = clientesOptions;
+    document.getElementById('galCliente').innerHTML = clientesOptions;
+    const servicosOptions = state.servicos.map(s => `<option value="${s.id}">${s.nome}</option>`).join('') || '<option value="">Cadastre um serviço</option>';
+    document.getElementById('agendaServico').innerHTML = servicosOptions;
+    const profissionaisOptions = state.profissionais.map(p => `<option value="${p.id}">${p.nome}</option>`).join('') || '<option value="">Cadastre um dentista</option>';
+    document.getElementById('agendaProfissional').innerHTML = profissionaisOptions;
+    document.getElementById('filtroProfissional').innerHTML = '<option value="">Todos os dentistas</option>' + profissionaisOptions;
+    atualizarCamposGaleria();
+  }
+
+  function renderGaleria() {
+    const container = document.getElementById('galeriaLista');
+    let entradas = state.galeria;
+    if (session.tipo === 'profissional') entradas = entradas.filter(g => g.profissionalId === session.profissionalId);
+    if (!entradas.length) { container.innerHTML = '<div class="empty-msg">Nenhum registro de galeria ainda.</div>'; return; }
+    const porCliente = {};
+    entradas.forEach(g => { (porCliente[g.clienteId] = porCliente[g.clienteId] || []).push(g); });
+    container.innerHTML = Object.keys(porCliente).map(clienteId => {
+      const cli = state.clientes.find(c => c.id === clienteId);
+      const registros = porCliente[clienteId];
+      const porGrupo = {};
+      registros.forEach(g => {
+        const chave = g.categoria === 'antes-depois' ? 'Antes/Depois de Tratamento' : (g.categoria === 'radiografia' ? 'Radiografias' : `Fotos Intrabucais — ${g.regiao}`);
+        (porGrupo[chave] = porGrupo[chave] || []).push(g);
+      });
+      return `
+        <div class="galeria-cliente-block card">
+          <h3>${cli ? cli.nome : 'Paciente removido'}</h3>
+          ${Object.keys(porGrupo).map(chave => `
+            <div class="galeria-regiao-block">
+              <h4>${chave}</h4>
+              <div class="items-grid">
+                ${porGrupo[chave].sort((a, b) => b.data.localeCompare(a.data)).map(g => g.categoria === 'antes-depois' ? `
+                  <div class="item-card">
+                    <div class="before-after" style="padding:10px">
+                      <div class="ba-item"><img src="${g.fotoAntes}"><span>Antes</span></div>
+                      <div class="ba-item"><img src="${g.fotoDepois}"><span>Depois</span></div>
+                    </div>
+                    <div class="body"><div class="meta">${formatDateBR(g.data)}</div>${g.observacao ? `<div class="meta">${g.observacao}</div>` : ''}<div class="actions"><button class="btn danger small" data-del-gal="${g.id}">Excluir</button></div></div>
+                  </div>
+                ` : `
+                  <div class="item-card">
+                    <img class="thumb" src="${g.foto}">
+                    <div class="body"><div class="meta">${formatDateBR(g.data)}</div>${g.observacao ? `<div class="meta">${g.observacao}</div>` : ''}<div class="actions"><button class="btn danger small" data-del-gal="${g.id}">Excluir</button></div></div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }).join('');
+  }
+  document.getElementById('galeriaLista').addEventListener('click', (e) => {
+    const id = e.target.dataset.delGal;
+    if (!id) return;
+    state.galeria = state.galeria.filter(g => g.id !== id);
+    save(STORAGE_KEYS.galeria, state.galeria);
+    renderGaleria();
+  });
+
+  // ---------- Financeiro ----------
+  document.getElementById('finData').value = todayISO();
+  const hojeParaPeriodo = todayISO();
+  document.getElementById('finPeriodoInicio').value = hojeParaPeriodo.slice(0, 8) + '01';
+  document.getElementById('finPeriodoFim').value = hojeParaPeriodo;
+
+  document.getElementById('finTipo').addEventListener('change', () => {
+    const receita = document.getElementById('finTipo').value === 'receita';
+    document.getElementById('campoFinOrigem').style.display = receita ? 'block' : 'none';
+    document.getElementById('campoFinConvenio').style.display = receita && document.getElementById('finOrigem').value === 'convenio' ? 'block' : 'none';
+  });
+  document.getElementById('finOrigem').addEventListener('change', () => {
+    document.getElementById('campoFinConvenio').style.display = document.getElementById('finOrigem').value === 'convenio' ? 'block' : 'none';
+  });
+
+  document.getElementById('formFinanceiro').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const tipo = document.getElementById('finTipo').value;
+    state.financeiro.push({
+      id: uid(), tipo, descricao: document.getElementById('finDescricao').value.trim(),
+      valor: parseFloat(document.getElementById('finValor').value), data: document.getElementById('finData').value,
+      origem: tipo === 'receita' ? document.getElementById('finOrigem').value : '',
+      convenioNome: tipo === 'receita' && document.getElementById('finOrigem').value === 'convenio' ? document.getElementById('finConvenioNome').value.trim() : ''
+    });
+    save(STORAGE_KEYS.financeiro, state.financeiro);
+    e.target.reset();
+    document.getElementById('finData').value = todayISO();
+    document.getElementById('campoFinOrigem').style.display = 'block';
+    document.getElementById('campoFinConvenio').style.display = 'none';
+    renderFinanceiro();
+    renderDashboard();
+    showToast('Lançamento adicionado!');
+  });
+
+  function renderFinanceiro() {
+    const receitas = state.financeiro.filter(f => f.tipo === 'receita').reduce((s, f) => s + Number(f.valor), 0);
+    const despesas = state.financeiro.filter(f => f.tipo === 'despesa').reduce((s, f) => s + Number(f.valor), 0);
+    document.getElementById('finReceitas').textContent = formatMoney(receitas);
+    document.getElementById('finDespesas').textContent = formatMoney(despesas);
+    document.getElementById('finSaldo').textContent = formatMoney(receitas - despesas);
+    const tbody = document.querySelector('#finTabela tbody');
+    const ordenado = [...state.financeiro].sort((a, b) => b.data.localeCompare(a.data));
+    tbody.innerHTML = ordenado.length ? ordenado.map(f => `
+      <tr>
+        <td>${formatDateBR(f.data)}</td><td>${f.descricao}</td>
+        <td class="${f.tipo}">${f.tipo === 'receita' ? 'Receita' : 'Despesa'}</td>
+        <td>${f.tipo === 'receita' ? (f.origem === 'convenio' ? `Convênio${f.convenioNome ? ' (' + f.convenioNome + ')' : ''}` : 'Particular') : '—'}</td>
+        <td class="${f.tipo}">${formatMoney(f.valor)}</td>
+        <td><button class="btn danger small" data-del-fin="${f.id}">Excluir</button></td>
+      </tr>
+    `).join('') : '<tr><td colspan="6" class="empty-msg">Nenhum lançamento ainda.</td></tr>';
+    aplicarFiltroPeriodo();
+  }
+  document.querySelector('#finTabela tbody').addEventListener('click', (e) => {
+    const id = e.target.dataset.delFin;
+    if (!id) return;
+    state.financeiro = state.financeiro.filter(f => f.id !== id);
+    save(STORAGE_KEYS.financeiro, state.financeiro);
+    renderFinanceiro();
+    renderDashboard();
+  });
+
+  function aplicarFiltroPeriodo() {
+    const ini = document.getElementById('finPeriodoInicio').value;
+    const fim = document.getElementById('finPeriodoFim').value;
+    if (!ini || !fim) { document.getElementById('resumoPeriodo').innerHTML = ''; return; }
+    const noPeriodo = state.financeiro.filter(f => f.data >= ini && f.data <= fim);
+    const receitas = noPeriodo.filter(f => f.tipo === 'receita');
+    const totalReceitas = receitas.reduce((s, f) => s + Number(f.valor), 0);
+    const totalDespesas = noPeriodo.filter(f => f.tipo === 'despesa').reduce((s, f) => s + Number(f.valor), 0);
+    const particular = receitas.filter(f => f.origem !== 'convenio').reduce((s, f) => s + Number(f.valor), 0);
+    const convenio = receitas.filter(f => f.origem === 'convenio').reduce((s, f) => s + Number(f.valor), 0);
+    document.getElementById('resumoPeriodo').innerHTML = `
+      <div class="list-row"><span>Receitas no período</span><span style="color:#1a7d3a;font-weight:600">${formatMoney(totalReceitas)}</span></div>
+      <div class="list-row"><span>&nbsp;&nbsp;Particular</span><span>${formatMoney(particular)}</span></div>
+      <div class="list-row"><span>&nbsp;&nbsp;Convênio</span><span>${formatMoney(convenio)}</span></div>
+      <div class="list-row"><span>Despesas no período</span><span style="color:#b3261e;font-weight:600">${formatMoney(totalDespesas)}</span></div>
+      <div class="list-row"><span>Saldo do período</span><span style="font-weight:700">${formatMoney(totalReceitas - totalDespesas)}</span></div>
+    `;
+  }
+  document.getElementById('btnFiltrarPeriodo').addEventListener('click', aplicarFiltroPeriodo);
+
+  function renderParcelasGlobais() {
+    const linhas = [];
+    state.clientes.forEach(p => {
+      (p.planoTratamento.parcelas || []).forEach(pc => {
+        linhas.push({ pacienteId: p.id, pacienteNome: p.nome, numero: pc.numero, total: p.planoTratamento.parcelas.length, valor: pc.valor, pago: pc.pago, dataPagamento: pc.dataPagamento });
+      });
+    });
+    linhas.sort((a, b) => (a.pago === b.pago ? 0 : (a.pago ? 1 : -1)));
+    const tbody = document.querySelector('#tabelaParcelasGlobais tbody');
+    tbody.innerHTML = linhas.length ? linhas.map(l => `
+      <tr>
+        <td>${l.pacienteNome}</td><td>${l.numero}/${l.total}</td><td>${formatMoney(l.valor)}</td>
+        <td>${l.pago ? '<span style="color:#1a7d3a;font-weight:600">Paga</span>' : '<span style="color:#b3261e;font-weight:600">Pendente</span>'}</td>
+        <td>${l.dataPagamento ? formatDateBR(l.dataPagamento) : '—'}</td>
+        <td><button class="btn ${l.pago ? 'secondary' : 'gold'} small" data-toggle-parcela-global data-paciente="${l.pacienteId}" data-numero="${l.numero}">${l.pago ? 'Desfazer' : 'Marcar paga'}</button></td>
+      </tr>
+    `).join('') : '<tr><td colspan="6" class="empty-msg">Nenhuma parcela gerada ainda.</td></tr>';
+    tbody.querySelectorAll('[data-toggle-parcela-global]').forEach(btn => btn.addEventListener('click', () => {
+      const p = state.clientes.find(x => x.id === btn.dataset.paciente);
+      const pc = p.planoTratamento.parcelas.find(x => String(x.numero) === btn.dataset.numero);
+      pc.pago = !pc.pago; pc.dataPagamento = pc.pago ? todayISO() : '';
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderParcelasGlobais();
+    }));
+  }
+
+  // ---------- Autenticação / Login ----------
+  function applyLoginBranding() {
+    const wrap = document.getElementById('loginLogoWrap');
+    wrap.innerHTML = state.config.logo ? `<img src="${state.config.logo}" alt="">` : `<div class="logo-placeholder">${(state.config.nomeNegocio || 'C').trim().charAt(0).toUpperCase()}</div>`;
+    document.getElementById('loginNomeNegocio').textContent = state.config.nomeNegocio || 'Clínica Odontológica';
+    document.documentElement.style.setProperty('--cor-primaria', state.config.corPrimaria || DEFAULT_CONFIG.corPrimaria);
+    document.documentElement.style.setProperty('--cor-secundaria', state.config.corSecundaria || DEFAULT_CONFIG.corSecundaria);
+  }
+  function renderSetupForm() {
+    const box = document.getElementById('loginConteudo');
+    box.innerHTML = `
+      <p style="font-size:13px;color:#6b7280;margin-bottom:16px">Primeiro acesso — crie a senha do administrador.</p>
+      <form id="formSetupAdmin">
+        <div class="field"><label>Nome da clínica</label><input type="text" id="setupNomeNegocio" value="${state.config.nomeNegocio || 'Clínica Odontológica'}"></div>
+        <div class="field"><label>Crie uma senha</label><input type="password" id="setupSenha" required></div>
+        <div class="field"><label>Confirme a senha</label><input type="password" id="setupSenhaConfirma" required></div>
+        <div class="error-msg" id="setupErro">As senhas não coincidem.</div>
+        <button type="submit" class="btn" style="width:100%;margin-top:8px">Criar conta de administrador</button>
+      </form>
+    `;
+    document.getElementById('formSetupAdmin').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const senha = document.getElementById('setupSenha').value;
+      const confirma = document.getElementById('setupSenhaConfirma').value;
+      if (!senha || senha !== confirma) { document.getElementById('setupErro').classList.add('show'); return; }
+      state.config.nomeNegocio = document.getElementById('setupNomeNegocio').value.trim() || 'Clínica Odontológica';
+      state.config.senhaAdmin = senha;
+      state.config.codigoMaster = gerarCodigoMaster();
+      save(STORAGE_KEYS.config, state.config);
+      renderCodigoMasterReveal();
+    });
+  }
+  function renderCodigoMasterReveal() {
+    const box = document.getElementById('loginConteudo');
+    box.innerHTML = `
+      <p style="font-size:13px;color:#6b7280;margin-bottom:10px">Conta criada! Guarde o código master abaixo — ele permite redefinir senhas esquecidas.</p>
+      <div class="master-code-box">Código master<strong>${state.config.codigoMaster}</strong></div>
+      <button type="button" class="btn" id="btnContinuarSetup" style="width:100%;margin-top:16px">Continuar</button>
+    `;
+    document.getElementById('btnContinuarSetup').addEventListener('click', () => { save(STORAGE_KEYS.sessao, { tipo: 'admin' }); location.reload(); });
+  }
+  function renderLoginForm() {
+    const box = document.getElementById('loginConteudo');
+    box.innerHTML = `
+      <form id="formLogin">
+        <div class="field"><label>Senha</label><input type="password" id="loginSenha" required autofocus></div>
+        <div class="error-msg" id="loginErro">Senha incorreta.</div>
+        <button type="submit" class="btn" style="width:100%;margin-top:8px">Entrar</button>
+      </form>
+      <button type="button" class="link-btn" id="btnEsqueciSenha">Esqueci minha senha</button>
+    `;
+    document.getElementById('btnEsqueciSenha').addEventListener('click', abrirModalEsqueciSenha);
+    document.getElementById('formLogin').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const senha = document.getElementById('loginSenha').value;
+      if (senha && senha === state.config.senhaAdmin) { save(STORAGE_KEYS.sessao, { tipo: 'admin' }); location.reload(); return; }
+      const prof = state.profissionais.find(p => p.senha === senha);
+      if (prof) { save(STORAGE_KEYS.sessao, { tipo: 'profissional', profissionalId: prof.id }); location.reload(); return; }
+      document.getElementById('loginErro').classList.add('show');
+    });
+  }
+  const modalEsqueci = document.getElementById('modalEsqueciSenha');
+  function abrirModalEsqueciSenha() {
+    const sel = document.getElementById('recAlvo');
+    sel.innerHTML = '<option value="admin">Dono / Administrador</option>' + state.profissionais.map(p => `<option value="${p.id}">${p.nome} (Dentista)</option>`).join('');
+    document.getElementById('recErro').style.display = 'none';
+    document.getElementById('formEsqueciSenha').reset();
+    modalEsqueci.classList.add('open');
+  }
+  document.getElementById('btnFecharModalEsqueci').addEventListener('click', () => modalEsqueci.classList.remove('open'));
+  modalEsqueci.addEventListener('click', (e) => { if (e.target === modalEsqueci) modalEsqueci.classList.remove('open'); });
+  document.getElementById('formEsqueciSenha').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const codigo = document.getElementById('recCodigoMaster').value.trim();
+    const erroEl = document.getElementById('recErro');
+    if (!state.config.codigoMaster || codigo.toUpperCase() !== state.config.codigoMaster.toUpperCase()) { erroEl.style.display = 'block'; return; }
+    const alvo = document.getElementById('recAlvo').value;
+    const novaSenha = document.getElementById('recNovaSenha').value;
+    if (alvo === 'admin') { state.config.senhaAdmin = novaSenha; save(STORAGE_KEYS.config, state.config); }
+    else { const p = state.profissionais.find(x => x.id === alvo); if (p) { p.senha = novaSenha; save(STORAGE_KEYS.profissionais, state.profissionais); } }
+    modalEsqueci.classList.remove('open');
+    showToast('Senha redefinida! Faça login com a nova senha.');
+  });
+
+  function applyRoleRestrictions() {
+    if (session.tipo === 'profissional') {
+      document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+      document.getElementById('campoAgendaProfissional').style.display = 'none';
+      document.getElementById('agendaProfissional').required = false;
+      document.querySelector('button[data-page="agendamentos"] .menu-label').textContent = 'Minha Agenda';
+      document.querySelector('button[data-page="clientes"] .menu-label').textContent = 'Meus Pacientes';
+      document.querySelector('button[data-page="galeria"] .menu-label').textContent = 'Galeria';
+      document.getElementById('agendaPageTitle').textContent = 'Minha Agenda';
+      document.getElementById('agendaPageSub').textContent = 'Seus horários agendados';
+      document.getElementById('clientesPageTitle').textContent = 'Meus Pacientes';
+      document.getElementById('clientesPageSub').textContent = 'Pacientes que você atendeu — ficha completa e prontuário';
+      document.getElementById('galeriaPageTitle').textContent = 'Galeria';
+      document.getElementById('galeriaPageSub').textContent = 'Fotos e radiografias dos seus pacientes';
+    }
+  }
+  function renderUserFooter() {
+    const el = document.getElementById('sidebarFooter');
+    let nome = 'Administrador', cargo = 'Dono / Admin';
+    if (session.tipo === 'profissional') {
+      const p = state.profissionais.find(x => x.id === session.profissionalId);
+      nome = p ? p.nome : 'Dentista';
+      cargo = p && p.especialidade ? p.especialidade : 'Dentista';
+    }
+    el.innerHTML = `<div class="user-footer"><div><div class="nome">${nome}</div><div class="cargo">${cargo}</div></div><button class="btn-sair" id="btnSair">Sair</button></div>`;
+    document.getElementById('btnSair').addEventListener('click', () => { if (confirm('Deseja sair?')) { localStorage.removeItem(STORAGE_KEYS.sessao); location.reload(); } });
+  }
+
+  function iniciarApp() {
+    document.getElementById('telaAtivacao').style.display = 'none';
+    document.getElementById('telaLogin').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'flex';
+    applyConfig();
+    applyRoleRestrictions();
+    renderUserFooter();
+    populateTodosSelects();
+    renderServicos();
+    renderProfissionais();
+    renderClientes();
+    renderAgendaCompleta();
+    renderGaleria();
+    renderFinanceiro();
+    renderParcelasGlobais();
+    renderDashboard();
+    verificarBannerRenovacao(licencaAtiva);
+    goToPage(session.tipo === 'admin' ? 'dashboard' : 'agendamentos');
+  }
+
+  function iniciar() {
+    applyLoginBranding();
+    if (!state.config.senhaAdmin) { renderSetupForm(); return; }
+    const sessaoSalva = load(STORAGE_KEYS.sessao, null);
+    const valida = sessaoSalva && (sessaoSalva.tipo === 'admin' || (sessaoSalva.tipo === 'profissional' && state.profissionais.some(p => p.id === sessaoSalva.profissionalId)));
+    if (valida) { session = sessaoSalva; iniciarApp(); }
+    else { localStorage.removeItem(STORAGE_KEYS.sessao); renderLoginForm(); }
+  }
+
+  // ---------- Licenciamento (ativação via admin-jv.html) ----------
+  function obterLicencasCompartilhadas() { return load(LICENCAS_SHARED_KEY, []); }
+  function obterConfigJvDatalab() { return load(JV_CONFIG_KEY, { nomeEmpresa: 'JV Datalab', whatsappSuporte: '' }); }
+  function validarCodigoAtivacao(codigo) {
+    const lic = obterLicencasCompartilhadas().find(l => l.codigo === (codigo || '').trim().toUpperCase());
+    if (!lic) return { ok: false, motivo: 'invalido' };
+    if (!ACCEPTED_SEGMENTOS.includes(lic.segmento)) return { ok: false, motivo: 'invalido' };
+    if (lic.dataVencimento < todayISO()) return { ok: false, motivo: 'expirado', licenca: lic };
+    return { ok: true, licenca: lic };
+  }
+  function licencaAtualFresca() {
+    const salva = load(STORAGE_KEYS.licenca, null);
+    if (!salva || !salva.codigo) return null;
+    return obterLicencasCompartilhadas().find(l => l.codigo === salva.codigo) || null;
+  }
+  function abrirWhatsSuporte(mensagemExtra) {
+    const cfg = obterConfigJvDatalab();
+    const numero = limparTelefoneWhats(cfg.whatsappSuporte || '');
+    if (!numero) { alert('Número de suporte não configurado. Entre em contato com a JV Datalab.'); return; }
+    const msg = mensagemExtra || 'Olá! Preciso de ajuda com meu sistema.';
+    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`, '_blank');
+  }
+  function verificarBannerRenovacao(licenca) {
+    const banner = document.getElementById('bannerRenovacao');
+    if (!licenca) { banner.style.display = 'none'; return; }
+    const hoje = todayISO();
+    const dias = Math.round((new Date(licenca.dataVencimento + 'T00:00:00') - new Date(hoje + 'T00:00:00')) / 86400000);
+    if (dias >= 0 && dias <= 7) {
+      banner.style.display = 'block';
+      banner.innerHTML = `⚠️ Sua assinatura vence em ${dias === 0 ? 'hoje' : dias + ' dia(s)'}. Renove para não perder o acesso! <button type="button" id="btnRenovarBanner" style="margin-left:10px;background:#3a2e00;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600">Renovar agora</button>`;
+      document.getElementById('btnRenovarBanner').addEventListener('click', () => abrirWhatsSuporte('Olá! Gostaria de renovar minha assinatura.'));
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+  function abrirModalLimite(licenca) {
+    document.getElementById('limitePlanoTexto').textContent = `Você atingiu o limite de ${licenca.limiteProfissionais} profissionais do plano ${licenca.plano}. Fale com a JV Datalab para fazer upgrade!`;
+    document.getElementById('modalLimitePlano').classList.add('open');
+  }
+  document.getElementById('btnFecharModalLimite').addEventListener('click', () => document.getElementById('modalLimitePlano').classList.remove('open'));
+  document.getElementById('btnWhatsLimite').addEventListener('click', () => abrirWhatsSuporte('Olá! Gostaria de aumentar o limite de profissionais do meu plano.'));
+
+  function mostrarTelaAtivacao(erro) {
+    document.getElementById('telaAtivacao').style.display = 'flex';
+    document.getElementById('telaLogin').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'none';
+    document.getElementById('ativacaoConteudo').innerHTML = `
+      <p style="font-size:13px;color:#6b7280;margin-bottom:16px">Digite o código de ativação que você recebeu para liberar o sistema.</p>
+      <form id="formAtivacao">
+        <div class="field"><label>Código de ativação</label><input type="text" id="inputCodigoAtivacao" placeholder="JV-2026-DEN-XXXX" required style="text-transform:uppercase"></div>
+        <div class="error-msg ${erro ? 'show' : ''}" id="ativacaoErro">${erro || 'Código inválido.'}</div>
+        <button type="submit" class="btn" style="width:100%;margin-top:8px">Ativar sistema</button>
+      </form>
+    `;
+    document.getElementById('formAtivacao').addEventListener('submit', (e) => {
+      e.preventDefault();
+      tentarAtivarCodigo(document.getElementById('inputCodigoAtivacao').value.trim().toUpperCase());
+    });
+  }
+  function mostrarTelaExpirada() {
+    document.getElementById('telaAtivacao').style.display = 'flex';
+    document.getElementById('telaLogin').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'none';
+    const cfg = obterConfigJvDatalab();
+    document.getElementById('ativacaoConteudo').innerHTML = `
+      <div class="master-code-box" style="text-align:center">
+        <p style="margin-bottom:6px;font-weight:600;color:var(--cor-primaria)">Sua assinatura venceu.</p>
+        <p style="font-size:12.5px;color:#6b7280">Entre em contato com ${cfg.nomeEmpresa || 'a JV Datalab'} para renovar e continuar usando o sistema.</p>
+      </div>
+      <button type="button" class="btn" id="btnWhatsExpirado" style="width:100%;margin-top:14px">🟢 Falar no WhatsApp</button>
+    `;
+    document.getElementById('btnWhatsExpirado').addEventListener('click', () => abrirWhatsSuporte('Olá! Minha assinatura do sistema venceu e gostaria de renovar.'));
+  }
+  function tentarAtivarCodigo(codigo) {
+    const resultado = validarCodigoAtivacao(codigo);
+    if (!resultado.ok) {
+      if (resultado.motivo === 'expirado') { mostrarTelaExpirada(); return; }
+      mostrarTelaAtivacao('Código inválido. Verifique e tente novamente, ou entre em contato com a JV Datalab.');
+      return;
+    }
+    save(STORAGE_KEYS.licenca, { codigo: resultado.licenca.codigo });
+    licencaAtiva = resultado.licenca;
+    iniciar();
+  }
+  function iniciarComLicenca() {
+    const licencaSalva = load(STORAGE_KEYS.licenca, null);
+    const codigoUrl = new URLSearchParams(window.location.search).get('cod');
+    if (!licencaSalva && codigoUrl) { tentarAtivarCodigo(codigoUrl); return; }
+    if (!licencaSalva) { mostrarTelaAtivacao(); return; }
+    const resultado = validarCodigoAtivacao(licencaSalva.codigo);
+    if (!resultado.ok) {
+      if (resultado.motivo === 'expirado') { mostrarTelaExpirada(); return; }
+      mostrarTelaAtivacao('Código inválido. Entre em contato com a JV Datalab.');
+      return;
+    }
+    licencaAtiva = resultado.licenca;
+    iniciar();
+  }
+
+  iniciarComLicenca();
+})();
+</script>
+</body>
+</html>
