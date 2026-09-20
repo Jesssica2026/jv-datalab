@@ -214,6 +214,86 @@
     .topbar { display: flex; }
     .content { padding: 18px 14px; }
   }
+
+  /* Backup e restauração */
+  .bk-status { font-size: 13.5px; padding: 10px 12px; border-radius: 8px; background: #f0f1f5; margin-bottom: 14px; }
+  .bk-status.alerta { background: #fdeaea; color: #8a1a14; font-weight: 600; }
+  .bk-cats { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 8px; margin: 10px 0 14px; }
+  .bk-scroll { overflow-x: auto; }
+  .bk-erro { margin-top: 12px; padding: 10px 12px; border-radius: 8px; background: #fdeaea; color: #8a1a14; font-size: 13px; font-weight: 600; }
+  /* Estoque, custos e financeiro */
+  .badge.alerta { background: #b3261e; color: #fff; }
+  .badge.aviso { background: #f5c542; color: #3a2e00; }
+  .stat-card .value.texto { font-size: 17px; line-height: 1.25; }
+  .stat-card .sub { font-size: 12px; color: #6b7280; margin-top: 4px; }
+  .fin-preview { background: var(--cor-fundo); border-radius: 8px; padding: 12px 16px; margin: 6px 0 14px; }
+  .fin-preview .linha { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; font-size: 13.5px; }
+  .fin-preview .linha.total { border-top: 1px solid var(--cor-borda); margin-top: 4px; padding-top: 9px; font-weight: 700; color: var(--cor-primaria); }
+  .fin-aba { display: none; }
+  .fin-aba.active { display: block; }
+  .fin-grafico { --serie-1: #2a78d6; --serie-2: #eb6834; position: relative; }
+  .fin-legenda { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: #52514e; margin-bottom: 8px; }
+  .fin-legenda i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+  .fin-tooltip { position: absolute; pointer-events: none; background: #fff; border: 1px solid var(--cor-borda); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; box-shadow: 0 4px 14px rgba(0,0,0,.12); display: none; z-index: 5; white-space: nowrap; color: #1f2430; }
+  .fin-grafico details { margin-top: 10px; font-size: 13px; }
+  .fin-grafico summary { cursor: pointer; color: #52514e; }
+  /* Status de clientes e retenção */
+  .status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--cor-borda); background: #fff; white-space: nowrap; }
+  .status-badge.avaliacao { background: #fff8db; border-color: #e8d27a; color: #6b5300; }
+  .status-badge.ativo { background: #e6f6ea; border-color: #9dd6ab; color: #14602b; }
+  .status-badge.inativo { background: #fdeaea; border-color: #eba5a2; color: #8a1a14; }
+  .status-badge.abandonou { background: #e9e9ec; border-color: #9a9aa3; color: #1f2430; }
+  .status-badge.concluido { background: #e8f0fe; border-color: #a9c0f0; color: #1a3d8f; }
+  .status-painel { background: var(--cor-fundo); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; }
+  .status-painel summary { cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--cor-primaria); margin-top: 10px; }
+  .alert-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .alert-card { border-radius: var(--radius); padding: 14px 16px; cursor: pointer; border: 1px solid; border-left-width: 5px; text-align: left; font-family: inherit; font-size: 13.5px; font-weight: 600; line-height: 1.35; }
+  .alert-card .n { display: block; font-size: 28px; font-weight: 800; }
+  .alert-card:hover { filter: brightness(.97); }
+  .alert-card.vermelho { background: #fdeaea; border-color: #b3261e; color: #8a1a14; }
+  .alert-card.laranja { background: #fff0e0; border-color: #e07b00; color: #8a4600; }
+  .alert-card.amarelo { background: #fff8db; border-color: #d4a300; color: #6b5300; }
+  .alert-card.azul { background: #e8f0fe; border-color: #1a5fb4; color: #0f3d7a; }
+  .ret-aba { display: none; }
+  .ret-aba.active { display: block; }
+  .barra-motivo { height: 10px; border-radius: 5px; background: var(--cor-secundaria); min-width: 4px; }
+  /* Evolução da cliente e resultados */
+  .res-aba { display: none; }
+  .res-aba.active { display: block; }
+  .evo-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 8px; }
+  .evo-card { background: var(--cor-fundo); border-radius: 10px; padding: 11px 14px; }
+  .evo-card .label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #6b7280; }
+  .evo-card .value { font-size: 17px; font-weight: 700; color: var(--cor-primaria); margin-top: 3px; }
+  .evo-card .sub { font-size: 12px; color: #6b7280; margin-top: 2px; }
+  .linha-tempo { position: relative; margin: 4px 0 0 8px; padding-left: 20px; border-left: 2px solid var(--cor-borda); }
+  .lt-item { position: relative; padding: 0 0 12px; font-size: 13px; }
+  .lt-item::before { content: ''; position: absolute; left: -27px; top: 3px; width: 11px; height: 11px; border-radius: 50%; background: var(--cor-secundaria); border: 2px solid #fff; box-shadow: 0 0 0 1px var(--cor-borda); }
+  .lt-item.marco::before { background: var(--cor-primaria); }
+  .lt-item .quando { font-weight: 700; color: var(--cor-primaria); margin-right: 6px; }
+  .lt-item .detalhe { color: #6b7280; }
+  .evo-fotos { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .evo-foto-par { border: 1px solid var(--cor-borda); border-radius: 10px; padding: 10px; }
+  .evo-foto-par .par { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .evo-foto-par img { width: 100%; height: 220px; object-fit: cover; border-radius: 8px; background: #eceef3; display: block; }
+  .evo-foto-par .par span { display: block; text-align: center; font-size: 11.5px; font-weight: 700; color: #6b7280; margin-top: 4px; text-transform: uppercase; }
+  .evo-grafico { position: relative; --surface: #fcfcfb; }
+  .evo-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .evo-chip { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--cor-borda); background: #fff; border-radius: 999px; padding: 4px 11px; font-size: 12px; color: #1f2430; cursor: pointer; font-family: inherit; }
+  .evo-chip[aria-pressed=false] { opacity: .45; }
+  .evo-chip svg { width: 22px; height: 8px; flex-shrink: 0; }
+  .evo-chip .dif { font-weight: 700; }
+  .evo-tooltip { position: absolute; pointer-events: none; background: #fff; border: 1px solid var(--cor-borda); border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.12); display: none; z-index: 5; white-space: nowrap; color: #52514e; }
+  .evo-tooltip .linha { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+  .evo-tooltip strong { color: #1f2430; }
+  .barra-res { height: 8px; border-radius: 4px; background: var(--cor-secundaria); min-width: 3px; }
+  .ficha-custo-linha { display: grid; grid-template-columns: 1fr 100px 90px 32px; gap: 8px; align-items: center; margin-bottom: 8px; }
+  @media (max-width: 520px) { .ficha-custo-linha { grid-template-columns: 1fr 80px 70px 32px; } }
+
+  .alert-card.roxo { background: #f3eafb; border-color: #7b3fb0; color: #4a2378; }
+  .evo-odonto { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin-bottom: 12px; }
+  .evo-odonto-titulo { font-size: 12.5px; font-weight: 700; color: var(--cor-primaria); margin-bottom: 6px; }
+  .evo-odonto .dente { cursor: default; }
+  .stat-card .sub { font-size: 12px; color: #6b7280; margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -241,8 +321,10 @@
       <button data-page="dashboard" class="admin-only"><span class="icon">📊</span><span class="menu-label">Dashboard</span></button>
       <button data-page="servicos" class="admin-only"><span class="icon">🦷</span><span class="menu-label">Serviços</span></button>
       <button data-page="profissionais" class="admin-only"><span class="icon">🧑‍⚕️</span><span class="menu-label">Dentistas</span></button>
+      <button data-page="estoque" class="admin-only"><span class="icon">📦</span><span class="menu-label">Estoque</span></button>
       <button data-page="agendamentos"><span class="icon">📅</span><span class="menu-label">Agendamentos</span></button>
       <button data-page="clientes"><span class="icon">👥</span><span class="menu-label">Pacientes</span></button>
+      <button data-page="retencao" class="admin-only"><span class="icon">🔁</span><span class="menu-label">Retenção</span></button>
       <button data-page="galeria"><span class="icon">📸</span><span class="menu-label">Galeria</span></button>
       <button data-page="personalizacao" class="admin-only"><span class="icon">🎨</span><span class="menu-label">Personalização</span></button>
       <button data-page="financeiro" class="admin-only"><span class="icon">💰</span><span class="menu-label">Financeiro</span></button>
@@ -252,6 +334,7 @@
 
   <div class="main">
     <div id="bannerRenovacao" style="display:none;background:#f5c542;color:#3a2e00;padding:10px 20px;text-align:center;font-size:13px;font-weight:600"></div>
+    <div id="bannerBackup" style="display:none;background:#fdeaea;color:#8a1a14;padding:10px 20px;text-align:center;font-size:13px;font-weight:600"></div>
     <div class="topbar">
       <button id="toggleSidebar">☰</button>
       <strong id="topbarTitle" style="color:var(--cor-primaria)">Painel</strong>
@@ -263,6 +346,7 @@
       <section class="page admin-only" id="page-dashboard">
         <h2 class="page-title">Dashboard</h2>
         <p class="page-sub">Visão geral da clínica</p>
+        <div class="alert-cards" id="dashAlertasClientes"></div>
         <div class="stats-grid" id="statsGrid"></div>
         <div class="dash-grid">
           <div class="card">
@@ -277,6 +361,10 @@
         <div class="card" style="margin-top:18px">
           <h3>Agendamentos de amanhã</h3>
           <div id="agendamentosAmanha"></div>
+        </div>
+        <div class="card" id="dashEstoqueCard" style="margin-top:18px;display:none;border-left:4px solid #b3261e">
+          <h3 style="color:#b3261e">⚠️ Alertas de estoque</h3>
+          <div id="dashEstoqueLista"></div>
         </div>
       </section>
 
@@ -322,6 +410,46 @@
           </form>
         </div>
         <div class="items-grid" id="profissionaisGrid"></div>
+      </section>
+
+      <!-- ESTOQUE -->
+      <section class="page admin-only" id="page-estoque">
+        <h2 class="page-title">Estoque de materiais</h2>
+        <p class="page-sub">Materiais odontológicos, com custo por uso e alerta de estoque mínimo</p>
+        <div id="estoqueAlertas"></div>
+        <div class="btn-row" style="margin:0 0 16px"><button type="button" class="btn" id="btnNovoProduto">+ Novo material</button></div>
+        <div class="card" id="cardProdutoForm" style="display:none">
+          <h3 id="produtoFormTitulo">Novo material</h3>
+          <form id="formProduto">
+            <input type="hidden" id="prodId">
+            <div class="form-grid">
+              <div class="field"><label>Nome do material</label><input type="text" id="prodNome" required placeholder="Ex: Resina composta, Anestésico, Luvas"></div>
+              <div class="field"><label>Unidade</label>
+                <select id="prodUnidade" required><option value="ml">ml</option><option value="un">un</option><option value="g">g</option><option value="cápsula">cápsula</option></select>
+              </div>
+              <div class="field"><label>Quantidade em estoque (embalagens)</label><input type="number" id="prodQtd" min="0" step="0.01" required></div>
+              <div class="field"><label>Valor de compra (R$ da embalagem)</label><input type="number" id="prodValor" min="0" step="0.01" required></div>
+              <div class="field"><label>Usos por embalagem</label><input type="number" id="prodUsos" min="1" step="1" required placeholder="Ex: 50"></div>
+              <div class="field"><label>Custo por uso (R$)</label><input type="text" id="prodCustoUso" readonly value="R$ 0,00"></div>
+              <div class="field"><label>Estoque mínimo (embalagens)</label><input type="number" id="prodMin" min="0" step="0.01"></div>
+              <div class="field"><label>Fornecedor</label><input type="text" id="prodFornecedor"></div>
+              <div class="field"><label>Data de validade</label><input type="date" id="prodValidade"></div>
+            </div>
+            <div class="btn-row">
+              <button type="submit" class="btn">Salvar material</button>
+              <button type="button" class="btn secondary" id="btnCancelarProduto">Cancelar</button>
+            </div>
+          </form>
+        </div>
+        <div class="card">
+          <h3>Materiais cadastrados</h3>
+          <div class="tabela-scroll">
+            <table id="estoqueTabela">
+              <thead><tr><th>Material</th><th>Estoque</th><th>Usos restantes</th><th>Valor de compra</th><th>Custo por uso</th><th>Mínimo</th><th>Fornecedor</th><th>Validade</th><th>Situação</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       <!-- AGENDAMENTOS -->
@@ -384,11 +512,84 @@
         <div class="clientes-layout">
           <div class="card">
             <div class="search-box"><input type="text" id="buscaCliente" placeholder="Buscar paciente..."></div>
+            <div class="search-box"><select id="filtroStatusLista"><option value="">Todos os status</option><option value="avaliacao">🟡 Em Avaliação</option><option value="ativo">🟢 Ativo (em tratamento)</option><option value="inativo">🔴 Inativo</option><option value="abandonou">⚫ Abandonou tratamento</option><option value="concluido">✅ Tratamento concluído</option></select></div>
             <button class="btn gold small admin-only" id="btnNovoCliente" style="width:100%;margin-bottom:12px">+ Novo paciente</button>
             <div id="listaClientes"></div>
           </div>
           <div class="card" id="clienteDetalhe">
             <div class="empty-msg">Selecione um paciente à esquerda para ver a ficha.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RETENCAO -->
+      <section class="page admin-only" id="page-retencao">
+        <h2 class="page-title">Retenção de pacientes</h2>
+        <p class="page-sub">Status do tratamento, revisões, manutenção de aparelho e ações de contato</p>
+
+        <div class="ficha-tabs" id="retTabs">
+          <button type="button" class="ficha-tab-btn active" data-ret-aba="lista">Pacientes por status</button>
+          <button type="button" class="ficha-tab-btn" data-ret-aba="acoes">Ações necessárias</button>
+          <button type="button" class="ficha-tab-btn" data-ret-aba="relatorio">Relatório de retenção</button>
+        </div>
+
+        <div class="card" id="retFiltros" style="margin-bottom:16px">
+          <div class="form-grid">
+            <div class="field" style="margin:0"><label>Status / alerta</label>
+              <select id="retStatus">
+                <option value="">Todos</option>
+                <option value="avaliacao">🟡 Em Avaliação</option>
+                <option value="ativo">🟢 Ativo (em tratamento)</option>
+                <option value="inativo">🔴 Inativo</option>
+                <option value="abandonou">⚫ Abandonou tratamento</option>
+                <option value="concluido">✅ Tratamento concluído</option>
+                <option value="revisao">🔵 Revisão semestral pendente</option>
+                <option value="aparelho">🟣 Aparelho sem manutenção</option>
+              </select>
+            </div>
+            <div class="field" style="margin:0"><label>Dentista</label><select id="retProf"></select></div>
+            <div class="field" style="margin:0"><label>Última consulta</label>
+              <select id="retPeriodo">
+                <option value="">Qualquer período</option>
+                <option value="ult30">Últimos 30 dias</option>
+                <option value="ult90">Últimos 90 dias</option>
+                <option value="ult180">Últimos 180 dias</option>
+                <option value="personalizado">Período personalizado</option>
+              </select>
+            </div>
+            <div class="field" style="margin:0;display:none" id="retDeBox"><label>De</label><input type="date" id="retDe"></div>
+            <div class="field" style="margin:0;display:none" id="retAteBox"><label>Até</label><input type="date" id="retAte"></div>
+          </div>
+          <div class="btn-row"><button type="button" class="btn secondary small" id="btnLimparFiltrosRet">Limpar filtros</button></div>
+        </div>
+
+        <div class="ret-aba active" id="retAba-lista">
+          <div class="card"><h3 id="retListaTitulo">Pacientes</h3><div id="retLista"></div></div>
+        </div>
+
+        <div class="ret-aba" id="retAba-acoes">
+          <div class="card">
+            <h3>Pacientes para contato hoje</h3>
+            <p style="font-size:13px;color:#6b7280;margin-bottom:12px">Inativos e que abandonaram o tratamento, revisões semestrais pendentes e aparelhos sem manutenção. Depois de contatar, marque como contatado: ele some desta lista por 7 dias.</p>
+            <div id="retAcoes"></div>
+          </div>
+        </div>
+
+        <div class="ret-aba" id="retAba-relatorio">
+          <div class="stats-grid" id="retCards"></div>
+          <div class="dash-grid">
+            <div class="card"><h3>Motivos de inatividade mais comuns</h3><div id="retMotivos"></div></div>
+            <div class="card">
+              <h3>Regras automáticas</h3>
+              <form id="formRegrasStatus">
+                <div class="field"><label>Inativo: em tratamento sem atividade há mais de (dias)</label><input type="number" id="retDiasInativo" min="1" step="1" required></div>
+                <div class="field"><label>Abandonou: em tratamento sem atividade há mais de (dias)</label><input type="number" id="retDiasAbandono" min="1" step="1" required></div>
+                <div class="field"><label>Revisão pendente: sem consulta há mais de (dias)</label><input type="number" id="retDiasRevisao" min="1" step="1" required></div>
+                <div class="field"><label>Aparelho sem manutenção há mais de (dias)</label><input type="number" id="retDiasAparelho" min="1" step="1" required></div>
+                <p style="font-size:12px;color:#6b7280">Atividade = consulta, procedimento concluído, pagamento ou agendamento comparecido. Quem tem agendamento futuro continua ativo.</p>
+                <div class="btn-row"><button type="submit" class="btn">Salvar regras</button></div>
+              </form>
+            </div>
           </div>
         </div>
       </section>
@@ -482,61 +683,227 @@
             <div class="btn-row"><button type="submit" class="btn">Atualizar senha</button></div>
           </form>
         </div>
+        <div class="card" style="margin-top:18px" id="cardBackup">
+          <h3>Backup e restauração</h3>
+          <div id="bkStatus" class="bk-status"></div>
+          <p style="font-size:12.5px;color:#6b7280;margin-bottom:12px">O arquivo de backup contém os dados pessoais dos pacientes e a senha do sistema. Guarde-o em local seguro e não o envie por canais públicos.</p>
+
+          <label class="checkbox-item" style="margin-bottom:8px"><input type="checkbox" id="bkAuto"> Backup automático diário ao abrir o sistema (como administrador)</label>
+          <label class="checkbox-item" style="margin-bottom:4px"><input type="checkbox" id="bkPerguntar"> Perguntar onde salvar o backup automático</label>
+          <p id="bkPerguntarAviso" style="font-size:12px;color:#6b7280;margin:0 0 12px 26px;display:none">Este navegador não deixa escolher a pasta; o arquivo é baixado direto (para a pasta de downloads).</p>
+
+          <hr style="border:none;border-top:1px solid var(--cor-borda);margin:14px 0">
+          <strong style="font-size:13.5px">Fazer backup agora</strong>
+          <p style="font-size:12.5px;color:#6b7280;margin:4px 0 0">Escolha o que incluir:</p>
+          <div id="bkCategorias" class="bk-cats"></div>
+          <div class="btn-row" style="margin-top:0"><button type="button" class="btn" id="bkFazer">Fazer backup agora</button></div>
+
+          <hr style="border:none;border-top:1px solid var(--cor-borda);margin:18px 0">
+          <strong style="font-size:13.5px">Restaurar backup</strong>
+          <p style="font-size:12.5px;color:#6b7280;margin:4px 0 10px">Selecione um arquivo .json gerado por este sistema. Os dados atuais serão substituídos (uma cópia de segurança do que existe hoje é baixada antes).</p>
+          <input type="file" id="bkArquivo" accept=".json,application/json" style="display:none">
+          <div class="btn-row" style="margin-top:0"><button type="button" class="btn secondary" id="bkRestaurar">Restaurar backup</button></div>
+          <div id="bkMensagem" class="bk-erro" style="display:none"></div>
+
+          <hr style="border:none;border-top:1px solid var(--cor-borda);margin:18px 0">
+          <strong style="font-size:13.5px">Histórico de backups (últimos 30)</strong>
+          <div id="bkHistorico"></div>
+        </div>
       </section>
 
       <!-- FINANCEIRO -->
       <section class="page admin-only" id="page-financeiro">
         <h2 class="page-title">Financeiro</h2>
-        <p class="page-sub">Controle de receitas, despesas, convênios e parcelas de tratamento</p>
-        <div class="fin-summary">
-          <div class="stat-card"><div class="label">Receitas</div><div class="value" id="finReceitas" style="color:#1a7d3a">R$ 0,00</div></div>
-          <div class="stat-card"><div class="label">Despesas</div><div class="value" id="finDespesas" style="color:#b3261e">R$ 0,00</div></div>
-          <div class="stat-card"><div class="label">Saldo</div><div class="value" id="finSaldo">R$ 0,00</div></div>
-        </div>
-        <div class="card">
-          <h3>Relatório por período</h3>
-          <div class="form-grid" style="max-width:420px">
-            <div class="field"><label>Data início</label><input type="date" id="finPeriodoInicio"></div>
-            <div class="field"><label>Data fim</label><input type="date" id="finPeriodoFim"></div>
-          </div>
-          <div class="btn-row"><button type="button" class="btn secondary small" id="btnFiltrarPeriodo">Filtrar</button></div>
-          <div id="resumoPeriodo" style="margin-top:10px"></div>
-        </div>
-        <div class="card" style="margin-top:18px">
-          <h3>Novo lançamento</h3>
-          <form id="formFinanceiro">
-            <div class="form-grid">
-              <div class="field"><label>Tipo</label><select id="finTipo"><option value="receita">Receita</option><option value="despesa">Despesa</option></select></div>
-              <div class="field"><label>Descrição</label><input type="text" id="finDescricao" required></div>
-              <div class="field"><label>Valor (R$)</label><input type="number" id="finValor" min="0" step="0.01" required></div>
-              <div class="field"><label>Data</label><input type="date" id="finData" required></div>
-              <div class="field" id="campoFinOrigem"><label>Origem</label><select id="finOrigem"><option value="particular">Particular</option><option value="convenio">Convênio</option></select></div>
-              <div class="field" id="campoFinConvenio" style="display:none"><label>Nome do convênio</label><input type="text" id="finConvenioNome"></div>
+        <p class="page-sub">Pagamentos, convênio x particular, taxas da maquininha, custo dos materiais e lucro real</p>
+
+        <div class="card" style="margin-bottom:16px">
+          <div class="form-grid">
+            <div class="field" style="margin:0"><label>Período (dashboard e exportação)</label>
+              <select id="finPeriodo">
+                <option value="hoje">Hoje</option>
+                <option value="semana">Esta semana</option>
+                <option value="mes" selected>Este mês</option>
+                <option value="personalizado">Período personalizado</option>
+              </select>
             </div>
-            <div class="btn-row"><button type="submit" class="btn">Adicionar lançamento</button></div>
-          </form>
+            <div class="field" style="margin:0;display:none" id="finPeriodoDeBox"><label>De</label><input type="date" id="finDe"></div>
+            <div class="field" style="margin:0;display:none" id="finPeriodoAteBox"><label>Até</label><input type="date" id="finAte"></div>
+          </div>
+          <div id="finPeriodoRotulo" style="font-size:12.5px;color:#6b7280;margin-top:8px"></div>
         </div>
-        <div class="card" style="margin-top:18px">
-          <h3>Lançamentos</h3>
-          <div class="tabela-scroll">
-          <table id="finTabela">
-            <thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Origem</th><th>Valor</th><th></th></tr></thead>
-            <tbody></tbody>
-          </table>
+
+        <div class="ficha-tabs" id="finTabs">
+          <button type="button" class="ficha-tab-btn active" data-fin-aba="dashboard">Dashboard</button>
+          <button type="button" class="ficha-tab-btn" data-fin-aba="pagamento">Pagamentos</button>
+          <button type="button" class="ficha-tab-btn" data-fin-aba="lancamentos">Lançamentos</button>
+          <button type="button" class="ficha-tab-btn" data-fin-aba="taxas">Formas de pagamento e taxas</button>
+          <button type="button" class="ficha-tab-btn" data-fin-aba="exportar">Exportar relatório</button>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="fin-aba active" id="finAba-dashboard">
+          <div class="stats-grid" id="finCards"></div>
+          <div class="card" style="margin-bottom:18px">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:8px">
+              <h3 style="margin:0">Faturamento e lucro</h3>
+              <div class="ficha-tabs" style="margin:0;border:none;padding:0" id="finGraficoModo">
+                <button type="button" class="ficha-tab-btn active" data-modo="semana">Por semana</button>
+                <button type="button" class="ficha-tab-btn" data-modo="mes">Por mês</button>
+              </div>
+            </div>
+            <div class="fin-grafico" id="finGrafico"></div>
+          </div>
+          <div class="dash-grid">
+            <div class="card"><h3>Receita convênio x particular</h3><div id="finConvenio"></div></div>
+            <div class="card"><h3>Procedimentos</h3><div id="finProcedimentos"></div></div>
           </div>
         </div>
-        <div class="card" style="margin-top:18px">
-          <h3>Parcelas de planos de tratamento</h3>
-          <div class="tabela-scroll">
-          <table id="tabelaParcelasGlobais">
-            <thead><tr><th>Paciente</th><th>Parcela</th><th>Valor</th><th>Status</th><th>Pagamento</th><th></th></tr></thead>
-            <tbody></tbody>
-          </table>
+
+        <!-- Pagamentos -->
+        <div class="fin-aba" id="finAba-pagamento">
+          <div class="card">
+            <h3>Parcelas dos planos de tratamento</h3>
+            <p style="font-size:13px;color:#6b7280;margin-bottom:8px">Ao registrar o pagamento de uma parcela, o sistema calcula a taxa da maquininha (só particular), o valor líquido, o custo dos materiais e o lucro real de cada procedimento do plano.</p>
+            <div class="tabela-scroll">
+            <table id="tabelaParcelasGlobais">
+              <thead><tr><th>Paciente</th><th>Parcela</th><th>Valor</th><th>Status</th><th>Pagamento</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+            </div>
+          </div>
+          <div class="card" style="margin-top:18px">
+            <h3>Pagamento avulso (procedimento sem plano de tratamento)</h3>
+            <form id="formPagamento">
+              <div class="form-grid">
+                <div class="field"><label>Data</label><input type="date" id="finPagData" required></div>
+                <div class="field"><label>Paciente</label><select id="finPagCliente"></select></div>
+                <div class="field"><label>Dentista</label><select id="finPagProf"></select></div>
+                <div class="field"><label>Procedimento</label><select id="finPagServ"></select></div>
+                <div class="field"><label>Dente</label><input type="text" id="finPagDente" placeholder="Ex: 26 ou Geral"></div>
+                <div class="field"><label>Valor bruto (R$)</label><input type="number" id="finPagValor" min="0" step="0.01" required></div>
+                <div class="field"><label>Convênio ou particular</label><select id="finPagOrigem"><option value="particular">Particular</option><option value="convenio">Convênio</option></select></div>
+                <div class="field" id="finPagConvenioBox" style="display:none"><label>Nome do convênio</label><input type="text" id="finPagConvenio"></div>
+                <div class="field" id="finPagFormaBox"><label>Forma de pagamento</label><select id="finPagForma"></select></div>
+              </div>
+              <div class="fin-preview" id="finPagPreview"></div>
+              <label class="checkbox-item" style="margin-bottom:12px"><input type="checkbox" id="finPagBaixa" checked> Dar baixa dos materiais do procedimento no estoque</label>
+              <div class="btn-row"><button type="submit" class="btn">Registrar pagamento</button></div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Lançamentos -->
+        <div class="fin-aba" id="finAba-lancamentos">
+          <div class="fin-summary">
+            <div class="stat-card"><div class="label">Receitas (bruto)</div><div class="value" id="finReceitas" style="color:#1a7d3a">R$ 0,00</div></div>
+            <div class="stat-card"><div class="label">Despesas</div><div class="value" id="finDespesas" style="color:#b3261e">R$ 0,00</div></div>
+            <div class="stat-card"><div class="label">Saldo</div><div class="value" id="finSaldo">R$ 0,00</div></div>
+          </div>
+          <div class="card">
+            <h3>Relatório por período</h3>
+            <div class="form-grid" style="max-width:420px">
+              <div class="field"><label>Data início</label><input type="date" id="finPeriodoInicio"></div>
+              <div class="field"><label>Data fim</label><input type="date" id="finPeriodoFim"></div>
+            </div>
+            <div class="btn-row"><button type="button" class="btn secondary small" id="btnFiltrarPeriodo">Filtrar</button></div>
+            <div id="resumoPeriodo" style="margin-top:10px"></div>
+          </div>
+          <div class="card" style="margin-top:18px">
+            <h3>Novo lançamento manual</h3>
+            <form id="formFinanceiro">
+              <div class="form-grid">
+                <div class="field"><label>Tipo</label><select id="finTipo"><option value="receita">Receita</option><option value="despesa">Despesa</option></select></div>
+                <div class="field"><label>Descrição</label><input type="text" id="finDescricao" required></div>
+                <div class="field"><label>Valor (R$)</label><input type="number" id="finValor" min="0" step="0.01" required></div>
+                <div class="field"><label>Data</label><input type="date" id="finData" required></div>
+                <div class="field" id="campoFinOrigem"><label>Origem</label><select id="finOrigem"><option value="particular">Particular</option><option value="convenio">Convênio</option></select></div>
+                <div class="field" id="campoFinConvenio" style="display:none"><label>Nome do convênio</label><input type="text" id="finConvenioNome"></div>
+              </div>
+              <div class="btn-row"><button type="submit" class="btn">Adicionar lançamento</button></div>
+            </form>
+          </div>
+          <div class="card" style="margin-top:18px">
+            <h3>Lançamentos</h3>
+            <div class="tabela-scroll">
+            <table id="finTabela">
+              <thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Origem</th><th>Valor bruto</th><th>Forma</th><th>Taxa</th><th>Líquido</th><th>Materiais</th><th>Lucro</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formas de pagamento e taxas -->
+        <div class="fin-aba" id="finAba-taxas">
+          <div class="card">
+            <h3>Formas de pagamento e taxas da maquininha</h3>
+            <p style="font-size:13px;color:#6b7280;margin-bottom:12px">As taxas valem para pagamentos <strong>particulares</strong>. Atendimentos de convênio não têm taxa de maquininha.</p>
+            <form id="formTaxas">
+              <div class="form-grid">
+                <div class="field"><label>Dinheiro (%)</label><input type="number" value="0" disabled></div>
+                <div class="field"><label>PIX (%)</label><input type="number" value="0" disabled></div>
+                <div class="field"><label>Débito (%)</label><input type="number" id="taxaDebito" min="0" max="100" step="0.01" placeholder="Ex: 1,5"></div>
+                <div class="field"><label>Crédito 1x (%)</label><input type="number" id="taxaCredito1x" min="0" max="100" step="0.01" placeholder="Ex: 2,5"></div>
+                <div class="field"><label>Crédito 2x a 6x (%)</label><input type="number" id="taxaCredito2a6" min="0" max="100" step="0.01" placeholder="Ex: 3,5"></div>
+                <div class="field"><label>Crédito 7x a 12x (%)</label><input type="number" id="taxaCredito7a12" min="0" max="100" step="0.01" placeholder="Ex: 4,5"></div>
+              </div>
+              <h4 class="ficha-secao">Outras formas</h4>
+              <div id="taxasOutros"></div>
+              <div class="btn-row"><button type="button" class="btn secondary small" id="btnAddOutraForma">+ Adicionar forma</button></div>
+              <div class="btn-row"><button type="submit" class="btn">Salvar taxas</button></div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Exportar -->
+        <div class="fin-aba" id="finAba-exportar">
+          <div class="card">
+            <h3>Exportar relatório</h3>
+            <p style="font-size:13px;color:#6b7280;margin-bottom:14px">Gera um arquivo .csv que abre direto no Excel. O período escolhido acima vale para os relatórios financeiro, de procedimentos e de convênio x particular.</p>
+            <div class="field" style="max-width:380px"><label>Relatório</label>
+              <select id="finRelatorio">
+                <option value="financeiro">Financeiro (pagamentos do período)</option>
+                <option value="convenio">Receita convênio x particular</option>
+                <option value="estoque">Estoque de materiais</option>
+                <option value="clientes">Pacientes (total gasto e última consulta)</option>
+                <option value="procedimentos">Procedimentos realizados no período</option>
+              </select>
+            </div>
+            <div class="btn-row"><button type="button" class="btn" id="btnExportar">Exportar relatório</button></div>
           </div>
         </div>
       </section>
 
     </div>
+  </div>
+</div>
+
+<!-- Modal: ficha de custo do procedimento -->
+<div class="modal-overlay" id="modalFichaCusto">
+  <div class="modal" style="max-width:600px" id="fichaCustoConteudo"></div>
+</div>
+
+<!-- Modal: evolução do paciente -->
+<div class="modal-overlay" id="modalEvolucao">
+  <div class="modal" style="max-width:980px" id="evolucaoConteudo"></div>
+</div>
+
+<!-- Modal: pagamento de parcela do plano -->
+<div class="modal-overlay" id="modalPagamento">
+  <div class="modal" style="max-width:520px">
+    <h3>Registrar pagamento da parcela</h3>
+    <p id="pgResumo" style="font-size:13.5px;font-weight:600;margin-bottom:12px"></p>
+    <form id="formPgParcela">
+      <div class="form-grid">
+        <div class="field"><label>Data do pagamento</label><input type="date" id="pgData" required></div>
+        <div class="field"><label>Convênio ou particular</label><select id="pgOrigem"><option value="particular">Particular</option><option value="convenio">Convênio</option></select></div>
+        <div class="field" id="pgConvenioBox" style="display:none"><label>Nome do convênio</label><input type="text" id="pgConvenio"></div>
+        <div class="field" id="pgFormaBox"><label>Forma de pagamento</label><select id="pgForma"></select></div>
+        <div class="field"><label>Dentista</label><select id="pgDentista"></select></div>
+      </div>
+      <div class="fin-preview" id="pgPreview"></div>
+      <div class="btn-row"><button type="submit" class="btn" id="pgConfirmar">Registrar pagamento</button><button type="button" class="btn secondary" id="pgCancelar">Cancelar</button></div>
+    </form>
   </div>
 </div>
 
@@ -621,6 +988,9 @@
         <option value="lembreteHoje">Lembrete (no dia)</option>
         <option value="cancelamento">Cancelamento</option>
         <option value="posAtendimento">Pós-atendimento</option>
+        <option value="revisao">Revisão semestral</option>
+        <option value="aparelho">Manutenção de aparelho</option>
+        <option value="retomada">Retomar tratamento</option>
       </select>
     </div>
     <div class="field" id="campoWhatsRetorno" style="display:none">
@@ -636,6 +1006,16 @@
 </div>
 
 <div id="areaImpressaoReceita"></div>
+<!-- Modal: resultado da restauração de backup -->
+<div class="modal-overlay" id="modalBackupResultado">
+  <div class="modal">
+    <h3>Backup restaurado ✅</h3>
+    <p id="bkResultadoTexto" style="font-size:14px;white-space:pre-line;margin-bottom:6px"></p>
+    <p style="font-size:12.5px;color:#6b7280">O sistema será recarregado para aplicar os dados restaurados.</p>
+    <div class="btn-row"><button type="button" class="btn" id="bkResultadoOk">Recarregar sistema</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -650,6 +1030,9 @@
     agendamentos: 'dentista_agendamentos',
     galeria: 'dentista_galeria',
     financeiro: 'dentista_financeiro',
+    produtos: 'dentista_produtos',
+    taxas: 'dentista_taxas',
+    regrasStatus: 'dentista_regras_status',
     sessao: 'dentista_sessao',
     licenca: 'dentista_licenca'
   };
@@ -686,7 +1069,7 @@
   const SERVICOS_PADRAO = [
     { nome: 'Consulta Inicial', preco: 150, duracao: 60 },
     { nome: 'Limpeza/Profilaxia', preco: 120, duracao: 60 },
-    { nome: 'Restauração Resina', preco: 180, duracao: 60 },
+    { nome: 'Restauração Resina', preco: 250, duracao: 60 },
     { nome: 'Extração Simples', preco: 150, duracao: 45 },
     { nome: 'Extração Siso', preco: 350, duracao: 90 },
     { nome: 'Tratamento de Canal', preco: 600, duracao: 120 },
@@ -720,7 +1103,18 @@
 
   const REGIOES_INTRABUCAL = ['Anterior', 'Lateral Direita', 'Lateral Esquerda', 'Superior', 'Inferior'];
 
-  const ADMIN_ONLY_PAGES = ['dashboard', 'servicos', 'profissionais', 'personalizacao', 'financeiro'];
+  const ADMIN_ONLY_PAGES = ['dashboard', 'servicos', 'profissionais', 'estoque', 'retencao', 'personalizacao', 'financeiro'];
+  const TAXAS_PADRAO = { debito: 0, credito1x: 0, credito2a6: 0, credito7a12: 0, outros: [] };
+  // Materiais de exemplo (valores editáveis): custo por uso = valor de compra / usos por embalagem
+  const PRODUTOS_PADRAO = [
+    { nome: 'Resina composta', unidade: 'g', quantidade: 2, valorCompra: 64, usosPorEmbalagem: 8, estoqueMinimo: 1, fornecedor: '', validade: '' },
+    { nome: 'Anestésico', unidade: 'un', quantidade: 2, valorCompra: 250, usosPorEmbalagem: 50, estoqueMinimo: 1, fornecedor: '', validade: '' },
+    { nome: 'Luvas', unidade: 'un', quantidade: 3, valorCompra: 100, usosPorEmbalagem: 100, estoqueMinimo: 1, fornecedor: '', validade: '' },
+    { nome: 'Máscara', unidade: 'un', quantidade: 3, valorCompra: 25, usosPorEmbalagem: 50, estoqueMinimo: 1, fornecedor: '', validade: '' },
+    { nome: 'Broca', unidade: 'un', quantidade: 3, valorCompra: 30, usosPorEmbalagem: 10, estoqueMinimo: 1, fornecedor: '', validade: '' },
+    { nome: 'Fio dental', unidade: 'un', quantidade: 2, valorCompra: 12, usosPorEmbalagem: 40, estoqueMinimo: 1, fornecedor: '', validade: '' },
+    { nome: 'Cimento', unidade: 'cápsula', quantidade: 2, valorCompra: 90, usosPorEmbalagem: 10, estoqueMinimo: 1, fornecedor: '', validade: '' }
+  ];
 
   function load(key, fallback) {
     try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
@@ -731,7 +1125,7 @@
   function gerarCodigoMaster() { return Math.random().toString(36).slice(2, 8).toUpperCase(); }
   function formatMoney(v) { return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function formatDateBR(iso) { if (!iso) return ''; const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; }
-  function todayISO() { return new Date().toISOString().slice(0, 10); }
+  function todayISO() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
       if (!file) { resolve(''); return; }
@@ -741,12 +1135,12 @@
       reader.readAsDataURL(file);
     });
   }
-  function showToast(msg) {
+  function showToast(msg, ms) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
     clearTimeout(showToast._timer);
-    showToast._timer = setTimeout(() => t.classList.remove('show'), 2300);
+    showToast._timer = setTimeout(() => t.classList.remove('show'), ms || 2300);
   }
 
   function fichaVaziaPaciente() {
@@ -767,12 +1161,28 @@
     clientes: load(STORAGE_KEYS.clientes, []),
     agendamentos: load(STORAGE_KEYS.agendamentos, []),
     galeria: load(STORAGE_KEYS.galeria, []),
-    financeiro: load(STORAGE_KEYS.financeiro, [])
+    financeiro: load(STORAGE_KEYS.financeiro, []),
+    produtos: load(STORAGE_KEYS.produtos, null),
+    taxas: load(STORAGE_KEYS.taxas, null)
   };
   state.config = Object.assign({}, DEFAULT_CONFIG, state.config);
+  state.regrasStatus = Object.assign({ diasInativo: 30, diasAbandono: 90, diasRevisao: 180, diasAparelho: 45 }, load(STORAGE_KEYS.regrasStatus, null) || {});
+  state.taxas = Object.assign({}, TAXAS_PADRAO, state.taxas || {});
+  if (!Array.isArray(state.taxas.outros)) state.taxas.outros = [];
   if (state.servicos === null) {
     state.servicos = SERVICOS_PADRAO.map(s => ({ id: uid(), nome: s.nome, preco: s.preco, duracao: s.duracao, foto: '' }));
     save(STORAGE_KEYS.servicos, state.servicos);
+  }
+  state.servicos.forEach(s => { if (!Array.isArray(s.insumos)) s.insumos = []; });
+  if (state.produtos === null) {
+    state.produtos = PRODUTOS_PADRAO.map(p => Object.assign({ id: uid() }, p));
+    save(STORAGE_KEYS.produtos, state.produtos);
+    // ficha de custo de exemplo: Restauração Resina = resina 0,5 g + broca + anestésico + luva
+    const restauracao = state.servicos.find(s => s.nome === 'Restauração Resina');
+    if (restauracao && !restauracao.insumos.length) {
+      restauracao.insumos = ['Resina composta', 'Broca', 'Anestésico', 'Luvas'].map(n => ({ produtoId: state.produtos.find(p => p.nome === n).id, usos: 1 }));
+      save(STORAGE_KEYS.servicos, state.servicos);
+    }
   }
   state.clientes.forEach(c => {
     const vazia = fichaVaziaPaciente();
@@ -782,6 +1192,8 @@
     if (!c.planoTratamento) c.planoTratamento = vazia.planoTratamento;
     if (!c.consultas) c.consultas = [];
     if (!c.receitas) c.receitas = [];
+    c.planoTratamento.itens.forEach(i => { if (i.dataConclusao === undefined) i.dataConclusao = ''; if (!Array.isArray(i.baixas)) i.baixas = []; if (i.servicoId === undefined) i.servicoId = ''; });
+    c.planoTratamento.parcelas.forEach(pc => { if (!Array.isArray(pc.lancamentos)) pc.lancamentos = []; });
   });
   state.profissionais.forEach(p => {
     if (!p.bloqueios) p.bloqueios = [];
@@ -859,6 +1271,7 @@
   });
 
   function goToPage(pageId) {
+    if (pageId === 'personalizacao') bkRenderPainel();
     if (session && session.tipo !== 'admin' && ADMIN_ONLY_PAGES.includes(pageId)) pageId = 'agendamentos';
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-' + pageId).classList.add('active');
@@ -870,6 +1283,8 @@
     if (pageId === 'galeria') renderGaleria();
     if (pageId === 'profissionais') renderProfissionais();
     if (pageId === 'financeiro') { renderFinanceiro(); renderParcelasGlobais(); }
+    if (pageId === 'estoque') renderEstoque();
+    if (pageId === 'retencao') renderRetencao();
   }
   document.getElementById('toggleSidebar').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
 
@@ -986,6 +1401,8 @@
 
   // ---------- Dashboard ----------
   function renderDashboard() {
+    sincronizarStatusClientes();
+    renderDashboardAlertas();
     const hojeISO = todayISO();
     const agendHoje = state.agendamentos.filter(a => a.data === hojeISO).length;
     const mesAtual = hojeISO.slice(0, 7);
@@ -1008,6 +1425,9 @@
       <div class="list-row"><span>Despesas</span><span style="color:#b3261e;font-weight:600">${formatMoney(despesasMes)}</span></div>
       <div class="list-row"><span>Saldo</span><span style="font-weight:700">${formatMoney(receitasMes - despesasMes)}</span></div>
     `;
+    const comAlerta = state.produtos.filter(p => alertasProduto(p).length);
+    document.getElementById('dashEstoqueCard').style.display = comAlerta.length ? 'block' : 'none';
+    document.getElementById('dashEstoqueLista').innerHTML = comAlerta.map(p => `<div class="list-row"><span>${esc(p.nome)}</span><span>${htmlAlertasProduto(p)}</span></div>`).join('');
   }
 
   // ---------- Serviços ----------
@@ -1015,7 +1435,7 @@
   document.getElementById('servFoto').addEventListener('change', async (e) => { pendingServicoFoto = await fileToBase64(e.target.files[0]); });
   document.getElementById('formServico').addEventListener('submit', (e) => {
     e.preventDefault();
-    state.servicos.push({ id: uid(), nome: document.getElementById('servNome').value.trim(), preco: parseFloat(document.getElementById('servPreco').value), duracao: parseInt(document.getElementById('servDuracao').value, 10), foto: pendingServicoFoto });
+    state.servicos.push({ id: uid(), nome: document.getElementById('servNome').value.trim(), preco: parseFloat(document.getElementById('servPreco').value), duracao: parseInt(document.getElementById('servDuracao').value, 10), foto: pendingServicoFoto, insumos: [] });
     save(STORAGE_KEYS.servicos, state.servicos);
     e.target.reset();
     pendingServicoFoto = '';
@@ -1026,18 +1446,26 @@
   function renderServicos() {
     const grid = document.getElementById('servicosGrid');
     if (!state.servicos.length) { grid.innerHTML = '<div class="empty-msg">Nenhum serviço cadastrado ainda.</div>'; return; }
-    grid.innerHTML = state.servicos.map(s => `
+    grid.innerHTML = state.servicos.map(s => {
+      const custo = custoInsumosServico(s);
+      const f = calcularFicha(s.preco, custo, s.tempoProfissional);
+      return `
       <div class="item-card">
-        ${s.foto ? `<img class="thumb" src="${s.foto}" alt="${s.nome}">` : `<div class="thumb">Sem foto</div>`}
+        ${s.foto ? `<img class="thumb" src="${s.foto}" alt="${esc(s.nome)}">` : `<div class="thumb">Sem foto</div>`}
         <div class="body">
-          <div class="name">${s.nome}</div>
+          <div class="name">${esc(s.nome)}</div>
           <div class="meta">${formatMoney(s.preco)} · ${s.duracao} min</div>
-          <div class="actions"><button class="btn danger small" data-del-servico="${s.id}">Excluir</button></div>
+          <div class="meta">${s.insumos.length ? `Materiais: ${formatMoney(custo)} · Margem: ${fmtMargem(f.margem)}` : 'Sem ficha de custo'}</div>
+          <div class="actions">
+            <button class="btn secondary small" data-ficha-servico="${s.id}">Ficha de custo</button>
+            <button class="btn danger small" data-del-servico="${s.id}">Excluir</button>
+          </div>
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
   }
   document.getElementById('servicosGrid').addEventListener('click', (e) => {
+    if (e.target.dataset.fichaServico) { abrirFichaCusto(e.target.dataset.fichaServico); return; }
     const id = e.target.dataset.delServico;
     if (!id) return;
     state.servicos = state.servicos.filter(s => s.id !== id);
@@ -1045,6 +1473,251 @@
     renderServicos();
     populateTodosSelects();
   });
+
+  function somarDiasISO(iso, dias) {
+    const d = new Date(iso + 'T12:00:00');
+    d.setDate(d.getDate() + dias);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+
+  // ---------- Utilidades de estoque e financeiro ----------
+  function r2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
+  function r4(n) { return Math.round((Number(n) || 0) * 10000) / 10000; }
+  function num(v) { const n = parseFloat(v); return isFinite(n) ? n : 0; }
+  function fmtPct(n) { return (Math.round((Number(n) || 0) * 100) / 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + '%'; }
+  function fmtMargem(n) { return (Math.round((Number(n) || 0) * 10) / 10).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%'; }
+  function fmtQtd(n) { return (Number(n) || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 }); }
+  function isoLocal(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+  function diasAte(iso) {
+    const [y, m, d] = iso.split('-').map(Number);
+    const [hy, hm, hd] = todayISO().split('-').map(Number);
+    return Math.round((new Date(y, m - 1, d) - new Date(hy, hm - 1, hd)) / 86400000);
+  }
+
+  // ---------- Estoque ----------
+  function custoPorUso(p) {
+    const usos = Number(p.usosPorEmbalagem);
+    return usos > 0 ? Number(p.valorCompra) / usos : 0;
+  }
+  function alertasProduto(p) {
+    const alertas = [];
+    const q = Number(p.quantidade) || 0, min = Number(p.estoqueMinimo) || 0;
+    if (q <= 0) alertas.push({ tipo: 'alerta', texto: 'Sem estoque' });
+    else if (q <= min) alertas.push({ tipo: 'alerta', texto: 'Estoque baixo' });
+    if (p.validade) {
+      const d = diasAte(p.validade);
+      if (d < 0) alertas.push({ tipo: 'alerta', texto: 'Vencido' });
+      else if (d <= 30) alertas.push({ tipo: 'aviso', texto: d === 0 ? 'Vence hoje' : `Vence em ${d} dia${d === 1 ? '' : 's'}` });
+    }
+    return alertas;
+  }
+  function htmlAlertasProduto(p) {
+    return alertasProduto(p).map(a => `<span class="badge ${a.tipo}">${a.texto}</span>`).join('');
+  }
+
+  const formProduto = document.getElementById('formProduto');
+  const cardProdutoForm = document.getElementById('cardProdutoForm');
+  function atualizarCustoUsoForm() {
+    document.getElementById('prodCustoUso').value = formatMoney(custoPorUso({ valorCompra: num(document.getElementById('prodValor').value), usosPorEmbalagem: num(document.getElementById('prodUsos').value) }));
+  }
+  function abrirFormProduto(p) {
+    formProduto.reset();
+    document.getElementById('prodId').value = p ? p.id : '';
+    document.getElementById('produtoFormTitulo').textContent = p ? 'Editar produto' : 'Novo produto';
+    if (p) {
+      document.getElementById('prodNome').value = p.nome;
+      document.getElementById('prodUnidade').value = p.unidade;
+      document.getElementById('prodQtd').value = p.quantidade;
+      document.getElementById('prodValor').value = p.valorCompra;
+      document.getElementById('prodUsos').value = p.usosPorEmbalagem;
+      document.getElementById('prodMin').value = p.estoqueMinimo;
+      document.getElementById('prodFornecedor').value = p.fornecedor || '';
+      document.getElementById('prodValidade').value = p.validade || '';
+    }
+    atualizarCustoUsoForm();
+    cardProdutoForm.style.display = 'block';
+    cardProdutoForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function fecharFormProduto() {
+    formProduto.reset();
+    document.getElementById('prodId').value = '';
+    cardProdutoForm.style.display = 'none';
+  }
+  document.getElementById('btnNovoProduto').addEventListener('click', () => abrirFormProduto(null));
+  document.getElementById('btnCancelarProduto').addEventListener('click', fecharFormProduto);
+  document.getElementById('prodValor').addEventListener('input', atualizarCustoUsoForm);
+  document.getElementById('prodUsos').addEventListener('input', atualizarCustoUsoForm);
+
+  formProduto.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = document.getElementById('prodId').value;
+    const dados = {
+      nome: document.getElementById('prodNome').value.trim(),
+      unidade: document.getElementById('prodUnidade').value,
+      quantidade: Math.max(0, num(document.getElementById('prodQtd').value)),
+      valorCompra: Math.max(0, num(document.getElementById('prodValor').value)),
+      usosPorEmbalagem: Math.max(1, parseInt(document.getElementById('prodUsos').value, 10) || 1),
+      estoqueMinimo: Math.max(0, num(document.getElementById('prodMin').value)),
+      fornecedor: document.getElementById('prodFornecedor').value.trim(),
+      validade: document.getElementById('prodValidade').value
+    };
+    if (id) Object.assign(state.produtos.find(x => x.id === id), dados);
+    else state.produtos.push(Object.assign({ id: uid() }, dados));
+    save(STORAGE_KEYS.produtos, state.produtos);
+    fecharFormProduto();
+    renderEstoque();
+    renderServicos();
+    renderDashboard();
+    showToast('Material salvo!');
+  });
+
+  function renderEstoque() {
+    const lista = [...state.produtos].sort((a, b) => a.nome.localeCompare(b.nome));
+    document.querySelector('#estoqueTabela tbody').innerHTML = lista.length ? lista.map(p => `
+      <tr>
+        <td>${esc(p.nome)}</td>
+        <td>${fmtQtd(p.quantidade)} ${esc(p.unidade)}</td>
+        <td>${fmtQtd(p.quantidade * p.usosPorEmbalagem)}</td>
+        <td>${formatMoney(p.valorCompra)}</td>
+        <td>${formatMoney(custoPorUso(p))}</td>
+        <td>${fmtQtd(p.estoqueMinimo)}</td>
+        <td>${esc(p.fornecedor) || '—'}</td>
+        <td>${p.validade ? formatDateBR(p.validade) : '—'}</td>
+        <td>${htmlAlertasProduto(p) || '<span style="color:#1a7d3a;font-size:12px;font-weight:600">OK</span>'}</td>
+        <td><button class="btn secondary small" data-edit-prod="${p.id}">Editar</button> <button class="btn danger small" data-del-prod="${p.id}">Excluir</button></td>
+      </tr>`).join('') : '<tr><td colspan="10" class="empty-msg">Nenhum material cadastrado ainda.</td></tr>';
+    const comAlerta = lista.filter(p => alertasProduto(p).length);
+    document.getElementById('estoqueAlertas').innerHTML = comAlerta.length ? `
+      <div class="card" style="border-left:4px solid #b3261e;margin-bottom:16px">
+        <h3 style="color:#b3261e">⚠️ Atenção ao estoque</h3>
+        ${comAlerta.map(p => `<div class="list-row"><span>${esc(p.nome)}</span><span>${htmlAlertasProduto(p)}</span></div>`).join('')}
+      </div>` : '';
+  }
+  document.querySelector('#estoqueTabela tbody').addEventListener('click', (e) => {
+    const editId = e.target.dataset.editProd, delId = e.target.dataset.delProd;
+    if (editId) {
+      const p = state.produtos.find(x => x.id === editId);
+      if (p) abrirFormProduto(p);
+    } else if (delId) {
+      const usadoEm = state.servicos.filter(s => s.insumos.some(i => i.produtoId === delId));
+      const aviso = usadoEm.length ? ` Ele será removido da ficha de custo de: ${usadoEm.map(s => s.nome).join(', ')}.` : '';
+      if (!confirm('Excluir este material?' + aviso)) return;
+      state.produtos = state.produtos.filter(p => p.id !== delId);
+      state.servicos.forEach(s => { s.insumos = s.insumos.filter(i => i.produtoId !== delId); });
+      save(STORAGE_KEYS.produtos, state.produtos);
+      save(STORAGE_KEYS.servicos, state.servicos);
+      renderEstoque();
+      renderServicos();
+      renderDashboard();
+    }
+  });
+
+  // ---------- Ficha de custo por procedimento ----------
+  function custoInsumosServico(s) {
+    return r2((s.insumos || []).reduce((soma, i) => {
+      const p = state.produtos.find(x => x.id === i.produtoId);
+      return soma + (p ? custoPorUso(p) * num(i.usos) : 0);
+    }, 0));
+  }
+  function ticketMedioServico(servicoId) {
+    const pagos = state.financeiro.filter(f => f.tipo === 'receita' && f.atendimento && f.servicoId === servicoId);
+    return { n: pagos.length, media: pagos.length ? r2(pagos.reduce((s, f) => s + Number(f.valor), 0) / pagos.length) : null };
+  }
+  function calcularFicha(preco, custo, tempo) {
+    const valor = num(preco);
+    const lucro = r2(valor - custo);
+    return { valor, lucro, margem: valor > 0 ? (lucro / valor) * 100 : 0, lucroHora: num(tempo) > 0 ? r2(lucro / num(tempo) * 60) : null };
+  }
+
+  const modalFichaCusto = document.getElementById('modalFichaCusto');
+  let fichaCusto = null;
+
+  function abrirFichaCusto(servicoId) {
+    const s = state.servicos.find(x => x.id === servicoId);
+    if (!s) return;
+    fichaCusto = {
+      servicoId,
+      insumos: s.insumos.map(i => ({ produtoId: i.produtoId, usos: i.usos })),
+      preco: s.preco,
+      tempo: s.tempoProfissional != null ? s.tempoProfissional : s.duracao
+    };
+    renderFichaCusto();
+    modalFichaCusto.classList.add('open');
+  }
+
+  function atualizarFichaResumo() {
+    const s = state.servicos.find(x => x.id === fichaCusto.servicoId);
+    let custoTotal = 0;
+    document.querySelectorAll('#fichaCustoConteudo .ficha-custo-linha[data-n]').forEach(row => {
+      const i = fichaCusto.insumos[Number(row.dataset.n)];
+      const p = state.produtos.find(x => x.id === i.produtoId);
+      const custo = p ? custoPorUso(p) * num(i.usos) : 0;
+      custoTotal += custo;
+      row.querySelector('[data-fc="custo"]').textContent = formatMoney(custo);
+    });
+    custoTotal = r2(custoTotal);
+    const f = calcularFicha(fichaCusto.preco, custoTotal, fichaCusto.tempo);
+    const ticket = ticketMedioServico(s.id);
+    document.getElementById('fcResumo').innerHTML = `
+      <div class="linha"><span>Custo total de materiais</span><span>${formatMoney(custoTotal)}</span></div>
+      <div class="linha"><span>Valor cobrado</span><span>${formatMoney(f.valor)}</span></div>
+      <div class="linha total"><span>Margem de lucro</span><span>${formatMoney(f.lucro)} (${fmtMargem(f.margem)})</span></div>
+      ${f.lucroHora !== null ? `<div class="linha"><span>Lucro por hora do profissional</span><span>${formatMoney(f.lucroHora)}</span></div>` : ''}
+      <div class="linha"><span>Ticket médio do serviço</span><span>${ticket.media !== null ? `${formatMoney(ticket.media)} (${ticket.n} atendimento${ticket.n === 1 ? '' : 's'})` : '—'}</span></div>
+    `;
+  }
+
+  function renderFichaCusto() {
+    const s = state.servicos.find(x => x.id === fichaCusto.servicoId);
+    const opcoes = (sel) => '<option value="">Selecione o material</option>' + state.produtos.map(p =>
+      `<option value="${p.id}" ${p.id === sel ? 'selected' : ''}>${esc(p.nome)} — ${formatMoney(custoPorUso(p))}/uso</option>`).join('');
+    const cont = document.getElementById('fichaCustoConteudo');
+    cont.innerHTML = `
+      <h3>Ficha de custo — ${esc(s.nome)}</h3>
+      ${state.produtos.length ? '' : '<div class="empty-msg">Cadastre materiais em "Estoque" para montar a ficha de custo.</div>'}
+      <div class="field">
+        <label>Materiais usados no procedimento</label>
+        ${fichaCusto.insumos.length ? '<div class="ficha-custo-linha" style="font-size:11px;color:#6b7280"><span>Insumo</span><span>Qtd. de usos</span><span style="text-align:right">Custo</span><span></span></div>' : ''}
+        ${fichaCusto.insumos.map((i, n) => `
+          <div class="ficha-custo-linha" data-n="${n}">
+            <select data-fc="produto">${opcoes(i.produtoId)}</select>
+            <input type="number" min="0" step="0.01" data-fc="usos" value="${esc(i.usos)}" title="Quantidade de usos do material">
+            <span data-fc="custo" style="font-size:13px;text-align:right"></span>
+            <button type="button" class="btn danger small" data-fc="remover" title="Remover material">×</button>
+          </div>`).join('')}
+        <button type="button" class="btn secondary small" id="fcAdd" ${state.produtos.length ? '' : 'disabled'}>+ Adicionar material</button>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Valor cobrado do procedimento (R$)</label><input type="number" id="fcPreco" min="0" step="0.01" value="${esc(fichaCusto.preco)}"></div>
+        <div class="field"><label>Tempo do profissional (minutos)</label><input type="number" id="fcTempo" min="0" step="5" value="${esc(fichaCusto.tempo)}"></div>
+      </div>
+      <div class="fin-preview" id="fcResumo"></div>
+      <div class="btn-row"><button type="button" class="btn" id="fcSalvar">Salvar ficha</button><button type="button" class="btn secondary" id="fcFechar">Fechar</button></div>
+    `;
+    cont.querySelectorAll('.ficha-custo-linha[data-n]').forEach(row => {
+      const n = Number(row.dataset.n);
+      row.querySelector('[data-fc="produto"]').addEventListener('change', (e) => { fichaCusto.insumos[n].produtoId = e.target.value; atualizarFichaResumo(); });
+      row.querySelector('[data-fc="usos"]').addEventListener('input', (e) => { fichaCusto.insumos[n].usos = e.target.value; atualizarFichaResumo(); });
+      row.querySelector('[data-fc="remover"]').addEventListener('click', () => { fichaCusto.insumos.splice(n, 1); renderFichaCusto(); });
+    });
+    document.getElementById('fcAdd').addEventListener('click', () => { fichaCusto.insumos.push({ produtoId: '', usos: 1 }); renderFichaCusto(); });
+    document.getElementById('fcPreco').addEventListener('input', (e) => { fichaCusto.preco = e.target.value; atualizarFichaResumo(); });
+    document.getElementById('fcTempo').addEventListener('input', (e) => { fichaCusto.tempo = e.target.value; atualizarFichaResumo(); });
+    document.getElementById('fcFechar').addEventListener('click', () => modalFichaCusto.classList.remove('open'));
+    document.getElementById('fcSalvar').addEventListener('click', () => {
+      s.insumos = fichaCusto.insumos.filter(i => i.produtoId && num(i.usos) > 0).map(i => ({ produtoId: i.produtoId, usos: num(i.usos) }));
+      s.preco = Math.max(0, num(fichaCusto.preco));
+      s.tempoProfissional = Math.max(0, num(fichaCusto.tempo));
+      save(STORAGE_KEYS.servicos, state.servicos);
+      modalFichaCusto.classList.remove('open');
+      renderServicos();
+      popularSelectsFinanceiro();
+      showToast('Ficha de custo salva!');
+    });
+    atualizarFichaResumo();
+  }
+  modalFichaCusto.addEventListener('click', (e) => { if (e.target === modalFichaCusto) modalFichaCusto.classList.remove('open'); });
 
   // ---------- Profissionais (dentistas) ----------
   let pendingProfFoto = '';
@@ -1154,7 +1827,7 @@
       const c = state.clientes.find(c => c.id === id);
       c.nome = nome; c.nascimento = nascimento; c.cpf = cpf; c.telefone = telefone; c.email = email; c.convenio = convenio;
     } else {
-      state.clientes.push(Object.assign({ id: uid(), nome, nascimento, cpf, telefone, email, convenio }, fichaVaziaPaciente()));
+      state.clientes.push(Object.assign({ id: uid(), nome, nascimento, cpf, telefone, email, convenio, criadoEm: todayISO(), dataAvaliacao: todayISO(), statusCliente: statusVazio(), aparelho: { modo: 'auto', ultimaManutencao: '' } }, fichaVaziaPaciente()));
     }
     save(STORAGE_KEYS.clientes, state.clientes);
     modalCliente.classList.remove('open');
@@ -1163,23 +1836,29 @@
     showToast('Paciente salvo!');
   });
 
-  function renderClientes() {
+  function renderListaClientes() {
     const busca = (document.getElementById('buscaCliente').value || '').toLowerCase();
+    const filtroStatus = document.getElementById('filtroStatusLista').value;
     let base = state.clientes;
     if (session.tipo === 'profissional') {
       const meusIds = new Set(state.agendamentos.filter(a => a.profissionalId === session.profissionalId).map(a => a.clienteId));
       base = base.filter(c => meusIds.has(c.id));
     }
     const lista = document.getElementById('listaClientes');
-    const filtrados = base.filter(c => c.nome.toLowerCase().includes(busca));
+    const filtrados = base.filter(c => c.nome.toLowerCase().includes(busca) && (!filtroStatus || c.statusCliente.valor === filtroStatus));
     lista.innerHTML = filtrados.length ? filtrados.map(c => `
       <div class="cliente-list-item ${c.id === clienteSelecionadoId ? 'selected' : ''}" data-cliente="${c.id}">
-        <span>${c.nome}</span><span class="sub">${c.telefone || ''}</span>
+        <span title="${STATUS_CLIENTE[c.statusCliente.valor].label}">${STATUS_CLIENTE[c.statusCliente.valor].emoji} ${esc(c.nome)}</span><span class="sub">${esc(c.telefone || '')}</span>
       </div>
     `).join('') : '<div class="empty-msg">Nenhum paciente encontrado.</div>';
+  }
+  function renderClientes() {
+    sincronizarStatusClientes();
+    renderListaClientes();
     renderClienteDetalhe();
   }
-  document.getElementById('buscaCliente').addEventListener('input', renderClientes);
+  document.getElementById('buscaCliente').addEventListener('input', renderListaClientes);
+  document.getElementById('filtroStatusLista').addEventListener('change', renderListaClientes);
   document.getElementById('listaClientes').addEventListener('click', (e) => {
     const row = e.target.closest('[data-cliente]');
     if (!row) return;
@@ -1207,14 +1886,20 @@
     box.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:10px">
         <div>
-          <h3 style="margin-bottom:4px">${c.nome} ${idade !== null ? `· ${idade} anos` : ''}</h3>
-          <div style="font-size:13px;color:#6b7280">${c.telefone || 'sem telefone'} ${c.email ? '· ' + c.email : ''} ${c.convenio ? '· ' + c.convenio : ''}</div>
+          <h3 style="margin-bottom:4px">${esc(c.nome)} ${idade !== null ? `· ${idade} anos` : ''}</h3>
+          <div style="font-size:13px;color:#6b7280">${esc(c.telefone) || 'sem telefone'} ${c.email ? '· ' + esc(c.email) : ''} ${c.convenio ? '· ' + esc(c.convenio) : ''}</div>
         </div>
-        ${podeGerenciar ? `<div style="display:flex;gap:8px"><button class="btn secondary small" id="btnEditarCliente">Editar</button><button class="btn danger small" id="btnExcluirCliente">Excluir</button></div>` : ''}
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn small" id="btnVerEvolucao">📈 Ver evolução</button>
+          ${podeGerenciar ? `<button class="btn secondary small" id="btnEditarCliente">Editar</button><button class="btn danger small" id="btnExcluirCliente">Excluir</button>` : ''}
+        </div>
       </div>
+      <div class="status-painel" id="statusClientePainel"></div>
       <div class="ficha-tabs">${ABAS_CLIENTE.map(a => `<button type="button" class="ficha-tab-btn ${abaAtivaCliente === a.id ? 'active' : ''}" data-aba="${a.id}">${a.label}</button>`).join('')}</div>
       <div id="fichaAbaConteudo"></div>
     `;
+    renderStatusPainel(c);
+    document.getElementById('btnVerEvolucao').addEventListener('click', () => abrirEvolucao(c));
 
     if (podeGerenciar) {
       document.getElementById('btnEditarCliente').addEventListener('click', () => {
@@ -1236,7 +1921,7 @@
         populateTodosSelects();
       });
     }
-    document.querySelectorAll('.ficha-tab-btn').forEach(btn => {
+    document.querySelectorAll('.ficha-tab-btn[data-aba]').forEach(btn => {
       btn.addEventListener('click', () => { abaAtivaCliente = btn.dataset.aba; denteAtivo = null; renderClienteDetalhe(); });
     });
     renderAbaCliente(c);
@@ -1387,13 +2072,46 @@
     }));
   }
 
+  // Ao concluir um procedimento do plano, os materiais do serviço saem do estoque (uma vez); voltar o status devolve
+  function definirStatusItem(item, novo) {
+    const antes = item.status;
+    let avisoEstoque = '';
+    if (novo === 'concluido' && antes !== 'concluido') {
+      item.dataConclusao = todayISO();
+      const serv = servicoDoItem(item);
+      item.baixas = serv ? baixarMateriais(serv) : [];
+      const baixos = produtosBaixos(item.baixas);
+      if (baixos.length) avisoEstoque = ` Estoque baixo: ${baixos.map(p => p.nome).join(', ')}`;
+    } else if (antes === 'concluido' && novo !== 'concluido') {
+      devolverMateriais(item.baixas);
+      item.baixas = [];
+      item.dataConclusao = '';
+    }
+    item.status = novo;
+    return avisoEstoque;
+  }
+  function aposMudancaPlano(p) {
+    sincronizarStatusCliente(p);
+    save(STORAGE_KEYS.clientes, state.clientes);
+    renderListaClientes();
+    renderStatusPainel(p);
+    renderDashboardAlertas();
+    renderEstoque();
+  }
+
   function renderAbaPlano(el, p) {
     const plano = p.planoTratamento;
     const total = plano.itens.reduce((s, i) => s + Number(i.valor || 0), 0);
+    const custoTotal = r2(plano.itens.reduce((s, i) => s + custoMateriaisItem(i), 0));
+    const nomeStatus = { pendente: 'Pendente', andamento: 'Em andamento', concluido: 'Concluído' };
+    const conv = convenioDoPaciente(p);
     el.innerHTML = `
       <h4 style="font-size:13px;color:var(--cor-primaria);margin-bottom:8px">Procedimentos do plano</h4>
       <form id="formItemPlano">
         <div class="form-grid">
+          <div class="field"><label>Procedimento cadastrado</label>
+            <select id="itemServico"><option value="">Outro (digitar abaixo)</option>${state.servicos.map(s => `<option value="${s.id}">${esc(s.nome)} — ${formatMoney(s.preco)}</option>`).join('')}</select>
+          </div>
           <div class="field"><label>Dente</label><input type="text" id="itemDente" placeholder="Ex: 26 ou Geral"></div>
           <div class="field"><label>Procedimento</label><input type="text" id="itemProcedimento" required></div>
           <div class="field"><label>Valor (R$)</label><input type="number" id="itemValor" min="0" step="0.01" required></div>
@@ -1403,23 +2121,24 @@
       </form>
       <div class="tabela-scroll" style="margin-top:14px">
         <table>
-          <thead><tr><th>Dente</th><th>Procedimento</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Dente</th><th>Procedimento</th><th>Valor</th><th>Materiais</th><th>Status</th><th>Concluído em</th><th></th></tr></thead>
           <tbody>
             ${plano.itens.length ? plano.itens.map(i => `
               <tr>
-                <td>${i.dente || 'Geral'}</td><td>${i.procedimento}</td><td>${formatMoney(i.valor)}</td>
+                <td>${esc(i.dente) || 'Geral'}</td><td>${esc(i.procedimento)}</td><td>${formatMoney(i.valor)}</td>
+                <td>${servicoDoItem(i) ? formatMoney(custoMateriaisItem(i)) : '—'}</td>
                 <td><select class="status-item" data-item="${i.id}">
-                  <option value="pendente" ${i.status === 'pendente' ? 'selected' : ''}>Pendente</option>
-                  <option value="andamento" ${i.status === 'andamento' ? 'selected' : ''}>Em andamento</option>
-                  <option value="concluido" ${i.status === 'concluido' ? 'selected' : ''}>Concluído</option>
+                  ${Object.keys(nomeStatus).map(k => `<option value="${k}" ${i.status === k ? 'selected' : ''}>${nomeStatus[k]}</option>`).join('')}
                 </select></td>
+                <td>${i.status === 'concluido' ? `<input type="date" class="data-item" data-item="${i.id}" value="${esc(i.dataConclusao)}" style="width:140px">` : '—'}</td>
                 <td><button class="btn danger small" data-del-item="${i.id}">Excluir</button></td>
               </tr>
-            `).join('') : '<tr><td colspan="5" class="empty-msg">Nenhum procedimento adicionado.</td></tr>'}
+            `).join('') : '<tr><td colspan="7" class="empty-msg">Nenhum procedimento adicionado.</td></tr>'}
           </tbody>
         </table>
       </div>
       <div style="text-align:right;font-weight:700;color:var(--cor-primaria);margin-top:10px;font-size:15px">Total do orçamento: ${formatMoney(total)}</div>
+      ${custoTotal > 0 ? `<div style="text-align:right;font-size:12.5px;color:#6b7280;margin-top:4px">Custo estimado de materiais: ${formatMoney(custoTotal)} · lucro estimado antes de taxas: ${formatMoney(total - custoTotal)} (${fmtMargem(total > 0 ? ((total - custoTotal) / total) * 100 : 0)})</div>` : ''}
       <hr style="border:none;border-top:1px solid var(--cor-borda);margin:18px 0">
       <h4 style="font-size:13px;color:var(--cor-primaria);margin-bottom:8px">Aceite do paciente</h4>
       <label class="checkbox-item"><input type="checkbox" id="planoAceite" ${plano.aceite.aceito ? 'checked' : ''}> Paciente aceitou o plano de tratamento</label>
@@ -1435,35 +2154,64 @@
             ${plano.parcelas.length ? plano.parcelas.map(pc => `
               <tr>
                 <td>${pc.numero}/${plano.parcelas.length}</td><td>${formatMoney(pc.valor)}</td>
-                <td>${pc.pago ? '<span style="color:#1a7d3a;font-weight:600">Paga</span>' : '<span style="color:#b3261e;font-weight:600">Pendente</span>'}</td>
+                <td>${pc.pago ? `<span style="color:#1a7d3a;font-weight:600">Paga</span>${pc.forma ? `<br><span style="font-size:11.5px;color:#6b7280">${pc.origem === 'convenio' ? 'Convênio' : 'Particular'} · ${esc(pc.forma)}</span>` : ''}` : '<span style="color:#b3261e;font-weight:600">Pendente</span>'}</td>
                 <td>${pc.dataPagamento ? formatDateBR(pc.dataPagamento) : '—'}</td>
-                <td><button class="btn ${pc.pago ? 'secondary' : 'gold'} small" data-toggle-parcela="${pc.numero}">${pc.pago ? 'Desfazer' : 'Marcar como paga'}</button></td>
+                <td><button class="btn ${pc.pago ? 'secondary' : 'gold'} small" data-parcela="${pc.pago ? 'desfazer' : 'pagar'}" data-numero="${pc.numero}">${pc.pago ? 'Desfazer' : 'Registrar pagamento'}</button></td>
               </tr>
             `).join('') : '<tr><td colspan="5" class="empty-msg">Nenhuma parcela gerada ainda.</td></tr>'}
           </tbody>
         </table>
       </div>
+      <div style="font-size:12px;color:#6b7280;margin-top:8px">${conv ? `Convênio do paciente: ${esc(conv)} (sem taxa de maquininha).` : 'Paciente particular: a taxa da maquininha é aplicada conforme a forma de pagamento.'}</div>
     `;
+    document.getElementById('itemServico').addEventListener('change', (e) => {
+      const s = state.servicos.find(x => x.id === e.target.value);
+      if (!s) return;
+      document.getElementById('itemProcedimento').value = s.nome;
+      document.getElementById('itemValor').value = s.preco;
+    });
     document.getElementById('formItemPlano').addEventListener('submit', (e) => {
       e.preventDefault();
-      plano.itens.push({ id: uid(), dente: document.getElementById('itemDente').value.trim(), procedimento: document.getElementById('itemProcedimento').value.trim(), valor: parseFloat(document.getElementById('itemValor').value) || 0, status: document.getElementById('itemStatus').value });
+      const item = {
+        id: uid(), dente: document.getElementById('itemDente').value.trim(), procedimento: document.getElementById('itemProcedimento').value.trim(),
+        valor: parseFloat(document.getElementById('itemValor').value) || 0, status: 'pendente', servicoId: document.getElementById('itemServico').value, dataConclusao: '', baixas: []
+      };
+      plano.itens.push(item);
+      const aviso = definirStatusItem(item, document.getElementById('itemStatus').value);
       save(STORAGE_KEYS.clientes, state.clientes);
+      aposMudancaPlano(p);
       renderAbaPlano(el, p);
-      showToast('Procedimento adicionado ao plano!');
+      showToast('Procedimento adicionado ao plano!' + aviso);
     });
     el.querySelectorAll('.status-item').forEach(sel => sel.addEventListener('change', () => {
       const item = plano.itens.find(i => i.id === sel.dataset.item);
-      if (item) { item.status = sel.value; save(STORAGE_KEYS.clientes, state.clientes); showToast('Status atualizado!'); }
+      if (!item) return;
+      const aviso = definirStatusItem(item, sel.value);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      aposMudancaPlano(p);
+      renderAbaPlano(el, p);
+      showToast('Status atualizado!' + aviso);
+    }));
+    el.querySelectorAll('.data-item').forEach(inp => inp.addEventListener('change', () => {
+      const item = plano.itens.find(i => i.id === inp.dataset.item);
+      if (!item) return;
+      item.dataConclusao = inp.value;
+      save(STORAGE_KEYS.clientes, state.clientes);
+      aposMudancaPlano(p);
     }));
     el.querySelectorAll('[data-del-item]').forEach(btn => btn.addEventListener('click', () => {
+      const item = plano.itens.find(i => i.id === btn.dataset.delItem);
+      if (item) devolverMateriais(item.baixas);
       plano.itens = plano.itens.filter(i => i.id !== btn.dataset.delItem);
       save(STORAGE_KEYS.clientes, state.clientes);
+      aposMudancaPlano(p);
       renderAbaPlano(el, p);
     }));
     document.getElementById('planoAceite').addEventListener('change', (e) => {
       plano.aceite.aceito = e.target.checked;
       plano.aceite.data = e.target.checked ? todayISO() : '';
       save(STORAGE_KEYS.clientes, state.clientes);
+      aposMudancaPlano(p);
       renderAbaPlano(el, p);
     });
     document.getElementById('btnGerarParcelas').addEventListener('click', () => {
@@ -1475,16 +2223,21 @@
       for (let n = 1; n <= qtd; n++) {
         const valor = n === qtd ? Math.round((totalAtual - soma) * 100) / 100 : valorBase;
         soma += valor;
-        parcelas.push({ numero: n, valor, pago: false, dataPagamento: '' });
+        parcelas.push({ numero: n, valor, pago: false, dataPagamento: '', lancamentos: [] });
       }
+      // parcelas já pagas geraram lançamentos: ao refazer o parcelamento eles são removidos junto
+      const idsAntigos = new Set(plano.parcelas.flatMap(pc => pc.lancamentos || []));
+      if (idsAntigos.size && !confirm('Já existem parcelas pagas. Refazer o parcelamento remove os pagamentos registrados nelas. Continuar?')) return;
+      if (idsAntigos.size) { state.financeiro = state.financeiro.filter(f => !idsAntigos.has(f.id)); save(STORAGE_KEYS.financeiro, state.financeiro); }
       plano.parcelas = parcelas;
       save(STORAGE_KEYS.clientes, state.clientes);
       renderAbaPlano(el, p);
+      renderParcelasGlobais();
       showToast('Parcelas geradas!');
     });
-    el.querySelectorAll('[data-toggle-parcela]').forEach(btn => btn.addEventListener('click', () => {
-      const pc = plano.parcelas.find(x => String(x.numero) === btn.dataset.toggleParcela);
-      if (pc) { pc.pago = !pc.pago; pc.dataPagamento = pc.pago ? todayISO() : ''; save(STORAGE_KEYS.clientes, state.clientes); renderAbaPlano(el, p); }
+    el.querySelectorAll('[data-parcela]').forEach(btn => btn.addEventListener('click', () => {
+      if (btn.dataset.parcela === 'pagar') abrirPagamentoParcela(p.id, btn.dataset.numero);
+      else if (confirm('Desfazer este pagamento? Os lançamentos gerados por ele serão removidos.')) desfazerPagamentoParcela(p.id, btn.dataset.numero);
     }));
   }
 
@@ -1534,6 +2287,7 @@
     listaEl.querySelectorAll('[data-del-consulta]').forEach(btn => btn.addEventListener('click', () => {
       p.consultas = p.consultas.filter(c => c.id !== btn.dataset.delConsulta);
       save(STORAGE_KEYS.clientes, state.clientes);
+      aposMudancaPlano(p);
       renderAbaProntuario(el, p);
     }));
     document.getElementById('formConsulta').addEventListener('submit', async (e) => {
@@ -1553,6 +2307,7 @@
         anexos
       });
       save(STORAGE_KEYS.clientes, state.clientes);
+      aposMudancaPlano(p);
       showToast('Consulta registrada!');
       renderAbaProntuario(el, p);
     });
@@ -1735,6 +2490,9 @@
     if (tipo === 'lembreteHoje') return `Olá ${d.nome}! Hoje é o dia do seu ${d.servico} às ${d.hora}. Te esperamos! 😊`;
     if (tipo === 'cancelamento') return `Olá ${d.nome}, precisamos cancelar seu agendamento de ${d.servico} do dia ${d.data}. Entre em contato para reagendar. 😊`;
     if (tipo === 'posAtendimento') return `Olá ${d.nome}! Esperamos que tenha gostado do seu ${d.servico}! Seu próximo retorno recomendado é em ${d.dataRetorno}. Agende pelo link: ${d.link}`;
+    if (tipo === 'revisao') return `Olá ${d.nomeCurto}! Está na hora da sua revisão semestral 😊 Agende pelo link: ${d.link}`;
+    if (tipo === 'aparelho') return `Olá ${d.nomeCurto}! Está na hora da manutenção do seu aparelho 😊${d.diasAparelho !== null ? ` Faz ${d.diasAparelho} dias desde a última manutenção.` : ''} Agende pelo link: ${d.link}`;
+    if (tipo === 'retomada') return `Olá ${d.nomeCurto}! Sentimos sua falta 😊 Seu tratamento ainda tem ${d.pendentes} ${d.pendentes === 1 ? 'procedimento pendente' : 'procedimentos pendentes'}. Vamos retomar? Agende pelo link: ${d.link}`;
     return '';
   }
   function tipoSugeridoPorData(dataISO) {
@@ -1752,6 +2510,7 @@
     const cli = state.clientes.find(c => c.id === agendamento.clienteId);
     if (!cli) { alert('Paciente não encontrado.'); return; }
     whatsAgendamentoAtual = agendamento;
+    document.getElementById('whatsTipo').disabled = false;
     document.getElementById('whatsCliente').value = cli.nome;
     document.getElementById('whatsTelefone').value = cli.telefone || '';
     document.getElementById('whatsTipo').value = tipoForcado || tipoSugeridoPorData(agendamento.data);
@@ -1776,7 +2535,10 @@
       data: formatDateBR(a.data),
       hora: a.hora,
       dataRetorno: formatDateBR(document.getElementById('whatsDataRetorno').value),
-      link: getClienteLinkURL()
+      link: getClienteLinkURL(),
+      nomeCurto: cli ? primeiroNome(cli) : '',
+      pendentes: cli ? itensPendentes(cli).length : 0,
+      diasAparelho: cli && infoAparelho(cli).ultima ? diasEntre(infoAparelho(cli).ultima, todayISO()) : null
     };
     document.getElementById('whatsMensagem').value = montarMensagemWhatsapp(tipo, dados);
   }
@@ -1796,6 +2558,11 @@
     const digits = limparTelefoneWhats(telefone);
     const mensagem = document.getElementById('whatsMensagem').value;
     window.open(`https://wa.me/${digits}?text=${encodeURIComponent(mensagem)}`, '_blank');
+    if (whatsAgendamentoAtual.retomada && cli) {
+      cli.statusCliente.ultimoContato = todayISO();
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderRetencaoAcoes();
+    }
     modalWhatsapp.classList.remove('open');
   });
 
@@ -1927,6 +2694,583 @@
     cont.innerHTML = `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;overflow-x:auto">${dias.map(d => `<div><div style="font-size:11px;color:#6b7280;text-align:center;margin-bottom:6px;font-weight:600">${nomesDias[new Date(d + 'T00:00:00').getDay()]}<br>${formatDateBR(d).slice(0, 5)}</div>${renderTimelineDiaCompacto(alvo, d)}</div>`).join('')}</div>`;
   }
 
+  // ---------- Status de pacientes, retenção e evolução ----------
+  const STATUS_CLIENTE = {
+    avaliacao: { emoji: '🟡', label: 'Em Avaliação' },
+    ativo: { emoji: '🟢', label: 'Ativo (em tratamento)' },
+    inativo: { emoji: '🔴', label: 'Inativo' },
+    abandonou: { emoji: '⚫', label: 'Abandonou tratamento' },
+    concluido: { emoji: '✅', label: 'Tratamento concluído' }
+  };
+  const ORDEM_URGENCIA_STATUS = ['abandonou', 'inativo', 'avaliacao', 'ativo', 'concluido'];
+  const DIAS_ENTRE_CONTATOS = 7;
+  const MOTIVOS_SUGERIDOS = ['Financeiro', 'Falta de tempo', 'Medo/receio do tratamento', 'Insatisfação com o atendimento', 'Mudou de cidade', 'Foi para outro consultório', 'Não respondeu ao contato'];
+  const RE_ORTODONTIA = /aparelho|ortodon/i;
+
+  function htmlBadgeStatus(valor) {
+    const s = STATUS_CLIENTE[valor] || STATUS_CLIENTE.avaliacao;
+    return `<span class="status-badge ${valor}">${s.emoji} ${s.label}</span>`;
+  }
+  function plural(n, singular, pluralTxt) { return n === 1 ? singular : pluralTxt; }
+  function diasEntre(deISO, ateISO) {
+    const [y1, m1, d1] = deISO.split('-').map(Number), [y2, m2, d2] = ateISO.split('-').map(Number);
+    return Math.round((new Date(y2, m2 - 1, d2) - new Date(y1, m1 - 1, d1)) / 86400000);
+  }
+  function maiorData(lista) { return lista.filter(Boolean).sort().pop() || ''; }
+  function media(lista) { return lista.length ? lista.reduce((s, v) => s + v, 0) / lista.length : null; }
+  function nomeProfissionalPorId(id) { const p = state.profissionais.find(x => x.id === id); return p ? p.nome : ''; }
+  function nomeServicoPorId(id) { const s = state.servicos.find(x => x.id === id); return s ? s.nome : ''; }
+  function slugNome(nome) { return String(nome).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'paciente'; }
+  function primeiroNome(c) { return String(c.nome || '').trim().split(' ')[0]; }
+  function statusVazio(valor) {
+    return { valor: valor || 'avaliacao', desde: todayISO(), manual: false, justificativa: '', atividadesNoAjuste: 0, motivoAtual: '', motivoInatividade: '', ultimoContato: '', historico: [] };
+  }
+  function dataAvaliacaoCliente(c) { return c.dataAvaliacao || c.criadoEm || ''; }
+
+  // Atividade = consulta, procedimento concluído, pagamento ou agendamento comparecido (uma data por dia)
+  function datasAtividadePaciente(c) {
+    const hoje = todayISO(), ds = [];
+    (c.consultas || []).forEach(x => { if (x.data && x.data <= hoje) ds.push(x.data); });
+    c.planoTratamento.itens.forEach(i => { if (i.status === 'concluido' && i.dataConclusao) ds.push(i.dataConclusao); });
+    c.planoTratamento.parcelas.forEach(pc => { if (pc.pago && pc.dataPagamento) ds.push(pc.dataPagamento); });
+    state.financeiro.forEach(f => { if (f.tipo === 'receita' && f.clienteId === c.id && f.data <= hoje) ds.push(f.data); });
+    state.agendamentos.forEach(a => { if (a.clienteId === c.id && a.data <= hoje && a.presenca !== 'faltou') ds.push(a.data); });
+    return [...new Set(ds)].sort();
+  }
+  function ultimaAtividadePaciente(c) { const d = datasAtividadePaciente(c); return d.length ? d[d.length - 1] : ''; }
+  function proximoAgendamentoCliente(c) {
+    const hoje = todayISO();
+    return state.agendamentos.filter(a => a.clienteId === c.id && a.data >= hoje && a.presenca !== 'faltou').sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora))[0] || null;
+  }
+  function planoAceito(c) { return !!(c.planoTratamento.aceite.aceito && c.planoTratamento.itens.length); }
+  function itensPendentes(c) { return c.planoTratamento.itens.filter(i => i.status !== 'concluido'); }
+  function profissionalDoCliente(c) {
+    const cons = (c.consultas || []).filter(x => x.dentistaId && x.data).sort((a, b) => a.data.localeCompare(b.data));
+    if (cons.length) return cons[cons.length - 1].dentistaId;
+    const fin = state.financeiro.filter(f => f.clienteId === c.id && f.profissionalId).sort((a, b) => a.data.localeCompare(b.data));
+    if (fin.length) return fin[fin.length - 1].profissionalId;
+    const ag = state.agendamentos.filter(a => a.clienteId === c.id && a.profissionalId && a.data <= todayISO()).sort((a, b) => a.data.localeCompare(b.data));
+    return ag.length ? ag[ag.length - 1].profissionalId : '';
+  }
+
+  // Aparelho ortodôntico: detectado pelos nomes dos procedimentos ("aparelho"/"ortodon...") ou definido na ficha
+  function infoAparelho(c) {
+    const modo = (c.aparelho && c.aparelho.modo) || 'auto', hoje = todayISO(), datas = [];
+    (c.consultas || []).forEach(x => { if (x.data && RE_ORTODONTIA.test(x.procedimento || '')) datas.push(x.data); });
+    c.planoTratamento.itens.forEach(i => { if (i.status === 'concluido' && i.dataConclusao && RE_ORTODONTIA.test(i.procedimento || '')) datas.push(i.dataConclusao); });
+    state.agendamentos.forEach(a => { if (a.clienteId === c.id && a.data <= hoje && a.presenca !== 'faltou' && RE_ORTODONTIA.test(nomeServicoPorId(a.servicoId))) datas.push(a.data); });
+    state.financeiro.forEach(f => { if (f.tipo === 'receita' && f.clienteId === c.id && f.data <= hoje && RE_ORTODONTIA.test(f.procedimentoNome || '')) datas.push(f.data); });
+    if (c.aparelho && c.aparelho.ultimaManutencao) datas.push(c.aparelho.ultimaManutencao);
+    const ativo = modo === 'sim' || (modo === 'auto' && datas.length > 0);
+    return { ativo, ultima: maiorData(datas) };
+  }
+  function aparelhoSemManutencao(c) {
+    const a = infoAparelho(c);
+    if (!a.ativo || proximoAgendamentoCliente(c)) return false;
+    return !a.ultima || diasEntre(a.ultima, todayISO()) > state.regrasStatus.diasAparelho;
+  }
+  function revisaoPendente(c) {
+    const ultima = ultimaAtividadePaciente(c);
+    return !!ultima && diasEntre(ultima, todayISO()) > state.regrasStatus.diasRevisao && !proximoAgendamentoCliente(c);
+  }
+
+  // Regras: todos os procedimentos concluídos -> Concluído; sem plano aceito -> Em Avaliação (Inativo se parar de vir);
+  // plano aceito com pendências -> Ativo, Inativo (sem atividade > 30 dias) ou Abandonou (> 90 dias)
+  function calcularStatusAutomatico(c) {
+    const hoje = todayISO(), regras = state.regrasStatus, itens = c.planoTratamento.itens;
+    const ultima = ultimaAtividadePaciente(c);
+    const dias = ultima ? diasEntre(ultima, hoje) : null;
+    if (itens.length && itens.every(i => i.status === 'concluido')) return { valor: 'concluido', motivo: `Todos os ${itens.length} ${plural(itens.length, 'procedimento', 'procedimentos')} do plano concluídos` };
+    if (!planoAceito(c)) {
+      if (dias === null) return { valor: 'avaliacao', motivo: 'Ainda sem consulta' };
+      if (dias > regras.diasAbandono && !proximoAgendamentoCliente(c)) return { valor: 'inativo', motivo: `Plano não aceito e sem atividade há ${dias} dias` };
+      return { valor: 'avaliacao', motivo: 'Avaliação feita; plano de tratamento ainda não aceito' };
+    }
+    const pend = itensPendentes(c).length;
+    if (proximoAgendamentoCliente(c)) return { valor: 'ativo', motivo: `Em tratamento com consulta agendada (${pend} ${plural(pend, 'procedimento pendente', 'procedimentos pendentes')})` };
+    const ref = ultima || c.planoTratamento.aceite.data || hoje;
+    const d = diasEntre(ref, hoje);
+    if (d > regras.diasAbandono) return { valor: 'abandonou', motivo: `${pend} ${plural(pend, 'procedimento pendente', 'procedimentos pendentes')} e sem atividade há ${d} dias` };
+    if (d > regras.diasInativo) return { valor: 'inativo', motivo: `Em tratamento, mas sem atividade há ${d} dias` };
+    return { valor: 'ativo', motivo: `Em tratamento (${pend} ${plural(pend, 'procedimento pendente', 'procedimentos pendentes')})` };
+  }
+
+  function registrarHistoricoStatus(c, de, para, manual, motivo) {
+    const h = c.statusCliente.historico;
+    h.push({ data: todayISO(), de, para, manual, motivo });
+    if (h.length > 50) h.shift();
+  }
+  function normalizarClientes() {
+    let criou = false;
+    state.clientes.forEach(c => {
+      if (!c.aparelho) c.aparelho = { modo: 'auto', ultimaManutencao: '' };
+      if (!c.statusCliente || !c.statusCliente.valor) { c.statusCliente = statusVazio(calcularStatusAutomatico(c).valor); criou = true; }
+      if (!Array.isArray(c.statusCliente.historico)) c.statusCliente.historico = [];
+    });
+    if (criou) save(STORAGE_KEYS.clientes, state.clientes);
+  }
+  function sincronizarStatusCliente(c) {
+    const s = c.statusCliente;
+    let mudou = false;
+    if (s.manual) {
+      if (datasAtividadePaciente(c).length <= (s.atividadesNoAjuste || 0)) return false;
+      s.manual = false; s.justificativa = '';
+      registrarHistoricoStatus(c, s.valor, s.valor, false, 'Status manual encerrado: o paciente teve nova atividade');
+      mudou = true;
+    }
+    const r = calcularStatusAutomatico(c);
+    s.motivoAtual = r.motivo;
+    if (r.valor !== s.valor) {
+      registrarHistoricoStatus(c, s.valor, r.valor, false, r.motivo);
+      s.valor = r.valor;
+      s.desde = todayISO();
+      mudou = true;
+    }
+    return mudou;
+  }
+  function sincronizarStatusClientes() {
+    let mudou = false;
+    state.clientes.forEach(c => { if (sincronizarStatusCliente(c)) mudou = true; });
+    if (mudou) save(STORAGE_KEYS.clientes, state.clientes);
+  }
+
+  // ---------- Painel de status na ficha ----------
+  function renderStatusPainel(c) {
+    const box = document.getElementById('statusClientePainel');
+    if (!box) return;
+    const s = c.statusCliente, admin = session.tipo === 'admin', ap = infoAparelho(c);
+    const origem = s.manual ? `Definido manualmente em ${formatDateBR(s.desde)}: ${esc(s.justificativa)}` : `Automático — ${esc(s.motivoAtual || 'calculado pelo tratamento')}`;
+    const alertas = [revisaoPendente(c) ? '<span class="badge aviso">Revisão pendente</span>' : '', aparelhoSemManutencao(c) ? '<span class="badge alerta">Aparelho sem manutenção</span>' : ''].join('');
+    box.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        ${htmlBadgeStatus(s.valor)}${alertas}
+        <span style="font-size:12.5px;color:#6b7280">desde ${formatDateBR(s.desde)} · ${origem}</span>
+      </div>
+      ${admin ? `
+      <details>
+        <summary>Gerenciar status</summary>
+        <form id="formStatusManual" style="margin-top:10px">
+          <div class="form-grid">
+            <div class="field"><label>Novo status</label>
+              <select id="stManualValor">${Object.keys(STATUS_CLIENTE).map(k => `<option value="${k}" ${k === s.valor ? 'selected' : ''}>${STATUS_CLIENTE[k].emoji} ${STATUS_CLIENTE[k].label}</option>`).join('')}</select>
+            </div>
+            <div class="field"><label>Justificativa (obrigatória)</label><input type="text" id="stManualJustificativa" required placeholder="Ex: tratamento suspenso a pedido do paciente"></div>
+          </div>
+          <div class="btn-row" style="margin-top:0">
+            <button type="submit" class="btn small">Aplicar status manual</button>
+            ${s.manual ? '<button type="button" class="btn secondary small" id="btnStatusAutomatico">Voltar ao automático</button>' : ''}
+          </div>
+        </form>
+        <form id="formAcompanhamento" style="margin-top:14px">
+          <div class="form-grid">
+            <div class="field"><label>Motivo de inatividade</label>
+              <input type="text" id="stMotivo" list="listaMotivosInatividade" value="${esc(s.motivoInatividade)}" placeholder="Ex: Financeiro">
+              <datalist id="listaMotivosInatividade">${MOTIVOS_SUGERIDOS.map(m => `<option value="${esc(m)}">`).join('')}</datalist>
+            </div>
+            <div class="field"><label>Data da avaliação inicial</label><input type="date" id="stDataAvaliacao" value="${esc(dataAvaliacaoCliente(c))}"></div>
+            <div class="field"><label>Aparelho ortodôntico</label>
+              <select id="stAparelhoModo">
+                <option value="auto" ${(c.aparelho.modo || 'auto') === 'auto' ? 'selected' : ''}>Automático (pelos procedimentos)</option>
+                <option value="sim" ${c.aparelho.modo === 'sim' ? 'selected' : ''}>Usa aparelho</option>
+                <option value="nao" ${c.aparelho.modo === 'nao' ? 'selected' : ''}>Não usa / tratamento encerrado</option>
+              </select>
+            </div>
+            <div class="field"><label>Última manutenção do aparelho</label><input type="date" id="stAparelhoData" value="${esc(c.aparelho.ultimaManutencao)}"></div>
+          </div>
+          <div style="font-size:12px;color:#6b7280;margin-bottom:8px">Aparelho: ${ap.ativo ? `em uso${ap.ultima ? `, última manutenção em ${formatDateBR(ap.ultima)}` : ', sem manutenção registrada'}` : 'não identificado'}.</div>
+          <div class="btn-row" style="margin-top:0"><button type="submit" class="btn secondary small">Salvar acompanhamento</button></div>
+        </form>
+        ${s.historico.length ? `<div style="margin-top:12px;font-size:12.5px"><strong>Histórico de status</strong>${[...s.historico].reverse().slice(0, 8).map(h => `<div class="list-row" style="padding:5px 0"><span>${formatDateBR(h.data)} · ${h.de === h.para ? htmlBadgeStatus(h.para) : `${htmlBadgeStatus(h.de)} → ${htmlBadgeStatus(h.para)}`}</span><span style="color:#6b7280;text-align:right">${h.manual ? 'Manual: ' : ''}${esc(h.motivo)}</span></div>`).join('')}</div>` : ''}
+      </details>` : ''}
+    `;
+    if (!admin) return;
+    document.getElementById('formStatusManual').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const justificativa = document.getElementById('stManualJustificativa').value.trim();
+      if (!justificativa) { showToast('Informe a justificativa.'); return; }
+      const novo = document.getElementById('stManualValor').value;
+      registrarHistoricoStatus(c, s.valor, novo, true, justificativa);
+      s.valor = novo; s.manual = true; s.justificativa = justificativa; s.desde = todayISO(); s.atividadesNoAjuste = datasAtividadePaciente(c).length;
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderListaClientes(); renderStatusPainel(c); renderDashboardAlertas();
+      showToast('Status atualizado manualmente.');
+    });
+    const btnAuto = document.getElementById('btnStatusAutomatico');
+    if (btnAuto) btnAuto.addEventListener('click', () => {
+      s.manual = false; s.justificativa = '';
+      registrarHistoricoStatus(c, s.valor, s.valor, false, 'Voltou ao modo automático');
+      sincronizarStatusCliente(c);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderListaClientes(); renderStatusPainel(c); renderDashboardAlertas();
+      showToast('Status voltou ao automático.');
+    });
+    document.getElementById('formAcompanhamento').addEventListener('submit', (e) => {
+      e.preventDefault();
+      s.motivoInatividade = document.getElementById('stMotivo').value.trim();
+      c.dataAvaliacao = document.getElementById('stDataAvaliacao').value;
+      c.aparelho = { modo: document.getElementById('stAparelhoModo').value, ultimaManutencao: document.getElementById('stAparelhoData').value };
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderStatusPainel(c); renderDashboardAlertas();
+      showToast('Acompanhamento salvo!');
+    });
+  }
+
+  // ---------- Alertas no Dashboard ----------
+  function contarAlertasClientes() {
+    const cont = { inativo: 0, abandonou: 0, avaliacao: 0, revisao: 0, aparelho: 0 };
+    state.clientes.forEach(c => {
+      if (c.statusCliente.valor in cont) cont[c.statusCliente.valor]++;
+      if (revisaoPendente(c)) cont.revisao++;
+      if (aparelhoSemManutencao(c)) cont.aparelho++;
+    });
+    return cont;
+  }
+  function renderDashboardAlertas() {
+    const box = document.getElementById('dashAlertasClientes');
+    if (!box) return;
+    const n = contarAlertasClientes(), r = state.regrasStatus;
+    const card = (cor, filtro, qtd, texto) => `<button type="button" class="alert-card ${cor}" data-filtro-status="${filtro}"><span class="n">${qtd}</span>${texto}</button>`;
+    box.innerHTML =
+      card('vermelho', 'inativo', n.inativo, `${plural(n.inativo, 'paciente inativo', 'pacientes inativos')} (tratamento parado há mais de ${r.diasInativo} dias)`) +
+      card('laranja', 'abandonou', n.abandonou, `${plural(n.abandonou, 'paciente abandonou', 'pacientes abandonaram')} o tratamento`) +
+      card('amarelo', 'avaliacao', n.avaliacao, `${plural(n.avaliacao, 'paciente em avaliação', 'pacientes em avaliação')}, sem plano aceito`) +
+      card('azul', 'revisao', n.revisao, `${plural(n.revisao, 'paciente não retornou', 'pacientes não retornaram')} para revisão em ${Math.round(r.diasRevisao / 30)} meses`) +
+      card('roxo', 'aparelho', n.aparelho, `${plural(n.aparelho, 'aparelho ortodôntico sem manutenção', 'aparelhos ortodônticos sem manutenção')} há mais de ${r.diasAparelho} dias`);
+  }
+  document.getElementById('dashAlertasClientes').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-filtro-status]');
+    if (!btn) return;
+    abrirRetencao({ status: btn.dataset.filtroStatus });
+  });
+
+  // ---------- Página de retenção ----------
+  let retAbaAtiva = 'lista';
+  const $ret = (id) => document.getElementById(id);
+  function abrirRetencao(filtros, aba) {
+    limparFiltrosRetencao();
+    Object.keys(filtros || {}).forEach(k => { const el = $ret('ret' + k.charAt(0).toUpperCase() + k.slice(1)); if (el) el.value = filtros[k]; });
+    retAbaAtiva = aba || 'lista';
+    goToPage('retencao');
+  }
+  function limparFiltrosRetencao() {
+    ['retStatus', 'retProf', 'retPeriodo', 'retDe', 'retAte'].forEach(id => { $ret(id).value = ''; });
+    $ret('retDeBox').style.display = 'none';
+    $ret('retAteBox').style.display = 'none';
+  }
+  function popularFiltrosRetencao() {
+    const prof = $ret('retProf').value;
+    $ret('retProf').innerHTML = '<option value="">Todos os dentistas</option>' + state.profissionais.map(p => `<option value="${p.id}">${esc(p.nome)}</option>`).join('');
+    $ret('retProf').value = prof;
+  }
+  function correspondeStatusFiltro(c, status) {
+    if (!status) return true;
+    if (status === 'revisao') return revisaoPendente(c);
+    if (status === 'aparelho') return aparelhoSemManutencao(c);
+    return c.statusCliente.valor === status;
+  }
+  function clientesFiltradosRetencao(baseFn, ignorarStatus) {
+    const hoje = todayISO();
+    const status = ignorarStatus ? '' : $ret('retStatus').value, prof = $ret('retProf').value, periodo = $ret('retPeriodo').value;
+    let de = '', ate = '';
+    if (periodo === 'personalizado') { de = $ret('retDe').value; ate = $ret('retAte').value; if (de && ate && de > ate) { const t = de; de = ate; ate = t; } }
+    else if (periodo) { de = somarDiasISO(hoje, -parseInt(periodo.slice(3), 10)); ate = hoje; }
+    return state.clientes.filter(c => {
+      if (baseFn && !baseFn(c)) return false;
+      if (!correspondeStatusFiltro(c, status)) return false;
+      if (prof && profissionalDoCliente(c) !== prof) return false;
+      if (de || ate) {
+        const ultima = ultimaAtividadePaciente(c);
+        if (!ultima || (de && ultima < de) || (ate && ultima > ate)) return false;
+      }
+      return true;
+    }).sort((a, b) => ORDEM_URGENCIA_STATUS.indexOf(a.statusCliente.valor) - ORDEM_URGENCIA_STATUS.indexOf(b.statusCliente.valor) || a.nome.localeCompare(b.nome));
+  }
+  function descricaoUltimaConsulta(c) {
+    const ultima = ultimaAtividadePaciente(c);
+    if (!ultima) return 'Nenhuma';
+    const dias = diasEntre(ultima, todayISO());
+    return `${formatDateBR(ultima)} (há ${dias} ${plural(dias, 'dia', 'dias')})`;
+  }
+  function descricaoPlano(c) {
+    const it = c.planoTratamento.itens;
+    if (!it.length) return 'Sem plano';
+    return `${it.filter(i => i.status === 'concluido').length}/${it.length} concluídos${planoAceito(c) ? '' : ' · não aceito'}`;
+  }
+
+  function renderRetencaoLista() {
+    const lista = clientesFiltradosRetencao();
+    $ret('retListaTitulo').textContent = `Pacientes (${lista.length})`;
+    $ret('retLista').innerHTML = lista.length ? `
+      <div class="tabela-scroll"><table>
+        <thead><tr><th>Paciente</th><th>Status</th><th>Plano</th><th>Última consulta</th><th>Dentista</th><th>Alertas</th><th></th></tr></thead>
+        <tbody>${lista.map(c => {
+          const v = c.statusCliente.valor;
+          const alertas = [revisaoPendente(c) ? '<span class="badge aviso">Revisão</span>' : '', aparelhoSemManutencao(c) ? '<span class="badge alerta">Aparelho</span>' : ''].join('') || '—';
+          return `<tr>
+            <td>${esc(c.nome)}${c.telefone ? `<br><span style="font-size:11.5px;color:#6b7280">${esc(c.telefone)}</span>` : ''}</td>
+            <td>${htmlBadgeStatus(v)}</td>
+            <td>${descricaoPlano(c)}</td>
+            <td>${descricaoUltimaConsulta(c)}</td>
+            <td>${esc(nomeProfissionalPorId(profissionalDoCliente(c))) || '—'}</td>
+            <td>${alertas}</td>
+            <td><button class="btn secondary small" data-ret-ficha="${c.id}">Ficha</button>${c.telefone ? ` <button class="btn gold small" data-ret-whats="${c.id}" data-tipo="${aparelhoSemManutencao(c) ? 'aparelho' : (revisaoPendente(c) ? 'revisao' : 'retomada')}">🟢 WhatsApp</button>` : ''}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>` : '<div class="empty-msg">Nenhum paciente com esses filtros.</div>';
+  }
+
+  function contatadoRecentemente(c) {
+    const u = c.statusCliente.ultimoContato;
+    return !!u && diasEntre(u, todayISO()) < DIAS_ENTRE_CONTATOS;
+  }
+  function renderRetencaoAcoes() {
+    const grupos = [
+      { titulo: 'Tratamento parado (inativos e abandonos)', tipo: 'retomada', lista: clientesFiltradosRetencao(c => c.statusCliente.valor === 'inativo' || c.statusCliente.valor === 'abandonou', true) },
+      { titulo: 'Aparelho ortodôntico sem manutenção', tipo: 'aparelho', lista: clientesFiltradosRetencao(aparelhoSemManutencao, true) },
+      { titulo: 'Revisão semestral pendente', tipo: 'revisao', lista: clientesFiltradosRetencao(revisaoPendente, true) }
+    ];
+    const linha = (c, tipo, contatado) => {
+      const pend = itensPendentes(c).length, ap = infoAparelho(c);
+      const det = tipo === 'aparelho' ? `Última manutenção: ${ap.ultima ? formatDateBR(ap.ultima) : 'sem registro'}` : (tipo === 'revisao' ? `Última consulta: ${descricaoUltimaConsulta(c)}` : `${pend} ${plural(pend, 'procedimento pendente', 'procedimentos pendentes')} · última atividade: ${descricaoUltimaConsulta(c)}`);
+      return `<div class="list-row" style="gap:10px;flex-wrap:wrap">
+        <span>${htmlBadgeStatus(c.statusCliente.valor)} <strong>${esc(c.nome)}</strong><br><span style="font-size:12.5px;color:#6b7280">${det}${contatado ? ` · contatado em ${formatDateBR(c.statusCliente.ultimoContato)}` : ''}</span></span>
+        <span style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn gold small" data-ret-whats="${c.id}" data-tipo="${tipo}">🟢 WhatsApp</button>
+          ${contatado ? '' : `<button class="btn secondary small" data-ret-contatada="${c.id}">Marcar como contatado</button>`}
+          <button class="btn secondary small" data-ret-ficha="${c.id}">Ficha</button>
+        </span>
+      </div>`;
+    };
+    let vazio = true;
+    $ret('retAcoes').innerHTML = grupos.map(g => {
+      const paraContato = g.lista.filter(c => !contatadoRecentemente(c)), contatados = g.lista.filter(contatadoRecentemente);
+      if (!g.lista.length) return '';
+      vazio = false;
+      return `<h4 class="ficha-secao">${g.titulo} (${paraContato.length})</h4>` + (paraContato.length ? paraContato.map(c => linha(c, g.tipo, false)).join('') : '<div class="empty-msg" style="text-align:left;padding:4px 0">Todos já foram contatados nos últimos 7 dias.</div>') + contatados.map(c => linha(c, g.tipo, true)).join('');
+    }).join('') || '<div class="empty-msg">Nenhum paciente para contato hoje. 🎉</div>';
+    if (vazio) $ret('retAcoes').innerHTML = '<div class="empty-msg">Nenhum paciente para contato hoje. 🎉</div>';
+  }
+
+  function calcularRelatorioRetencao() {
+    const todos = state.clientes, comPlano = todos.filter(planoAceito);
+    const contar = (v) => comPlano.filter(c => c.statusCliente.valor === v).length;
+    const intervalos = comPlano.map(c => (c.planoTratamento.aceite.data && dataAvaliacaoCliente(c)) ? diasEntre(dataAvaliacaoCliente(c), c.planoTratamento.aceite.data) : -1).filter(d => d >= 0);
+    const motivos = {};
+    todos.forEach(c => { const m = (c.statusCliente.motivoInatividade || '').trim(); if (m) (motivos[m.toLowerCase()] = motivos[m.toLowerCase()] || { texto: m, n: 0 }).n++; });
+    const pct = (n, d) => d ? (n / d) * 100 : null;
+    return {
+      total: todos.length, aceitaram: comPlano.length, abandonaram: contar('abandonou'), inativos: contar('inativo'), concluiram: contar('concluido'),
+      aceite: pct(comPlano.length, todos.length), abandono: pct(contar('abandonou'), comPlano.length), conclusao: pct(contar('concluido'), comPlano.length),
+      tempoAceite: media(intervalos), amostraTempo: intervalos.length, motivos: Object.values(motivos).sort((a, b) => b.n - a.n)
+    };
+  }
+  function renderRetencaoRelatorio() {
+    const r = calcularRelatorioRetencao();
+    const card = (label, valor, sub) => `<div class="stat-card"><div class="label">${label}</div><div class="value">${valor}</div><div class="sub">${sub}</div></div>`;
+    $ret('retCards').innerHTML =
+      card('Taxa de aceite do plano', r.aceite !== null ? fmtMargem(r.aceite) : '—', `${r.aceitaram} de ${r.total} pacientes aceitaram o plano`) +
+      card('Taxa de abandono do tratamento', r.abandono !== null ? fmtMargem(r.abandono) : '—', `${r.abandonaram} de ${r.aceitaram} abandonaram${r.inativos ? ` · ${r.inativos} ${plural(r.inativos, 'inativo', 'inativos')}` : ''}`) +
+      card('Taxa de conclusão', r.conclusao !== null ? fmtMargem(r.conclusao) : '—', `${r.concluiram} de ${r.aceitaram} concluíram o tratamento`) +
+      card('Avaliação até aceite do plano', r.tempoAceite !== null ? `${(Math.round(r.tempoAceite * 10) / 10).toLocaleString('pt-BR')} dias` : '—', r.amostraTempo ? `Média de ${r.amostraTempo} ${plural(r.amostraTempo, 'paciente', 'pacientes')}` : 'Preencha a data da avaliação inicial nas fichas');
+    const max = r.motivos.length ? r.motivos[0].n : 0;
+    $ret('retMotivos').innerHTML = r.motivos.length
+      ? r.motivos.map(m => `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(m.texto)}</span><strong>${m.n}</strong></div><div class="barra-motivo" style="width:${Math.round((m.n / max) * 100)}%"></div></div>`).join('')
+      : '<div class="empty-msg">Nenhum motivo registrado. Preencha "Motivo de inatividade" em "Gerenciar status" na ficha do paciente.</div>';
+    const rg = state.regrasStatus;
+    $ret('retDiasInativo').value = rg.diasInativo; $ret('retDiasAbandono').value = rg.diasAbandono;
+    $ret('retDiasRevisao').value = rg.diasRevisao; $ret('retDiasAparelho').value = rg.diasAparelho;
+  }
+  $ret('formRegrasStatus').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const n = (id, padrao) => Math.max(1, parseInt($ret(id).value, 10) || padrao);
+    state.regrasStatus = { diasInativo: n('retDiasInativo', 30), diasAbandono: n('retDiasAbandono', 90), diasRevisao: n('retDiasRevisao', 180), diasAparelho: n('retDiasAparelho', 45) };
+    save(STORAGE_KEYS.regrasStatus, state.regrasStatus);
+    sincronizarStatusClientes();
+    renderRetencao(); renderDashboardAlertas(); renderListaClientes();
+    showToast('Regras salvas e status recalculados!');
+  });
+
+  function renderRetencao() {
+    sincronizarStatusClientes();
+    popularFiltrosRetencao();
+    document.querySelectorAll('#retTabs [data-ret-aba]').forEach(b => b.classList.toggle('active', b.dataset.retAba === retAbaAtiva));
+    document.querySelectorAll('.ret-aba').forEach(el => el.classList.toggle('active', el.id === 'retAba-' + retAbaAtiva));
+    $ret('retFiltros').style.display = retAbaAtiva === 'relatorio' ? 'none' : 'block';
+    renderRetencaoLista();
+    renderRetencaoAcoes();
+    renderRetencaoRelatorio();
+  }
+  $ret('retTabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-ret-aba]');
+    if (!btn) return;
+    retAbaAtiva = btn.dataset.retAba;
+    renderRetencao();
+  });
+  ['retStatus', 'retProf', 'retDe', 'retAte'].forEach(id => $ret(id).addEventListener('change', renderRetencao));
+  $ret('retPeriodo').addEventListener('change', () => {
+    const pers = $ret('retPeriodo').value === 'personalizado';
+    $ret('retDeBox').style.display = pers ? 'block' : 'none';
+    $ret('retAteBox').style.display = pers ? 'block' : 'none';
+    renderRetencao();
+  });
+  $ret('btnLimparFiltrosRet').addEventListener('click', () => { limparFiltrosRetencao(); renderRetencao(); });
+
+  function abrirFichaDaCliente(id, aba) {
+    clienteSelecionadoId = id;
+    abaAtivaCliente = aba || 'plano';
+    denteAtivo = null;
+    goToPage('clientes');
+    renderClientes();
+  }
+  ['retLista', 'retAcoes'].forEach(idBox => $ret(idBox).addEventListener('click', (e) => {
+    const t = e.target;
+    if (t.dataset.retFicha) abrirFichaDaCliente(t.dataset.retFicha);
+    else if (t.dataset.retWhats) abrirWhatsPaciente(state.clientes.find(c => c.id === t.dataset.retWhats), t.dataset.tipo);
+    else if (t.dataset.retContatada) {
+      const c = state.clientes.find(x => x.id === t.dataset.retContatada);
+      c.statusCliente.ultimoContato = todayISO();
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderRetencaoAcoes();
+      showToast('Marcado como contatado.');
+    }
+  }));
+
+  // WhatsApp: revisão semestral, manutenção de aparelho e retomada do tratamento
+  function abrirWhatsPaciente(c, tipo) {
+    if (!c) return;
+    whatsAgendamentoAtual = { clienteId: c.id, data: todayISO(), hora: '', servicoId: '', retomada: true };
+    document.getElementById('whatsCliente').value = c.nome;
+    document.getElementById('whatsTelefone').value = c.telefone || '';
+    document.getElementById('whatsTipo').value = tipo || 'retomada';
+    document.getElementById('whatsTipo').disabled = true;
+    atualizarCampoRetornoWhats();
+    atualizarMensagemWhats();
+    modalWhatsapp.classList.add('open');
+    if (!c.telefone) showToast('Este paciente não tem telefone cadastrado. Informe antes de enviar.');
+  }
+
+  // ---------- Relatório de evolução do paciente ----------
+  const modalEvolucao = document.getElementById('modalEvolucao');
+  modalEvolucao.addEventListener('click', (e) => { if (e.target === modalEvolucao) modalEvolucao.classList.remove('open'); });
+  function abrirEvolucao(c) { renderEvolucao(c); modalEvolucao.classList.add('open'); }
+
+  function agendamentosPassadosPaciente(c) {
+    return state.agendamentos.filter(a => a.clienteId === c.id && a.data <= todayISO()).sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
+  }
+  function taxaComparecimento(c) {
+    const ags = agendamentosPassadosPaciente(c), faltas = ags.filter(a => a.presenca === 'faltou').length;
+    return { total: ags.length, faltas, compareceu: ags.length - faltas, taxa: ags.length ? ((ags.length - faltas) / ags.length) * 100 : null };
+  }
+  function odontogramaInicialEAtual(c) {
+    const hist = [...c.odontogramaHistorico].sort((a, b) => a.data.localeCompare(b.data));
+    const inicial = hist.length ? hist[0] : null;
+    return { inicial, atual: c.odontogramaAtual };
+  }
+  function condicaoDe(dentes, n) { return (dentes[n] && dentes[n].condicao) || 'saudavel'; }
+  function rotuloCondicao(id) { return (CONDICOES_DENTE.find(x => x.id === id) || {}).label || id; }
+
+  function eventosTimelinePaciente(c) {
+    const ev = [], avaliacao = dataAvaliacaoCliente(c), plano = c.planoTratamento;
+    if (avaliacao) ev.push({ data: avaliacao, ordem: 0, marco: true, titulo: 'Avaliação inicial', detalhe: (c.anamnese && c.anamnese.motivoConsulta) || '' });
+    (c.odontogramaHistorico || []).forEach(h => ev.push({ data: h.data, ordem: 1, titulo: 'Odontograma registrado', detalhe: `${Object.keys(h.dentes).filter(n => h.dentes[n].condicao !== 'saudavel').length} dentes com alteração` }));
+    if (plano.aceite.aceito && plano.aceite.data) ev.push({ data: plano.aceite.data, ordem: 2, marco: true, titulo: 'Plano de tratamento aceito', detalhe: `${plano.itens.length} ${plural(plano.itens.length, 'procedimento', 'procedimentos')} · ${formatMoney(plano.itens.reduce((s, i) => s + Number(i.valor || 0), 0))}` });
+    (c.consultas || []).forEach(x => ev.push({ data: x.data, ordem: 3, titulo: 'Consulta', detalhe: [x.dentes ? `dente(s) ${x.dentes}` : '', x.procedimento, nomeProfissionalPorId(x.dentistaId)].filter(Boolean).join(' · ') }));
+    plano.itens.filter(i => i.status === 'concluido' && i.dataConclusao).forEach(i => ev.push({ data: i.dataConclusao, ordem: 4, titulo: 'Procedimento concluído', detalhe: `${i.procedimento}${i.dente ? ' (dente ' + i.dente + ')' : ''} · ${formatMoney(i.valor)}` }));
+    state.financeiro.filter(f => f.tipo === 'receita' && f.clienteId === c.id).forEach(f => ev.push({ data: f.data, ordem: 5, titulo: 'Pagamento', detalhe: `${f.procedimentoNome || f.descricao} · ${formatMoney(f.valor)} · ${origemTexto(f)}` }));
+    (c.receitas || []).forEach(r => ev.push({ data: r.data, ordem: 6, titulo: 'Receita emitida', detalhe: r.medicamento || '' }));
+    const its = plano.itens;
+    if (c.statusCliente.valor === 'concluido' && its.length) ev.push({ data: maiorData(its.map(i => i.dataConclusao)) || todayISO(), ordem: 9, marco: true, titulo: 'Tratamento concluído', detalhe: `${its.length} de ${its.length} procedimentos` });
+    return ev.filter(e => e.data).sort((a, b) => a.data.localeCompare(b.data) || a.ordem - b.ordem);
+  }
+
+  function renderEvolucao(c) {
+    const plano = c.planoTratamento, itens = plano.itens, concl = itens.filter(i => i.status === 'concluido');
+    const gasto = totalGastoPaciente(c), comp = taxaComparecimento(c), od = odontogramaInicialEAtual(c);
+    const eventos = eventosTimelinePaciente(c), avaliacao = dataAvaliacaoCliente(c);
+    const pagas = plano.parcelas.filter(pc => pc.pago).length;
+    const tipoArco = c.odontogramaAtual.tipo;
+    const sup = tipoArco === 'permanente' ? DENTES_PERM_SUP : DENTES_DECID_SUP, inf = tipoArco === 'permanente' ? DENTES_PERM_INF : DENTES_DECID_INF;
+    const todosDentes = sup.concat(inf);
+    const alterados = od.inicial ? todosDentes.filter(n => condicaoDe(od.inicial.dentes, n) !== condicaoDe(od.atual.dentes, n)) : [];
+    const arcos = (dentes) => `<div style="overflow-x:auto"><div style="margin-bottom:8px">${gerarSvgArco(sup, dentes)}</div><div>${gerarSvgArco(inf, dentes)}</div></div>`;
+    const realizados = [];
+    concl.forEach(i => realizados.push({ data: i.dataConclusao, proc: i.procedimento, dente: i.dente, valor: i.valor, origem: 'Plano de tratamento' }));
+    (c.consultas || []).forEach(x => { if (x.procedimento) realizados.push({ data: x.data, proc: x.procedimento, dente: x.dentes, valor: null, origem: 'Prontuário' }); });
+    realizados.sort((a, b) => (a.data || '').localeCompare(b.data || ''));
+    const passados = agendamentosPassadosPaciente(c);
+
+    document.getElementById('evolucaoConteudo').innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+        <div><h3 style="margin-bottom:6px">Evolução — ${esc(c.nome)}</h3>${htmlBadgeStatus(c.statusCliente.valor)}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" class="btn small" id="btnExportarEvolucao">Exportar histórico completo (CSV)</button>
+          <button type="button" class="btn secondary small" id="btnFecharEvolucao">Fechar</button>
+        </div>
+      </div>
+      <div class="evo-cards">
+        <div class="evo-card"><div class="label">Avaliação inicial</div><div class="value">${avaliacao ? formatDateBR(avaliacao) : '—'}</div></div>
+        <div class="evo-card"><div class="label">Tratamento</div><div class="value">${itens.length ? `${concl.length} de ${itens.length}` : '—'}</div><div class="sub">${itens.length ? `procedimentos concluídos${plano.aceite.aceito ? ' · plano aceito em ' + formatDateBR(plano.aceite.data) : ' · plano não aceito'}` : 'Sem plano de tratamento'}</div></div>
+        <div class="evo-card"><div class="label">Total gasto no consultório</div><div class="value">${formatMoney(gasto)}</div><div class="sub">${plano.parcelas.length ? `${pagas} de ${plano.parcelas.length} parcelas pagas` : 'Pagamentos registrados'}</div></div>
+        <div class="evo-card"><div class="label">Comparecimento às consultas</div><div class="value">${comp.taxa !== null ? fmtMargem(comp.taxa) : '—'}</div><div class="sub">${comp.total ? `${comp.compareceu} de ${comp.total} agendadas` : 'Sem agendamentos passados'}</div></div>
+      </div>
+
+      <h4 class="ficha-secao">Linha do tempo do tratamento</h4>
+      ${eventos.length ? `<div class="linha-tempo">${eventos.map(e => `<div class="lt-item ${e.marco ? 'marco' : ''}"><span class="quando">${formatDateBR(e.data)}</span><strong>${esc(e.titulo)}</strong>${e.detalhe ? ` <span class="detalhe">— ${esc(e.detalhe)}</span>` : ''}</div>`).join('')}</div>` : '<div class="empty-msg">Nenhum evento registrado ainda.</div>'}
+
+      <h4 class="ficha-secao">Odontograma: inicial vs atual</h4>
+      ${od.inicial ? `
+        <div class="evo-odonto">
+          <div><div class="evo-odonto-titulo">Inicial — ${formatDateBR(od.inicial.data)}</div>${arcos(od.inicial.dentes)}</div>
+          <div><div class="evo-odonto-titulo">Atual</div>${arcos(od.atual.dentes)}</div>
+        </div>
+        ${alterados.length ? `<div class="tabela-scroll"><table><thead><tr><th>Dente</th><th>Inicial</th><th>Atual</th></tr></thead><tbody>${alterados.map(n => `<tr><td>${n}</td><td>${rotuloCondicao(condicaoDe(od.inicial.dentes, n))}</td><td><strong>${rotuloCondicao(condicaoDe(od.atual.dentes, n))}</strong></td></tr>`).join('')}</tbody></table></div>` : '<div style="font-size:13px;color:#6b7280;margin-top:8px">Nenhum dente mudou de condição desde o registro inicial.</div>'}
+      ` : `<div class="empty-msg">Nenhum odontograma no histórico. Na aba Odontograma, use "Registrar odontograma de hoje no histórico" para guardar o estado inicial.</div>
+        <div>${arcos(od.atual.dentes)}</div>`}
+
+      <h4 class="ficha-secao">Procedimentos realizados por data</h4>
+      ${realizados.length ? `<div class="tabela-scroll"><table><thead><tr><th>Data</th><th>Procedimento</th><th>Dente</th><th>Valor</th><th>Origem</th></tr></thead>
+        <tbody>${realizados.map(r => `<tr><td>${r.data ? formatDateBR(r.data) : '—'}</td><td>${esc(r.proc)}</td><td>${esc(r.dente) || '—'}</td><td>${r.valor !== null ? formatMoney(r.valor) : '—'}</td><td>${r.origem}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-msg">Nenhum procedimento realizado ainda.</div>'}
+
+      <h4 class="ficha-secao">Comparecimento às consultas</h4>
+      ${passados.length ? `<div class="tabela-scroll"><table><thead><tr><th>Data</th><th>Horário</th><th>Serviço</th><th>Dentista</th><th>Presença</th><th></th></tr></thead>
+        <tbody>${passados.map(a => `<tr><td>${formatDateBR(a.data)}</td><td>${esc(a.hora)}</td><td>${esc(nomeServicoPorId(a.servicoId)) || '—'}</td><td>${esc(nomeProfissionalPorId(a.profissionalId)) || '—'}</td>
+          <td>${a.presenca === 'faltou' ? '<span class="badge alerta">Faltou</span>' : 'Compareceu'}</td>
+          <td><button type="button" class="btn secondary small" data-falta="${a.id}">${a.presenca === 'faltou' ? 'Desfazer falta' : 'Marcar falta'}</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-msg">Nenhum agendamento passado.</div>'}
+    `;
+    document.getElementById('btnFecharEvolucao').addEventListener('click', () => modalEvolucao.classList.remove('open'));
+    document.getElementById('btnExportarEvolucao').addEventListener('click', () => exportarHistoricoPaciente(c));
+    document.querySelectorAll('#evolucaoConteudo [data-falta]').forEach(btn => btn.addEventListener('click', () => {
+      const a = state.agendamentos.find(x => x.id === btn.dataset.falta);
+      if (!a) return;
+      a.presenca = a.presenca === 'faltou' ? '' : 'faltou';
+      save(STORAGE_KEYS.agendamentos, state.agendamentos);
+      sincronizarStatusCliente(c);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderListaClientes(); renderStatusPainel(c); renderDashboardAlertas();
+      renderEvolucao(c);
+    }));
+  }
+
+  function exportarHistoricoPaciente(c) {
+    const linhas = [['Data', 'Tipo', 'Descrição', 'Dente', 'Dentista', 'Valor', 'Observações']];
+    const reg = [];
+    const av = dataAvaliacaoCliente(c);
+    if (av) reg.push([av, 'Avaliação inicial', (c.anamnese && c.anamnese.motivoConsulta) || 'Avaliação inicial', '', '', '', '']);
+    (c.odontogramaHistorico || []).forEach(h => {
+      const alt = Object.keys(h.dentes).filter(n => h.dentes[n].condicao !== 'saudavel');
+      reg.push([h.data, 'Odontograma', `${h.tipo === 'permanente' ? 'Permanente' : 'Decídua'}: ${alt.length ? alt.map(n => `${n} ${rotuloCondicao(h.dentes[n].condicao)}`).join(', ') : 'todos saudáveis'}`, '', '', '', '']);
+    });
+    if (c.planoTratamento.aceite.aceito && c.planoTratamento.aceite.data) reg.push([c.planoTratamento.aceite.data, 'Aceite do plano', `${c.planoTratamento.itens.length} procedimentos`, '', '', c.planoTratamento.itens.reduce((s, i) => s + Number(i.valor || 0), 0), '']);
+    (c.consultas || []).forEach(x => reg.push([x.data, 'Consulta', x.procedimento || x.queixas || '', x.dentes || '', nomeProfissionalPorId(x.dentistaId), '', [x.queixas ? 'Queixas: ' + x.queixas : '', x.materiais ? 'Materiais: ' + x.materiais : '', x.prescricao ? 'Prescrição: ' + x.prescricao : '', x.retorno ? 'Retorno: ' + formatDateBR(x.retorno) : ''].filter(Boolean).join(' | ')]));
+    c.planoTratamento.itens.forEach(i => reg.push([i.dataConclusao || '', 'Procedimento do plano', i.procedimento, i.dente || '', '', Number(i.valor || 0), i.status === 'concluido' ? 'Concluído' : (i.status === 'andamento' ? 'Em andamento' : 'Pendente')]));
+    state.financeiro.filter(f => f.tipo === 'receita' && f.clienteId === c.id).forEach(f => reg.push([f.data, 'Pagamento', f.procedimentoNome || f.descricao, f.dente || '', f.profissionalNome || '', Number(f.valor), `${origemTexto(f)}${f.formaPagamento ? ' · ' + f.formaPagamento : ''} · líquido ${formatMoney(dadosFin(f).liquido)}`]));
+    agendamentosPassadosPaciente(c).forEach(a => reg.push([a.data, 'Agendamento', `${nomeServicoPorId(a.servicoId)} às ${a.hora}`, '', nomeProfissionalPorId(a.profissionalId), '', a.presenca === 'faltou' ? 'Faltou' : 'Compareceu']));
+    (c.receitas || []).forEach(r => reg.push([r.data, 'Receita', `${r.medicamento || ''}${r.dose ? ' — ' + r.dose : ''}`, '', '', '', r.posologia || '']));
+    reg.sort((a, b) => (a[0] || '9999').localeCompare(b[0] || '9999')).forEach(r => linhas.push([r[0] ? formatDateBR(r[0]) : ''].concat(r.slice(1))));
+    baixarCsv(`historico_${slugNome(c.nome)}.csv`, linhas);
+    showToast(`Histórico exportado (${linhas.length - 1} ${plural(linhas.length - 1, 'registro', 'registros')}).`);
+  }
+
   // ---------- Galeria ----------
   document.getElementById('galData').value = todayISO();
   let pendingGalAntes = '', pendingGalDepois = '', pendingGalUnica = '';
@@ -1977,6 +3321,7 @@
     document.getElementById('agendaProfissional').innerHTML = profissionaisOptions;
     document.getElementById('filtroProfissional').innerHTML = '<option value="">Todos os dentistas</option>' + profissionaisOptions;
     atualizarCamposGaleria();
+    popularSelectsFinanceiro();
   }
 
   function renderGaleria() {
@@ -2030,12 +3375,371 @@
     renderGaleria();
   });
 
-  // ---------- Financeiro ----------
+  // ---------- Financeiro (convênio x particular, taxas, custo de materiais, lucro real) ----------
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  let finAbaAtiva = 'dashboard';
+  let finGraficoModo = 'semana';
+
+  // Período (vale para o dashboard e para a exportação)
+  function inicioSemanaISO(iso) {
+    const [y, m, d] = iso.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    dt.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
+    return isoLocal(dt);
+  }
+  function intervaloPeriodo() {
+    const tipo = document.getElementById('finPeriodo').value;
+    const hoje = todayISO();
+    const [y, m] = hoje.split('-').map(Number);
+    let de = hoje, ate = hoje;
+    if (tipo === 'semana') { de = inicioSemanaISO(hoje); ate = somarDiasISO(de, 6); }
+    else if (tipo === 'mes') { de = isoLocal(new Date(y, m - 1, 1)); ate = isoLocal(new Date(y, m, 0)); }
+    else if (tipo === 'personalizado') {
+      de = document.getElementById('finDe').value || hoje;
+      ate = document.getElementById('finAte').value || hoje;
+      if (de > ate) { const t = de; de = ate; ate = t; }
+    }
+    return { de, ate };
+  }
+  document.getElementById('finPeriodo').addEventListener('change', () => {
+    const pers = document.getElementById('finPeriodo').value === 'personalizado';
+    document.getElementById('finPeriodoDeBox').style.display = pers ? 'block' : 'none';
+    document.getElementById('finPeriodoAteBox').style.display = pers ? 'block' : 'none';
+    if (pers) {
+      if (!document.getElementById('finDe').value) document.getElementById('finDe').value = somarDiasISO(todayISO(), -30);
+      if (!document.getElementById('finAte').value) document.getElementById('finAte').value = todayISO();
+    }
+    renderFinanceiro();
+  });
+  ['finDe', 'finAte'].forEach(id => document.getElementById(id).addEventListener('change', renderFinanceiro));
+
+  document.getElementById('finTabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-fin-aba]');
+    if (!btn) return;
+    finAbaAtiva = btn.dataset.finAba;
+    renderFinanceiro();
+  });
+
+
+  // Formas de pagamento e taxas da maquininha
+  function formasPagamento() {
+    const t = state.taxas;
+    const lista = [
+      { key: 'dinheiro', label: 'Dinheiro', taxa: 0 },
+      { key: 'pix', label: 'PIX', taxa: 0 },
+      { key: 'debito', label: 'Débito', taxa: num(t.debito) },
+      { key: 'credito1x', label: 'Crédito 1x', taxa: num(t.credito1x) },
+      { key: 'credito2a6', label: 'Crédito 2x a 6x', taxa: num(t.credito2a6) },
+      { key: 'credito7a12', label: 'Crédito 7x a 12x', taxa: num(t.credito7a12) }
+    ];
+    t.outros.forEach(o => { if (o.nome) lista.push({ key: 'outro:' + o.id, label: o.nome, taxa: num(o.taxa) }); });
+    return lista;
+  }
+
+  let taxasOutrosTrabalho = [];
+  function renderTaxasForm() {
+    const t = state.taxas;
+    document.getElementById('taxaDebito').value = t.debito || '';
+    document.getElementById('taxaCredito1x').value = t.credito1x || '';
+    document.getElementById('taxaCredito2a6').value = t.credito2a6 || '';
+    document.getElementById('taxaCredito7a12').value = t.credito7a12 || '';
+    taxasOutrosTrabalho = t.outros.map(o => Object.assign({}, o));
+    renderTaxasOutros();
+  }
+  function renderTaxasOutros() {
+    const box = document.getElementById('taxasOutros');
+    box.innerHTML = taxasOutrosTrabalho.length ? taxasOutrosTrabalho.map((o, n) => `
+      <div class="form-grid" style="grid-template-columns:2fr 1fr auto;align-items:end;margin-bottom:8px" data-n="${n}">
+        <div class="field" style="margin:0"><label>Nome da forma</label><input type="text" data-tx="nome" value="${esc(o.nome)}" placeholder="Ex: Voucher, Convênio"></div>
+        <div class="field" style="margin:0"><label>Taxa (%)</label><input type="number" data-tx="taxa" min="0" max="100" step="0.01" value="${esc(o.taxa)}"></div>
+        <button type="button" class="btn danger small" data-tx="remover" style="margin-bottom:2px">Remover</button>
+      </div>`).join('') : '<div class="empty-msg" style="padding:6px 0;text-align:left">Nenhuma outra forma cadastrada.</div>';
+    box.querySelectorAll('[data-n]').forEach(row => {
+      const n = Number(row.dataset.n);
+      row.querySelector('[data-tx="nome"]').addEventListener('input', (e) => { taxasOutrosTrabalho[n].nome = e.target.value; });
+      row.querySelector('[data-tx="taxa"]').addEventListener('input', (e) => { taxasOutrosTrabalho[n].taxa = e.target.value; });
+      row.querySelector('[data-tx="remover"]').addEventListener('click', () => { taxasOutrosTrabalho.splice(n, 1); renderTaxasOutros(); });
+    });
+  }
+  document.getElementById('btnAddOutraForma').addEventListener('click', () => {
+    taxasOutrosTrabalho.push({ id: uid(), nome: '', taxa: '' });
+    renderTaxasOutros();
+  });
+  const limitarPct = (v) => Math.min(100, Math.max(0, num(v)));
+  document.getElementById('formTaxas').addEventListener('submit', (e) => {
+    e.preventDefault();
+    state.taxas = {
+      debito: limitarPct(document.getElementById('taxaDebito').value),
+      credito1x: limitarPct(document.getElementById('taxaCredito1x').value),
+      credito2a6: limitarPct(document.getElementById('taxaCredito2a6').value),
+      credito7a12: limitarPct(document.getElementById('taxaCredito7a12').value),
+      outros: taxasOutrosTrabalho.filter(o => o.nome.trim()).map(o => ({ id: o.id, nome: o.nome.trim(), taxa: limitarPct(o.taxa) }))
+    };
+    save(STORAGE_KEYS.taxas, state.taxas);
+    renderTaxasForm();
+    popularSelectsFinanceiro();
+    showToast('Taxas salvas!');
+  });
+
+
+  function definirOpcoes(id, html) {
+    const el = document.getElementById(id);
+    const anterior = el.value;
+    el.innerHTML = html;
+    if (anterior && [...el.options].some(o => o.value === anterior)) el.value = anterior;
+  }
+  function convenioDoPaciente(c) {
+    const v = ((c && c.convenio) || '').trim();
+    return v && !/^particular$/i.test(v) ? v : '';
+  }
+  function origemTexto(f) { return f.origem === 'convenio' ? `Convênio${f.convenioNome ? ' (' + f.convenioNome + ')' : ''}` : 'Particular'; }
+  // Convênio não tem taxa de maquininha; particular usa a taxa da forma escolhida
+  function formaEfetiva(origem, formaKey) {
+    if (origem === 'convenio') return { key: 'convenio', label: 'Convênio', taxa: 0 };
+    const lista = formasPagamento();
+    return lista.find(f => f.key === formaKey) || lista[0];
+  }
+  function calcularEntrada(bruto, forma, custo) {
+    const valor = r2(bruto), taxaPct = forma.taxa, taxa = r2(valor * taxaPct / 100), liquido = r2(valor - taxa);
+    return { bruto: valor, taxaPct, taxa, liquido, custo: r2(custo), lucro: r2(liquido - custo) };
+  }
+  function htmlPreviewPagamento(c) {
+    return `
+      <div class="linha"><span>Valor bruto</span><span>${formatMoney(c.bruto)}</span></div>
+      <div class="linha"><span>Taxa da maquininha (${fmtPct(c.taxaPct)})</span><span>-${formatMoney(c.taxa)}</span></div>
+      <div class="linha"><span>Valor líquido recebido</span><span>${formatMoney(c.liquido)}</span></div>
+      <div class="linha"><span>Custo dos materiais</span><span>-${formatMoney(c.custo)}</span></div>
+      <div class="linha total"><span>Lucro real</span><span style="color:${c.lucro < 0 ? '#b3261e' : 'inherit'}">${formatMoney(c.lucro)}</span></div>`;
+  }
+
+  // Materiais: baixa no estoque quando o procedimento é realizado
+  function baixarMateriais(servico) {
+    const baixas = [];
+    (servico.insumos || []).forEach(i => {
+      const p = state.produtos.find(x => x.id === i.produtoId);
+      if (!p || !(p.usosPorEmbalagem > 0)) return;
+      const embalagens = Math.min(Number(p.quantidade) || 0, r4(num(i.usos) / p.usosPorEmbalagem));
+      if (embalagens <= 0) return;
+      p.quantidade = r4(p.quantidade - embalagens);
+      baixas.push({ produtoId: p.id, embalagens });
+    });
+    if (baixas.length) save(STORAGE_KEYS.produtos, state.produtos);
+    return baixas;
+  }
+  function devolverMateriais(baixas) {
+    (baixas || []).forEach(b => { const p = state.produtos.find(x => x.id === b.produtoId); if (p) p.quantidade = r4(Number(p.quantidade) + b.embalagens); });
+    if ((baixas || []).length) save(STORAGE_KEYS.produtos, state.produtos);
+  }
+  function produtosBaixos(baixas) {
+    return (baixas || []).map(b => state.produtos.find(p => p.id === b.produtoId)).filter(p => p && alertasProduto(p).some(a => a.tipo === 'alerta' && a.texto !== 'Vencido'));
+  }
+
+  // Item do plano -> serviço cadastrado (para o custo de materiais)
+  function servicoDoItem(item) {
+    if (item.servicoId) { const s = state.servicos.find(x => x.id === item.servicoId); if (s) return s; }
+    const nome = (item.procedimento || '').trim().toLowerCase();
+    if (!nome) return null;
+    return state.servicos.find(s => s.nome.toLowerCase() === nome) || state.servicos.find(s => nome.includes(s.nome.toLowerCase())) || null;
+  }
+  function custoMateriaisItem(item) { const s = servicoDoItem(item); return s ? custoInsumosServico(s) : 0; }
+
+  // Pagamento de uma parcela: o valor é rateado entre os procedimentos do plano, proporcionalmente ao valor de cada um
+  function alocarParcela(p, pc) {
+    const itens = p.planoTratamento.itens, total = r2(itens.reduce((s, i) => s + Number(i.valor || 0), 0));
+    if (!itens.length || total <= 0) return [{ item: null, bruto: r2(pc.valor), custo: 0 }];
+    let acumulado = 0;
+    const lista = itens.map((item, idx) => {
+      const valorItem = Number(item.valor || 0);
+      const bruto = idx === itens.length - 1 ? r2(pc.valor - acumulado) : r2(pc.valor * valorItem / total);
+      acumulado = r2(acumulado + bruto);
+      return { item, bruto, custo: valorItem > 0 ? r2(custoMateriaisItem(item) * bruto / valorItem) : 0 };
+    }).filter(a => a.bruto > 0);
+    return lista.length ? lista : [{ item: null, bruto: r2(pc.valor), custo: 0 }];
+  }
+
+  const modalPagamento = document.getElementById('modalPagamento');
+  let pagamentoParcelaAtual = null;
+  function ultimoDentistaDoPaciente(p) {
+    const c = [...(p.consultas || [])].filter(x => x.dentistaId).sort((a, b) => a.data.localeCompare(b.data));
+    return c.length ? c[c.length - 1].dentistaId : '';
+  }
+  function abrirPagamentoParcela(pacienteId, numero) {
+    const p = state.clientes.find(x => x.id === pacienteId);
+    const pc = p && p.planoTratamento.parcelas.find(x => String(x.numero) === String(numero));
+    if (!pc) return;
+    pagamentoParcelaAtual = { pacienteId, numero: pc.numero };
+    const conv = convenioDoPaciente(p);
+    document.getElementById('pgResumo').textContent = `${p.nome} — parcela ${pc.numero}/${p.planoTratamento.parcelas.length} — ${formatMoney(pc.valor)}`;
+    document.getElementById('pgData').value = todayISO();
+    document.getElementById('pgOrigem').value = conv ? 'convenio' : 'particular';
+    document.getElementById('pgConvenio').value = conv;
+    definirOpcoes('pgForma', formasPagamento().map(f => `<option value="${f.key}">${esc(f.label)}${f.taxa ? ' — ' + fmtPct(f.taxa) : ''}</option>`).join(''));
+    document.getElementById('pgDentista').innerHTML = '<option value="">Sem dentista</option>' + state.profissionais.map(x => `<option value="${x.id}">${esc(x.nome)}</option>`).join('');
+    document.getElementById('pgDentista').value = session.tipo === 'profissional' ? session.profissionalId : ultimoDentistaDoPaciente(p);
+    atualizarPreviewParcela();
+    modalPagamento.classList.add('open');
+  }
+  function atualizarPreviewParcela() {
+    if (!pagamentoParcelaAtual) return;
+    const p = state.clientes.find(x => x.id === pagamentoParcelaAtual.pacienteId);
+    const pc = p.planoTratamento.parcelas.find(x => x.numero === pagamentoParcelaAtual.numero);
+    const origem = document.getElementById('pgOrigem').value;
+    document.getElementById('pgConvenioBox').style.display = origem === 'convenio' ? 'block' : 'none';
+    document.getElementById('pgFormaBox').style.display = origem === 'convenio' ? 'none' : 'block';
+    const forma = formaEfetiva(origem, document.getElementById('pgForma').value);
+    const aloc = alocarParcela(p, pc);
+    const custo = aloc.reduce((s, a) => s + a.custo, 0);
+    document.getElementById('pgPreview').innerHTML = htmlPreviewPagamento(calcularEntrada(pc.valor, forma, custo))
+      + (aloc.length > 1 ? `<div style="font-size:11.5px;color:#6b7280;margin-top:6px">Rateado entre ${aloc.length} procedimentos do plano, proporcional ao valor de cada um.</div>` : '');
+  }
+  document.getElementById('pgOrigem').addEventListener('change', atualizarPreviewParcela);
+  document.getElementById('pgForma').addEventListener('change', atualizarPreviewParcela);
+  document.getElementById('pgCancelar').addEventListener('click', () => modalPagamento.classList.remove('open'));
+  modalPagamento.addEventListener('click', (e) => { if (e.target === modalPagamento) modalPagamento.classList.remove('open'); });
+  document.getElementById('formPgParcela').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const p = state.clientes.find(x => x.id === pagamentoParcelaAtual.pacienteId);
+    const pc = p.planoTratamento.parcelas.find(x => x.numero === pagamentoParcelaAtual.numero);
+    const origem = document.getElementById('pgOrigem').value, data = document.getElementById('pgData').value || todayISO();
+    const convenioNome = origem === 'convenio' ? (document.getElementById('pgConvenio').value.trim() || convenioDoPaciente(p)) : '';
+    const forma = formaEfetiva(origem, document.getElementById('pgForma').value);
+    const dent = state.profissionais.find(x => x.id === document.getElementById('pgDentista').value);
+    const totalParcelas = p.planoTratamento.parcelas.length;
+    const ids = [];
+    alocarParcela(p, pc).forEach(a => {
+      const c = calcularEntrada(a.bruto, forma, a.custo);
+      const nome = a.item ? a.item.procedimento : `Parcela ${pc.numero}/${totalParcelas} do plano`;
+      const serv = a.item ? servicoDoItem(a.item) : null;
+      const id = uid();
+      ids.push(id);
+      state.financeiro.push({
+        id, tipo: 'receita', atendimento: true, origem, convenioNome, descricao: `${nome} — ${p.nome}`, valor: c.bruto, data,
+        clienteId: p.id, clienteNome: p.nome, profissionalId: dent ? dent.id : '', profissionalNome: dent ? dent.nome : '',
+        servicoId: serv ? serv.id : '', servicoNome: nome, procedimentoNome: nome, dente: a.item ? (a.item.dente || '') : '',
+        planoItemId: a.item ? a.item.id : '', parcelaNumero: pc.numero, formaPagamento: forma.label, taxaPercentual: c.taxaPct, taxaValor: c.taxa,
+        custoInsumos: c.custo, valorLiquido: c.liquido, lucro: c.lucro, baixas: []
+      });
+    });
+    pc.pago = true; pc.dataPagamento = data; pc.lancamentos = ids; pc.origem = origem; pc.forma = forma.label;
+    save(STORAGE_KEYS.financeiro, state.financeiro);
+    modalPagamento.classList.remove('open');
+    aposMudancaPagamento(p);
+    showToast('Pagamento registrado!');
+  });
+  function desfazerPagamentoParcela(pacienteId, numero) {
+    const p = state.clientes.find(x => x.id === pacienteId);
+    const pc = p && p.planoTratamento.parcelas.find(x => String(x.numero) === String(numero));
+    if (!pc) return;
+    const ids = new Set(pc.lancamentos || []);
+    state.financeiro = state.financeiro.filter(f => !ids.has(f.id));
+    pc.pago = false; pc.dataPagamento = ''; pc.lancamentos = []; pc.origem = ''; pc.forma = '';
+    save(STORAGE_KEYS.financeiro, state.financeiro);
+    aposMudancaPagamento(p);
+  }
+  function aposMudancaPagamento(p) {
+    sincronizarStatusCliente(p);
+    save(STORAGE_KEYS.clientes, state.clientes);
+    renderFinanceiro();
+    renderParcelasGlobais();
+    renderDashboard();
+    if (clienteSelecionadoId === p.id) renderClienteDetalhe();
+  }
+
+  function renderParcelasGlobais() {
+    const linhas = [];
+    state.clientes.forEach(p => {
+      (p.planoTratamento.parcelas || []).forEach(pc => {
+        linhas.push({ pacienteId: p.id, pacienteNome: p.nome, numero: pc.numero, total: p.planoTratamento.parcelas.length, valor: pc.valor, pago: pc.pago, dataPagamento: pc.dataPagamento, origem: pc.origem, forma: pc.forma });
+      });
+    });
+    linhas.sort((a, b) => (a.pago === b.pago ? 0 : (a.pago ? 1 : -1)));
+    document.querySelector('#tabelaParcelasGlobais tbody').innerHTML = linhas.length ? linhas.map(l => `
+      <tr>
+        <td>${esc(l.pacienteNome)}</td><td>${l.numero}/${l.total}</td><td>${formatMoney(l.valor)}</td>
+        <td>${l.pago ? `<span style="color:#1a7d3a;font-weight:600">Paga</span>${l.forma ? `<br><span style="font-size:11.5px;color:#6b7280">${l.origem === 'convenio' ? 'Convênio' : 'Particular'} · ${esc(l.forma)}</span>` : ''}` : '<span style="color:#b3261e;font-weight:600">Pendente</span>'}</td>
+        <td>${l.dataPagamento ? formatDateBR(l.dataPagamento) : '—'}</td>
+        <td><button class="btn ${l.pago ? 'secondary' : 'gold'} small" data-parcela-global="${l.pago ? 'desfazer' : 'pagar'}" data-paciente="${l.pacienteId}" data-numero="${l.numero}">${l.pago ? 'Desfazer' : 'Registrar pagamento'}</button></td>
+      </tr>
+    `).join('') : '<tr><td colspan="6" class="empty-msg">Nenhuma parcela gerada ainda.</td></tr>';
+  }
+  document.querySelector('#tabelaParcelasGlobais tbody').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-parcela-global]');
+    if (!btn) return;
+    if (btn.dataset.parcelaGlobal === 'pagar') abrirPagamentoParcela(btn.dataset.paciente, btn.dataset.numero);
+    else if (confirm('Desfazer este pagamento? Os lançamentos gerados por ele serão removidos.')) desfazerPagamentoParcela(btn.dataset.paciente, btn.dataset.numero);
+  });
+
+  // ---------- Pagamento avulso ----------
+  function popularSelectsFinanceiro() {
+    definirOpcoes('finPagCliente', state.clientes.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('') || '<option value="">Cadastre um paciente</option>');
+    definirOpcoes('finPagProf', '<option value="">Sem dentista</option>' + state.profissionais.map(p => `<option value="${p.id}">${esc(p.nome)}</option>`).join(''));
+    definirOpcoes('finPagServ', state.servicos.map(s => `<option value="${s.id}">${esc(s.nome)}</option>`).join('') || '<option value="">Cadastre um serviço</option>');
+    definirOpcoes('finPagForma', formasPagamento().map(f => `<option value="${f.key}">${esc(f.label)}${f.taxa ? ' — ' + fmtPct(f.taxa) : ''}</option>`).join(''));
+    atualizarPreviewAvulso();
+  }
+  function atualizarPreviewAvulso() {
+    const serv = state.servicos.find(s => s.id === document.getElementById('finPagServ').value);
+    const origem = document.getElementById('finPagOrigem').value;
+    document.getElementById('finPagConvenioBox').style.display = origem === 'convenio' ? 'block' : 'none';
+    document.getElementById('finPagFormaBox').style.display = origem === 'convenio' ? 'none' : 'block';
+    const forma = formaEfetiva(origem, document.getElementById('finPagForma').value);
+    document.getElementById('finPagPreview').innerHTML = htmlPreviewPagamento(calcularEntrada(document.getElementById('finPagValor').value, forma, serv ? custoInsumosServico(serv) : 0));
+  }
+  function preencherValorDoServico() {
+    const serv = state.servicos.find(s => s.id === document.getElementById('finPagServ').value);
+    document.getElementById('finPagValor').value = serv ? serv.preco : '';
+  }
+  document.getElementById('finPagServ').addEventListener('change', () => { preencherValorDoServico(); atualizarPreviewAvulso(); });
+  document.getElementById('finPagForma').addEventListener('change', atualizarPreviewAvulso);
+  document.getElementById('finPagValor').addEventListener('input', atualizarPreviewAvulso);
+  document.getElementById('finPagOrigem').addEventListener('change', atualizarPreviewAvulso);
+  document.getElementById('finPagCliente').addEventListener('change', () => {
+    const c = state.clientes.find(x => x.id === document.getElementById('finPagCliente').value);
+    const conv = convenioDoPaciente(c);
+    document.getElementById('finPagOrigem').value = conv ? 'convenio' : 'particular';
+    document.getElementById('finPagConvenio').value = conv;
+    atualizarPreviewAvulso();
+  });
+
+  document.getElementById('formPagamento').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const cli = state.clientes.find(c => c.id === document.getElementById('finPagCliente').value);
+    const serv = state.servicos.find(s => s.id === document.getElementById('finPagServ').value);
+    const dent = state.profissionais.find(p => p.id === document.getElementById('finPagProf').value);
+    if (!cli || !serv) { showToast('Selecione o paciente e o procedimento.'); return; }
+    const origem = document.getElementById('finPagOrigem').value;
+    const forma = formaEfetiva(origem, document.getElementById('finPagForma').value);
+    const c = calcularEntrada(document.getElementById('finPagValor').value, forma, custoInsumosServico(serv));
+    const baixas = document.getElementById('finPagBaixa').checked ? baixarMateriais(serv) : [];
+    state.financeiro.push({
+      id: uid(), tipo: 'receita', atendimento: true, origem, convenioNome: origem === 'convenio' ? (document.getElementById('finPagConvenio').value.trim() || convenioDoPaciente(cli)) : '',
+      descricao: `${serv.nome} — ${cli.nome}`, valor: c.bruto, data: document.getElementById('finPagData').value,
+      clienteId: cli.id, clienteNome: cli.nome, profissionalId: dent ? dent.id : '', profissionalNome: dent ? dent.nome : '',
+      servicoId: serv.id, servicoNome: serv.nome, procedimentoNome: serv.nome, dente: document.getElementById('finPagDente').value.trim(),
+      formaPagamento: forma.label, taxaPercentual: c.taxaPct, taxaValor: c.taxa, custoInsumos: c.custo, valorLiquido: c.liquido, lucro: c.lucro, baixas
+    });
+    save(STORAGE_KEYS.financeiro, state.financeiro);
+    document.getElementById('finPagData').value = todayISO();
+    document.getElementById('finPagDente').value = '';
+    preencherValorDoServico();
+    sincronizarStatusCliente(cli);
+    save(STORAGE_KEYS.clientes, state.clientes);
+    renderFinanceiro();
+    renderEstoque();
+    renderDashboard();
+    renderListaClientes();
+    const baixos = produtosBaixos(baixas);
+    showToast(baixos.length ? `Pagamento registrado! Estoque baixo: ${baixos.map(p => p.nome).join(', ')}` : 'Pagamento registrado!');
+  });
+
+  // ---------- Lançamentos manuais ----------
   document.getElementById('finData').value = todayISO();
+  document.getElementById('finPagData').value = todayISO();
   const hojeParaPeriodo = todayISO();
   document.getElementById('finPeriodoInicio').value = hojeParaPeriodo.slice(0, 8) + '01';
   document.getElementById('finPeriodoFim').value = hojeParaPeriodo;
-
   document.getElementById('finTipo').addEventListener('change', () => {
     const receita = document.getElementById('finTipo').value === 'receita';
     document.getElementById('campoFinOrigem').style.display = receita ? 'block' : 'none';
@@ -2044,7 +3748,6 @@
   document.getElementById('finOrigem').addEventListener('change', () => {
     document.getElementById('campoFinConvenio').style.display = document.getElementById('finOrigem').value === 'convenio' ? 'block' : 'none';
   });
-
   document.getElementById('formFinanceiro').addEventListener('submit', (e) => {
     e.preventDefault();
     const tipo = document.getElementById('finTipo').value;
@@ -2063,35 +3766,17 @@
     renderDashboard();
     showToast('Lançamento adicionado!');
   });
-
-  function renderFinanceiro() {
-    const receitas = state.financeiro.filter(f => f.tipo === 'receita').reduce((s, f) => s + Number(f.valor), 0);
-    const despesas = state.financeiro.filter(f => f.tipo === 'despesa').reduce((s, f) => s + Number(f.valor), 0);
-    document.getElementById('finReceitas').textContent = formatMoney(receitas);
-    document.getElementById('finDespesas').textContent = formatMoney(despesas);
-    document.getElementById('finSaldo').textContent = formatMoney(receitas - despesas);
-    const tbody = document.querySelector('#finTabela tbody');
-    const ordenado = [...state.financeiro].sort((a, b) => b.data.localeCompare(a.data));
-    tbody.innerHTML = ordenado.length ? ordenado.map(f => `
-      <tr>
-        <td>${formatDateBR(f.data)}</td><td>${f.descricao}</td>
-        <td class="${f.tipo}">${f.tipo === 'receita' ? 'Receita' : 'Despesa'}</td>
-        <td>${f.tipo === 'receita' ? (f.origem === 'convenio' ? `Convênio${f.convenioNome ? ' (' + f.convenioNome + ')' : ''}` : 'Particular') : '—'}</td>
-        <td class="${f.tipo}">${formatMoney(f.valor)}</td>
-        <td><button class="btn danger small" data-del-fin="${f.id}">Excluir</button></td>
-      </tr>
-    `).join('') : '<tr><td colspan="6" class="empty-msg">Nenhum lançamento ainda.</td></tr>';
-    aplicarFiltroPeriodo();
-  }
   document.querySelector('#finTabela tbody').addEventListener('click', (e) => {
     const id = e.target.dataset.delFin;
     if (!id) return;
-    state.financeiro = state.financeiro.filter(f => f.id !== id);
+    const f = state.financeiro.find(x => x.id === id);
+    if (f && Array.isArray(f.baixas) && f.baixas.length) devolverMateriais(f.baixas);
+    state.financeiro = state.financeiro.filter(x => x.id !== id);
     save(STORAGE_KEYS.financeiro, state.financeiro);
     renderFinanceiro();
+    renderEstoque();
     renderDashboard();
   });
-
   function aplicarFiltroPeriodo() {
     const ini = document.getElementById('finPeriodoInicio').value;
     const fim = document.getElementById('finPeriodoFim').value;
@@ -2112,31 +3797,282 @@
   }
   document.getElementById('btnFiltrarPeriodo').addEventListener('click', aplicarFiltroPeriodo);
 
-  function renderParcelasGlobais() {
-    const linhas = [];
-    state.clientes.forEach(p => {
-      (p.planoTratamento.parcelas || []).forEach(pc => {
-        linhas.push({ pacienteId: p.id, pacienteNome: p.nome, numero: pc.numero, total: p.planoTratamento.parcelas.length, valor: pc.valor, pago: pc.pago, dataPagamento: pc.dataPagamento });
-      });
-    });
-    linhas.sort((a, b) => (a.pago === b.pago ? 0 : (a.pago ? 1 : -1)));
-    const tbody = document.querySelector('#tabelaParcelasGlobais tbody');
-    tbody.innerHTML = linhas.length ? linhas.map(l => `
-      <tr>
-        <td>${l.pacienteNome}</td><td>${l.numero}/${l.total}</td><td>${formatMoney(l.valor)}</td>
-        <td>${l.pago ? '<span style="color:#1a7d3a;font-weight:600">Paga</span>' : '<span style="color:#b3261e;font-weight:600">Pendente</span>'}</td>
-        <td>${l.dataPagamento ? formatDateBR(l.dataPagamento) : '—'}</td>
-        <td><button class="btn ${l.pago ? 'secondary' : 'gold'} small" data-toggle-parcela-global data-paciente="${l.pacienteId}" data-numero="${l.numero}">${l.pago ? 'Desfazer' : 'Marcar paga'}</button></td>
-      </tr>
-    `).join('') : '<tr><td colspan="6" class="empty-msg">Nenhuma parcela gerada ainda.</td></tr>';
-    tbody.querySelectorAll('[data-toggle-parcela-global]').forEach(btn => btn.addEventListener('click', () => {
-      const p = state.clientes.find(x => x.id === btn.dataset.paciente);
-      const pc = p.planoTratamento.parcelas.find(x => String(x.numero) === btn.dataset.numero);
-      pc.pago = !pc.pago; pc.dataPagamento = pc.pago ? todayISO() : '';
-      save(STORAGE_KEYS.clientes, state.clientes);
-      renderParcelasGlobais();
-    }));
+  // ---------- Dashboard financeiro ----------
+  function dadosFin(f) {
+    const bruto = Number(f.valor) || 0;
+    return {
+      bruto, taxaPct: Number(f.taxaPercentual) || 0, taxa: Number(f.taxaValor) || 0, custo: Number(f.custoInsumos) || 0,
+      liquido: f.valorLiquido != null ? Number(f.valorLiquido) : bruto, lucro: f.lucro != null ? Number(f.lucro) : bruto
+    };
   }
+  function somaDados(lista, k) { return r2(lista.reduce((s, r) => s + r[k], 0)); }
+  function resumoFinanceiro(de, ate) {
+    const regs = state.financeiro.filter(f => f.data >= de && f.data <= ate);
+    const receitas = regs.filter(f => f.tipo === 'receita').map(f => Object.assign({ f }, dadosFin(f)));
+    const atend = receitas.filter(r => r.f.atendimento);
+    const porOrigem = (o) => {
+      const l = receitas.filter(r => (r.f.origem === 'convenio' ? 'convenio' : 'particular') === o);
+      return { n: l.length, bruto: somaDados(l, 'bruto'), taxa: somaDados(l, 'taxa'), custo: somaDados(l, 'custo'), liquido: somaDados(l, 'liquido'), lucro: somaDados(l, 'lucro') };
+    };
+    const agrupar = (chaveFn, nomeFn) => {
+      const mapa = {};
+      atend.forEach(r => { const k = chaveFn(r.f); if (!k) return; const g = (mapa[k] = mapa[k] || { nome: nomeFn(r.f), n: 0, bruto: 0, custo: 0, lucro: 0 }); g.n++; g.bruto += r.bruto; g.custo += r.custo; g.lucro += r.lucro; });
+      return Object.values(mapa).map(g => Object.assign(g, { bruto: r2(g.bruto), custo: r2(g.custo), lucro: r2(g.lucro) }));
+    };
+    const procedimentos = agrupar(f => f.servicoId || f.procedimentoNome, f => f.procedimentoNome || f.servicoNome).sort((a, b) => b.lucro - a.lucro);
+    const dentistas = agrupar(f => f.profissionalId || f.profissionalNome, f => f.profissionalNome).sort((a, b) => b.bruto - a.bruto);
+    const convenios = {};
+    receitas.filter(r => r.f.origem === 'convenio').forEach(r => { const k = (r.f.convenioNome || 'Sem nome informado'); const g = (convenios[k] = convenios[k] || { nome: k, n: 0, bruto: 0 }); g.n++; g.bruto = r2(g.bruto + r.bruto); });
+    const despesas = r2(regs.filter(f => f.tipo === 'despesa').reduce((s, f) => s + (Number(f.valor) || 0), 0));
+    const lucro = somaDados(receitas, 'lucro');
+    return {
+      bruto: somaDados(receitas, 'bruto'), taxas: somaDados(receitas, 'taxa'), custos: somaDados(receitas, 'custo'), lucro, despesas, resultado: r2(lucro - despesas),
+      particular: porOrigem('particular'), convenio: porOrigem('convenio'), convenios: Object.values(convenios).sort((a, b) => b.bruto - a.bruto),
+      atendimentos: atend.length, ticket: atend.length ? r2(somaDados(atend, 'bruto') / atend.length) : null,
+      procedimentos, procTop: procedimentos[0] || null, dentistaTop: dentistas[0] || null
+    };
+  }
+
+  function renderFinCards() {
+    const { de, ate } = intervaloPeriodo();
+    document.getElementById('finPeriodoRotulo').textContent = de === ate ? formatDateBR(de) : `${formatDateBR(de)} a ${formatDateBR(ate)}`;
+    const r = resumoFinanceiro(de, ate);
+    const card = (label, valor, sub, estilo) => `<div class="stat-card"><div class="label">${label}</div><div class="value ${estilo === 'texto' ? 'texto' : ''}">${valor}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`;
+    const cor = (n) => `<span style="color:${n < 0 ? '#b3261e' : 'inherit'}">${formatMoney(n)}</span>`;
+    document.getElementById('finCards').innerHTML =
+      card('Faturamento bruto total', formatMoney(r.bruto), `${r.atendimentos} ${plural(r.atendimentos, 'procedimento registrado', 'procedimentos registrados')}`) +
+      card('Particular', formatMoney(r.particular.bruto), `${r.particular.n} ${plural(r.particular.n, 'lançamento', 'lançamentos')}`) +
+      card('Convênio', formatMoney(r.convenio.bruto), `${r.convenio.n} ${plural(r.convenio.n, 'lançamento', 'lançamentos')}`) +
+      card('Taxas de maquininha', formatMoney(r.taxas), 'Só em pagamentos particulares') +
+      card('Custos de materiais', formatMoney(r.custos), 'Materiais usados nos procedimentos') +
+      card('Lucro líquido real', cor(r.lucro), 'Bruto − taxas − materiais') +
+      card('Ticket médio por procedimento', r.ticket !== null ? formatMoney(r.ticket) : '—', '') +
+      card('Procedimento mais lucrativo', r.procTop ? esc(r.procTop.nome) : '—', r.procTop ? `Lucro de ${formatMoney(r.procTop.lucro)}` : 'Sem procedimentos no período', 'texto') +
+      card('Dentista com maior faturamento', r.dentistaTop ? esc(r.dentistaTop.nome) : '—', r.dentistaTop ? `${formatMoney(r.dentistaTop.bruto)} faturados` : 'Sem procedimentos no período', 'texto') +
+      card('Despesas do período', formatMoney(r.despesas), 'Lançamentos de despesa') +
+      card('Resultado após despesas', cor(r.resultado), 'Lucro real − despesas');
+    const linhaOrigem = (rot, o) => `<tr><td>${rot}</td><td>${o.n}</td><td>${formatMoney(o.bruto)}</td><td>${formatMoney(o.taxa)}</td><td>${formatMoney(o.custo)}</td><td>${formatMoney(o.liquido)}</td><td>${formatMoney(o.lucro)}</td></tr>`;
+    document.getElementById('finConvenio').innerHTML = `<div class="tabela-scroll"><table>
+      <thead><tr><th>Origem</th><th>Lançamentos</th><th>Bruto</th><th>Taxas</th><th>Materiais</th><th>Líquido</th><th>Lucro</th></tr></thead>
+      <tbody>${linhaOrigem('Particular', r.particular)}${linhaOrigem('Convênio', r.convenio)}</tbody></table></div>
+      ${r.convenios.length ? `<div style="font-size:12.5px;margin-top:10px"><strong>Por convênio</strong>${r.convenios.map(c => `<div class="list-row" style="padding:5px 0"><span>${esc(c.nome)}</span><span>${c.n} ${plural(c.n, 'lançamento', 'lançamentos')} · ${formatMoney(c.bruto)}</span></div>`).join('')}</div>` : ''}`;
+    document.getElementById('finProcedimentos').innerHTML = r.procedimentos.length ? `<div class="tabela-scroll"><table>
+      <thead><tr><th>Procedimento</th><th>Qtde</th><th>Faturado</th><th>Ticket médio</th><th>Lucro</th></tr></thead>
+      <tbody>${r.procedimentos.slice(0, 10).map(g => `<tr><td>${esc(g.nome)}</td><td>${g.n}</td><td>${formatMoney(g.bruto)}</td><td>${formatMoney(g.bruto / g.n)}</td><td>${formatMoney(g.lucro)}</td></tr>`).join('')}</tbody></table></div>`
+      : '<div class="empty-msg">Nenhum procedimento com pagamento registrado no período.</div>';
+  }
+
+  // Gráfico: faturamento bruto e lucro real por semana ou mês
+  function moedaCurta(v) {
+    if (v >= 1000) return 'R$ ' + (v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mil';
+    return 'R$ ' + Math.round(v).toLocaleString('pt-BR');
+  }
+  function escalaGrafico(max) {
+    if (max <= 0) return { topo: 100, passo: 25 };
+    const bruto = max / 4, pot = Math.pow(10, Math.floor(Math.log10(bruto)));
+    const passo = [1, 2, 2.5, 5, 10].map(m => m * pot).find(p => p >= bruto);
+    return { topo: passo * 4, passo };
+  }
+  function barraArredondada(x, y, w, h, r) {
+    if (h <= 0) return '';
+    r = Math.min(r, w / 2, h);
+    return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
+  }
+  function periodosGrafico(modo) {
+    const hoje = todayISO(), out = [];
+    if (modo === 'semana') {
+      const ini = inicioSemanaISO(hoje);
+      for (let i = 7; i >= 0; i--) {
+        const de = somarDiasISO(ini, -7 * i), ate = somarDiasISO(de, 6);
+        out.push({ de, ate, rotulo: formatDateBR(de).slice(0, 5), titulo: `Semana de ${formatDateBR(de)} a ${formatDateBR(ate)}` });
+      }
+    } else {
+      const [y, m] = hoje.split('-').map(Number);
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(y, m - 1 - i, 1);
+        const mes = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        out.push({ de: isoLocal(d), ate: isoLocal(new Date(d.getFullYear(), d.getMonth() + 1, 0)), rotulo: `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear()).slice(2)}`, titulo: mes.charAt(0).toUpperCase() + mes.slice(1) });
+      }
+    }
+    return out.map(p => {
+      const receitas = state.financeiro.filter(f => f.tipo === 'receita' && f.data >= p.de && f.data <= p.ate).map(dadosFin);
+      return Object.assign(p, { bruto: r2(receitas.reduce((s, r) => s + r.bruto, 0)), lucro: r2(receitas.reduce((s, r) => s + r.lucro, 0)) });
+    });
+  }
+
+  function renderFinGrafico() {
+    const dados = periodosGrafico(finGraficoModo);
+    const cont = document.getElementById('finGrafico');
+    const max = Math.max(0, ...dados.map(d => Math.max(d.bruto, d.lucro)));
+    if (max <= 0) { cont.innerHTML = '<div class="empty-msg">Sem faturamento registrado neste intervalo. Registre pagamentos para ver o gráfico.</div>'; return; }
+    const W = 640, H = 260, ml = 62, mr = 12, mt = 12, mb = 32;
+    const pw = W - ml - mr, ph = H - mt - mb;
+    const esc_ = escalaGrafico(max);
+    const y = (v) => mt + ph - (v / esc_.topo) * ph;
+    const slot = pw / dados.length, larg = Math.min(20, slot * 0.3), grupo = larg * 2 + 2;
+    let svg = '';
+    for (let t = 0; t <= 4; t++) {
+      const v = esc_.passo * t;
+      svg += `<line x1="${ml}" x2="${W - mr}" y1="${y(v)}" y2="${y(v)}" stroke="#e3e5ec" stroke-width="1"/>`;
+      svg += `<text x="${ml - 8}" y="${y(v) + 4}" font-size="11" text-anchor="end" fill="#6b7280">${moedaCurta(v)}</text>`;
+    }
+    dados.forEach((d, i) => {
+      const x0 = ml + i * slot + (slot - grupo) / 2;
+      svg += `<path d="${barraArredondada(x0, y(d.bruto), larg, y(0) - y(d.bruto), 4)}" fill="var(--serie-1)"/>`;
+      svg += `<path d="${barraArredondada(x0 + larg + 2, y(Math.max(0, d.lucro)), larg, y(0) - y(Math.max(0, d.lucro)), 4)}" fill="var(--serie-2)"/>`;
+      svg += `<text x="${ml + i * slot + slot / 2}" y="${H - 10}" font-size="11" text-anchor="middle" fill="#6b7280">${d.rotulo}</text>`;
+      svg += `<rect class="fin-hit" data-i="${i}" x="${ml + i * slot}" y="${mt}" width="${slot}" height="${ph}" fill="transparent"/>`;
+    });
+    svg += `<line x1="${ml}" x2="${W - mr}" y1="${y(0)}" y2="${y(0)}" stroke="#9aa0ab" stroke-width="1"/>`;
+    cont.innerHTML = `
+      <div class="fin-legenda"><span><i style="background:var(--serie-1)"></i>Faturamento bruto</span><span><i style="background:var(--serie-2)"></i>Lucro real</span></div>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="Faturamento bruto e lucro real por ${finGraficoModo === 'semana' ? 'semana' : 'mês'}">${svg}</svg>
+      <div class="fin-tooltip" id="finTooltip"></div>
+      <details><summary>Ver tabela</summary>
+        <div class="tabela-scroll"><table><thead><tr><th>Período</th><th>Faturamento bruto</th><th>Lucro real</th></tr></thead>
+        <tbody>${dados.map(d => `<tr><td>${d.titulo}</td><td>${formatMoney(d.bruto)}</td><td>${formatMoney(d.lucro)}</td></tr>`).join('')}</tbody></table></div>
+      </details>`;
+    const tip = cont.querySelector('#finTooltip'), svgEl = cont.querySelector('svg');
+    cont.querySelectorAll('.fin-hit').forEach(r => {
+      const mostrar = () => {
+        const d = dados[Number(r.dataset.i)];
+        tip.innerHTML = `<strong>${d.titulo}</strong><br>Faturamento bruto: ${formatMoney(d.bruto)}<br>Lucro real: ${formatMoney(d.lucro)}`;
+        tip.style.display = 'block';
+        const escala = svgEl.getBoundingClientRect().width / W;
+        const centro = (ml + (Number(r.dataset.i) + 0.5) * slot) * escala;
+        tip.style.left = Math.max(0, Math.min(centro - tip.offsetWidth / 2, cont.clientWidth - tip.offsetWidth)) + 'px';
+        tip.style.top = '30px';
+      };
+      r.addEventListener('mouseenter', mostrar);
+      r.addEventListener('mousemove', mostrar);
+      r.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+    });
+  }
+  document.getElementById('finGraficoModo').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-modo]');
+    if (!btn) return;
+    finGraficoModo = btn.dataset.modo;
+    document.querySelectorAll('#finGraficoModo [data-modo]').forEach(b => b.classList.toggle('active', b === btn));
+    renderFinGrafico();
+  });
+
+
+  function renderFinanceiro() {
+    document.querySelectorAll('#finTabs [data-fin-aba]').forEach(b => b.classList.toggle('active', b.dataset.finAba === finAbaAtiva));
+    document.querySelectorAll('.fin-aba').forEach(el => el.classList.toggle('active', el.id === 'finAba-' + finAbaAtiva));
+    renderFinCards();
+    renderFinGrafico();
+    popularSelectsFinanceiro();
+    renderParcelasGlobais();
+    const receitas = state.financeiro.filter(f => f.tipo === 'receita').reduce((s, f) => s + Number(f.valor), 0);
+    const despesas = state.financeiro.filter(f => f.tipo === 'despesa').reduce((s, f) => s + Number(f.valor), 0);
+    document.getElementById('finReceitas').textContent = formatMoney(receitas);
+    document.getElementById('finDespesas').textContent = formatMoney(despesas);
+    document.getElementById('finSaldo').textContent = formatMoney(receitas - despesas);
+    const ordenado = [...state.financeiro].sort((a, b) => b.data.localeCompare(a.data));
+    document.querySelector('#finTabela tbody').innerHTML = ordenado.length ? ordenado.map(f => {
+      const rec = f.tipo === 'receita', d = dadosFin(f), detalhado = rec && f.formaPagamento;
+      return `
+      <tr>
+        <td>${formatDateBR(f.data)}</td><td>${esc(f.descricao)}</td>
+        <td class="${f.tipo}">${rec ? 'Receita' : 'Despesa'}</td>
+        <td>${rec ? esc(origemTexto(f)) : '—'}</td>
+        <td class="${f.tipo}">${formatMoney(f.valor)}</td>
+        <td>${detalhado ? esc(f.formaPagamento) : '—'}</td>
+        <td>${detalhado ? `${formatMoney(d.taxa)} (${fmtPct(d.taxaPct)})` : '—'}</td>
+        <td>${rec ? formatMoney(d.liquido) : '—'}</td>
+        <td>${rec && f.atendimento ? formatMoney(d.custo) : '—'}</td>
+        <td>${rec ? formatMoney(d.lucro) : '—'}</td>
+        <td>${f.parcelaNumero ? '<span style="font-size:11.5px;color:#6b7280">desfaça na parcela</span>' : `<button class="btn danger small" data-del-fin="${f.id}">Excluir</button>`}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="11" class="empty-msg">Nenhum lançamento ainda.</td></tr>';
+    aplicarFiltroPeriodo();
+  }
+
+  // Exportação em CSV (separador ";", vírgula decimal e BOM UTF-8: abre direto no Excel em português)
+  function csvCampo(v) {
+    if (typeof v === 'number') return (Math.round(v * 100) / 100).toFixed(2).replace('.', ',');
+    let s = String(v == null ? '' : v);
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return /[";\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  function baixarCsv(nome, linhas) {
+    const csv = '﻿' + linhas.map(l => l.map(csvCampo).join(';')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = nome;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+
+  function ultimaConsultaPaciente(c) { return ultimaAtividadePaciente(c); }
+  function totalGastoPaciente(c) {
+    return state.financeiro.filter(f => f.tipo === 'receita' && f.clienteId === c.id).reduce((s, f) => s + (Number(f.valor) || 0), 0);
+  }
+
+  function linhasRelatorio(tipo, de, ate) {
+    if (tipo === 'financeiro') {
+      const regs = state.financeiro.filter(f => f.tipo === 'receita' && f.data >= de && f.data <= ate).sort((a, b) => a.data.localeCompare(b.data));
+      const linhas = [['Data', 'Paciente', 'Dentista', 'Procedimento', 'Dente', 'Valor bruto', 'Convênio/Particular', 'Forma pagamento', 'Taxa maquininha (%)', 'Taxa maquininha (R$)', 'Custo materiais', 'Valor líquido', 'Lucro']];
+      const tot = { bruto: 0, taxa: 0, custo: 0, liquido: 0, lucro: 0 };
+      regs.forEach(f => {
+        const d = dadosFin(f);
+        Object.keys(tot).forEach(k => { tot[k] += d[k]; });
+        linhas.push([formatDateBR(f.data), f.clienteNome || '', f.profissionalNome || '', f.procedimentoNome || f.servicoNome || f.descricao, f.dente || '', d.bruto, origemTexto(f), f.formaPagamento || '', d.taxaPct, d.taxa, d.custo, d.liquido, d.lucro]);
+      });
+      linhas.push(['TOTAL', '', '', '', '', tot.bruto, '', '', '', tot.taxa, tot.custo, tot.liquido, tot.lucro]);
+      return { linhas, nome: `relatorio-financeiro_${de}_a_${ate}.csv`, qtd: regs.length };
+    }
+    if (tipo === 'convenio') {
+      const r = resumoFinanceiro(de, ate);
+      const l = (rot, nome, o) => [rot, nome, String(o.n), o.bruto, o.taxa, o.custo, o.liquido, o.lucro];
+      const linhas = [['Origem', 'Convênio', 'Lançamentos', 'Valor bruto', 'Taxas maquininha', 'Custo materiais', 'Valor líquido', 'Lucro'], l('Particular', '', r.particular), l('Convênio', '(todos)', r.convenio)];
+      const porNome = {};
+      state.financeiro.filter(f => f.tipo === 'receita' && f.origem === 'convenio' && f.data >= de && f.data <= ate).forEach(f => { const k = f.convenioNome || 'Sem nome informado'; (porNome[k] = porNome[k] || []).push(dadosFin(f)); });
+      Object.keys(porNome).sort().forEach(k => {
+        const d = porNome[k];
+        linhas.push(['Convênio', k, String(d.length), somaDados(d, 'bruto'), somaDados(d, 'taxa'), somaDados(d, 'custo'), somaDados(d, 'liquido'), somaDados(d, 'lucro')]);
+      });
+      return { linhas, nome: `relatorio-convenio-x-particular_${de}_a_${ate}.csv`, qtd: linhas.length - 1 };
+    }
+    if (tipo === 'estoque') {
+      const lista = [...state.produtos].sort((a, b) => a.nome.localeCompare(b.nome));
+      return {
+        nome: 'relatorio-estoque-materiais.csv', qtd: lista.length,
+        linhas: [['Material', 'Unidade', 'Quantidade em estoque (embalagens)', 'Usos restantes', 'Valor de compra', 'Usos por embalagem', 'Custo por uso', 'Estoque mínimo', 'Fornecedor', 'Validade', 'Situação']]
+          .concat(lista.map(p => [p.nome, p.unidade, Number(p.quantidade), Number(p.quantidade) * p.usosPorEmbalagem, Number(p.valorCompra), String(p.usosPorEmbalagem), custoPorUso(p), Number(p.estoqueMinimo), p.fornecedor || '', p.validade ? formatDateBR(p.validade) : '', alertasProduto(p).map(a => a.texto).join(' / ') || 'OK']))
+      };
+    }
+    if (tipo === 'clientes') {
+      const lista = [...state.clientes].sort((a, b) => a.nome.localeCompare(b.nome));
+      return {
+        nome: 'relatorio-pacientes.csv', qtd: lista.length,
+        linhas: [['Nome', 'Telefone', 'E-mail', 'Convênio', 'Total gasto', 'Pagamentos registrados', 'Última consulta']].concat(lista.map(c => {
+          const ultima = ultimaConsultaPaciente(c);
+          return [c.nome, c.telefone || '', c.email || '', convenioDoPaciente(c) || 'Particular', totalGastoPaciente(c), String(state.financeiro.filter(f => f.tipo === 'receita' && f.clienteId === c.id).length), ultima ? formatDateBR(ultima) : ''];
+        }))
+      };
+    }
+    // procedimentos realizados (itens do plano concluídos + pagamentos avulsos) no período
+    const linhas = [['Data', 'Paciente', 'Dentista', 'Procedimento', 'Dente', 'Valor do procedimento', 'Convênio/Particular', 'Custo materiais (estimado)']];
+    const registros = [];
+    state.clientes.forEach(c => c.planoTratamento.itens.filter(i => i.status === 'concluido' && i.dataConclusao && i.dataConclusao >= de && i.dataConclusao <= ate).forEach(i => {
+      const dent = state.profissionais.find(p => p.id === ((c.consultas || []).filter(x => x.dentistaId && x.data <= i.dataConclusao).sort((a, b) => b.data.localeCompare(a.data))[0] || {}).dentistaId);
+      registros.push([i.dataConclusao, c.nome, dent ? dent.nome : '', i.procedimento, i.dente || '', Number(i.valor || 0), convenioDoPaciente(c) ? `Convênio (${convenioDoPaciente(c)})` : 'Particular', custoMateriaisItem(i)]);
+    }));
+    state.financeiro.filter(f => f.tipo === 'receita' && f.atendimento && !f.planoItemId && f.data >= de && f.data <= ate).forEach(f => registros.push([f.data, f.clienteNome || '', f.profissionalNome || '', f.procedimentoNome || f.servicoNome, f.dente || '', Number(f.valor), origemTexto(f), Number(f.custoInsumos) || 0]));
+    registros.sort((a, b) => a[0].localeCompare(b[0])).forEach(r => linhas.push([formatDateBR(r[0])].concat(r.slice(1))));
+    return { linhas, nome: `relatorio-procedimentos_${de}_a_${ate}.csv`, qtd: registros.length };
+  }
+  document.getElementById('btnExportar').addEventListener('click', () => {
+    const { de, ate } = intervaloPeriodo();
+    const rel = linhasRelatorio(document.getElementById('finRelatorio').value, de, ate);
+    baixarCsv(rel.nome, rel.linhas);
+    showToast(`Relatório exportado (${rel.qtd} registro${rel.qtd === 1 ? '' : 's'}).`);
+  });
+
+  renderTaxasForm();
 
   // ---------- Autenticação / Login ----------
   function applyLoginBranding() {
@@ -2250,16 +4186,270 @@
     document.getElementById('btnSair').addEventListener('click', () => { if (confirm('Deseja sair?')) { localStorage.removeItem(STORAGE_KEYS.sessao); location.reload(); } });
   }
 
+  // ---------- Backup e restauração ----------
+  const BK = {
+    sistema: 'dentista',
+    nomeSistema: 'Dentista',
+    arquivo: 'backup-dentista',
+    histKey: 'dentista_backup_historico',
+    cfgKey: 'dentista_backup_config',
+    categorias: [
+      { id: 'clientes', label: 'Pacientes (fichas, anamneses, odontogramas, planos de tratamento, prontuário e receitas)', chaves: [STORAGE_KEYS.clientes], registro: true },
+      { id: 'agendamentos', label: 'Agendamentos', chaves: [STORAGE_KEYS.agendamentos], registro: true },
+      { id: 'fotos', label: 'Fotos antes/depois', chaves: [STORAGE_KEYS.galeria], registro: true },
+      { id: 'financeiro', label: 'Financeiro e taxas da maquininha', chaves: [STORAGE_KEYS.financeiro, STORAGE_KEYS.taxas], registro: true },
+      { id: 'estoque', label: 'Estoque de materiais', chaves: [STORAGE_KEYS.produtos], registro: true },
+      { id: 'equipe', label: 'Serviços e profissionais', chaves: [STORAGE_KEYS.servicos, STORAGE_KEYS.profissionais] },
+      { id: 'config', label: 'Configurações (personalização, agenda, senha e regras)', chaves: [STORAGE_KEYS.config, STORAGE_KEYS.regrasStatus] }
+    ],
+    tipos: { [STORAGE_KEYS.config]: 'objeto', [STORAGE_KEYS.regrasStatus]: 'objeto', [STORAGE_KEYS.taxas]: 'objeto', [STORAGE_KEYS.produtos]: 'array', [STORAGE_KEYS.clientes]: 'array', [STORAGE_KEYS.agendamentos]: 'array', [STORAGE_KEYS.galeria]: 'array', [STORAGE_KEYS.financeiro]: 'array', [STORAGE_KEYS.servicos]: 'array', [STORAGE_KEYS.profissionais]: 'array' },
+    principais: [{ key: STORAGE_KEYS.clientes, sing: 'paciente', plur: 'pacientes' }, { key: STORAGE_KEYS.agendamentos, sing: 'agendamento', plur: 'agendamentos' }, { key: STORAGE_KEYS.financeiro, sing: 'registro financeiro', plur: 'registros financeiros' }],
+    extras: [{ key: STORAGE_KEYS.produtos, sing: 'material em estoque', plur: 'materiais em estoque' }, { key: STORAGE_KEYS.galeria, sing: 'foto antes/depois', plur: 'fotos antes/depois' }, { key: STORAGE_KEYS.servicos, sing: 'serviço', plur: 'serviços' }, { key: STORAGE_KEYS.profissionais, sing: 'profissional', plur: 'profissionais' }]
+  };
+  const BK_LIMITE_HISTORICO = 30;
+  const BK_DIAS_ALERTA = 2;
+
+  function bkEsc(v) { return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function bkPlural(n, s, p) { return n === 1 ? s : p; }
+  function bkIso(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+  function bkHoje() { return bkIso(new Date()); }
+  function bkBR(iso) { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; }
+  function bkDias(deISO, ateISO) {
+    const [y1, m1, d1] = deISO.split('-').map(Number), [y2, m2, d2] = ateISO.split('-').map(Number);
+    return Math.round((new Date(y2, m2 - 1, d2) - new Date(y1, m1 - 1, d1)) / 86400000);
+  }
+  function bkTamanho(bytes) {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1048576) return `${(bytes / 1024).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} KB`;
+    return `${(bytes / 1048576).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} MB`;
+  }
+  function bkCfg() { return Object.assign({ automatico: true, perguntarLocal: false }, load(BK.cfgKey, null) || {}); }
+  function bkHistorico() { const h = load(BK.histKey, []); return Array.isArray(h) ? h : []; }
+  function bkTodasIds() { return BK.categorias.map(c => c.id); }
+  function bkUltimoCompleto() { return bkHistorico().find(h => h.completo) || null; }
+  function bkTemDados() {
+    return BK.categorias.filter(c => c.registro).some(c => c.chaves.some(k => { const v = load(k, []); return Array.isArray(v) && v.length > 0; }));
+  }
+
+  // Monta o arquivo: um pacote JSON com o conteúdo bruto de cada chave do localStorage escolhida
+  function bkMontar(ids) {
+    const dados = {}, incluidos = [];
+    BK.categorias.filter(c => ids.includes(c.id)).forEach(c => {
+      incluidos.push(c.id);
+      c.chaves.forEach(k => {
+        const raw = localStorage.getItem(k);
+        if (raw === null) return;
+        try { dados[k] = JSON.parse(raw); } catch (e) { /* valor corrompido: fica de fora */ }
+      });
+    });
+    return JSON.stringify({ formato: 'jv-datalab-backup', versao: 1, sistema: BK.sistema, geradoEm: new Date().toISOString(), incluido: incluidos, dados });
+  }
+
+  // Salva o arquivo. Com "perguntar", usa o seletor de pasta do navegador (só funciona após um clique);
+  // sem ele (ou se o navegador não tiver o seletor), baixa direto, como o FileSaver.js
+  async function bkSalvarArquivo(nome, json, perguntar) {
+    const blob = new Blob([json], { type: 'application/json' });
+    if (perguntar && window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({ suggestedName: nome, types: [{ description: 'Backup JSON', accept: { 'application/json': ['.json'] } }] });
+        const w = await handle.createWritable();
+        await w.write(blob);
+        await w.close();
+        return { ok: true, via: 'seletor' };
+      } catch (e) {
+        if (e && e.name === 'AbortError') return { ok: false, cancelado: true };
+      }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = nome;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    return { ok: true, via: 'download' };
+  }
+
+  function bkRegistrar(info) {
+    const agora = new Date();
+    const lista = bkHistorico();
+    lista.unshift({
+      id: agora.getTime(), data: bkHoje(), hora: `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}`,
+      tamanho: info.tamanho, arquivo: info.arquivo, tipo: info.tipo, itens: info.ids, completo: info.ids.length === BK.categorias.length
+    });
+    try { save(BK.histKey, lista.slice(0, BK_LIMITE_HISTORICO)); } catch (e) { /* histórico é só informativo */ }
+  }
+
+  async function bkFazerBackup(op) {
+    const json = bkMontar(op.ids);
+    const nome = `${BK.arquivo}${op.sufixo ? '-' + op.sufixo : ''}-${bkHoje()}.json`;
+    const tamanho = new Blob([json]).size;
+    const r = await bkSalvarArquivo(nome, json, op.perguntar);
+    if (r.ok) bkRegistrar({ arquivo: nome, tamanho, tipo: op.tipo, ids: op.ids });
+    return Object.assign(r, { nome, tamanho });
+  }
+
+  // Backup diário: roda ao abrir o sistema (só para o administrador), se ainda não houve backup completo hoje
+  function bkVerificarDiario() {
+    if (!session || session.tipo !== 'admin') return;
+    const cfg = bkCfg();
+    const feitoHoje = bkHistorico().some(h => h.completo && h.data === bkHoje());
+    if (!cfg.automatico || feitoHoje || !bkTemDados()) { bkAtualizarBanner(false); bkRenderPainel(); return; }
+    if (cfg.perguntarLocal && window.showSaveFilePicker) { bkAtualizarBanner(true); return; }
+    bkFazerBackup({ ids: bkTodasIds(), tipo: 'automático', perguntar: false }).then(r => {
+      if (r.ok) showToast('Backup do dia realizado com sucesso ✅', 5000);
+      bkAtualizarBanner(false);
+      bkRenderPainel();
+    }).catch(() => bkAtualizarBanner(false));
+  }
+
+  function bkAtualizarBanner(pendenteEscolha) {
+    const el = document.getElementById('bannerBackup');
+    if (!el) return;
+    let msg = '';
+    if (session && session.tipo === 'admin') {
+      if (pendenteEscolha) msg = '📦 O backup de hoje ainda não foi feito.';
+      else if (bkTemDados()) {
+        const ultimo = bkUltimoCompleto();
+        if (!ultimo) msg = '⚠️ Nenhum backup foi realizado ainda.';
+        else { const dias = bkDias(ultimo.data, bkHoje()); if (dias > BK_DIAS_ALERTA) msg = `⚠️ Faz ${dias} dias que você não faz backup.`; }
+      }
+    }
+    el.style.display = msg ? 'block' : 'none';
+    el.innerHTML = msg ? `${msg} <button type="button" id="bkBannerBtn" style="margin-left:10px;background:#3a2e00;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600">${pendenteEscolha ? 'Escolher onde salvar' : 'Fazer backup agora'}</button>` : '';
+    const btn = document.getElementById('bkBannerBtn');
+    if (btn) btn.addEventListener('click', () => bkBackupManual(bkTodasIds()));
+  }
+
+  // Backup manual (ou completo a partir do banner): pergunta onde salvar quando o navegador permite
+  async function bkBackupManual(ids) {
+    if (!ids.length) { showToast('Escolha ao menos um item para incluir no backup.', 4000); return; }
+    const r = await bkFazerBackup({ ids, tipo: 'manual', perguntar: true });
+    if (r.ok) showToast(`Backup realizado com sucesso ✅ (${bkTamanho(r.tamanho)})`, 4500);
+    else if (!r.cancelado) showToast('Não foi possível salvar o backup.', 4000);
+    bkAtualizarBanner(false);
+    bkRenderPainel();
+  }
+
+  // ---------- Restauração ----------
+  function bkLerArquivo(file) {
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = () => reject(fr.error);
+      fr.readAsText(file);
+    });
+  }
+  function bkValidar(p) {
+    if (!p || typeof p !== 'object' || p.formato !== 'jv-datalab-backup' || !p.dados || typeof p.dados !== 'object') return { ok: false, erro: 'Este arquivo não é um backup do JV Datalab.' };
+    if (p.sistema !== BK.sistema) return { ok: false, erro: `Este é um backup do sistema "${p.sistema}", não do ${BK.nomeSistema}.` };
+    if (typeof p.versao !== 'number' || p.versao > 1) return { ok: false, erro: 'Versão de backup não suportada por esta versão do sistema.' };
+    const ids = BK.categorias.filter(c => Array.isArray(p.incluido) ? p.incluido.includes(c.id) : c.chaves.some(k => k in p.dados)).map(c => c.id);
+    if (!ids.length) return { ok: false, erro: 'O backup não contém dados para restaurar.' };
+    for (const c of BK.categorias.filter(c => ids.includes(c.id))) {
+      for (const k of c.chaves) {
+        if (!(k in p.dados)) continue;
+        const v = p.dados[k], esperado = BK.tipos[k];
+        const valido = esperado === 'array' ? Array.isArray(v) : (v !== null && typeof v === 'object' && !Array.isArray(v));
+        if (!valido) return { ok: false, erro: `Os dados de "${c.label}" estão corrompidos no arquivo.` };
+      }
+    }
+    return { ok: true, ids };
+  }
+  // Troca os dados das categorias do arquivo; se algo falhar no meio, devolve tudo como estava
+  function bkAplicar(pacote, ids) {
+    const chaves = BK.categorias.filter(c => ids.includes(c.id)).flatMap(c => c.chaves);
+    const anterior = {};
+    chaves.forEach(k => { anterior[k] = localStorage.getItem(k); });
+    try {
+      chaves.forEach(k => { if (k in pacote.dados) localStorage.setItem(k, JSON.stringify(pacote.dados[k])); else localStorage.removeItem(k); });
+      return { ok: true };
+    } catch (e) {
+      chaves.forEach(k => { try { if (anterior[k] === null) localStorage.removeItem(k); else localStorage.setItem(k, anterior[k]); } catch (e2) { /* melhor esforço */ } });
+      return { ok: false, erro: 'Não foi possível restaurar (o navegador pode estar sem espaço). Nenhum dado foi alterado.' };
+    }
+  }
+  function bkResumoRestauracao(pacote, ids) {
+    const chavesRestauradas = new Set(BK.categorias.filter(c => ids.includes(c.id)).flatMap(c => c.chaves));
+    const contar = (lista) => lista.filter(i => chavesRestauradas.has(i.key) && Array.isArray(pacote.dados[i.key])).map(i => { const n = pacote.dados[i.key].length; return `${n} ${bkPlural(n, i.sing, i.plur)}`; });
+    const principais = contar(BK.principais), extras = contar(BK.extras);
+    return (principais.length ? `${principais.join(', ')} restaurados.` : 'Dados restaurados.') + (extras.length ? `\nTambém restaurados: ${extras.join(', ')}.` : '');
+  }
+  function bkMostrarErro(msg) {
+    const el = document.getElementById('bkMensagem');
+    if (el) { el.textContent = msg; el.style.display = 'block'; }
+    showToast(msg, 6000);
+  }
+
+  async function bkRestaurarArquivo(file) {
+    const msgBox = document.getElementById('bkMensagem');
+    if (msgBox) msgBox.style.display = 'none';
+    let pacote;
+    try { pacote = JSON.parse(await bkLerArquivo(file)); }
+    catch (e) { bkMostrarErro('Arquivo inválido: não foi possível ler o backup (precisa ser um .json gerado pelo sistema).'); return; }
+    const v = bkValidar(pacote);
+    if (!v.ok) { bkMostrarErro(v.erro); return; }
+
+    const completo = v.ids.length === BK.categorias.length;
+    const quando = pacote.geradoEm ? new Date(pacote.geradoEm) : null;
+    const dataTxt = quando && !isNaN(quando) ? `Backup gerado em ${bkBR(bkIso(quando))} às ${String(quando.getHours()).padStart(2, '0')}:${String(quando.getMinutes()).padStart(2, '0')}.\n\n` : '';
+    const rotulos = BK.categorias.filter(c => v.ids.includes(c.id)).map(c => c.label.split(' (')[0]).join(', ');
+    if (!confirm(dataTxt + (completo ? 'Isso substituirá todos os dados atuais. Continuar?' : `Isso substituirá os dados atuais de: ${rotulos}. Continuar?`))) return;
+
+    // Cópia de segurança do que existe agora, para o caso de o arquivo errado ter sido escolhido
+    await bkFazerBackup({ ids: bkTodasIds(), tipo: 'segurança (antes de restaurar)', perguntar: false, sufixo: 'antes-de-restaurar' });
+    const r = bkAplicar(pacote, v.ids);
+    if (!r.ok) { bkMostrarErro(r.erro); return; }
+    document.getElementById('bkResultadoTexto').textContent = bkResumoRestauracao(pacote, v.ids);
+    document.getElementById('modalBackupResultado').classList.add('open');
+  }
+  document.getElementById('bkResultadoOk').addEventListener('click', () => location.reload());
+
+  // ---------- Painel na Personalização ----------
+  function bkRenderPainel() {
+    const box = document.getElementById('bkStatus');
+    if (!box) return;
+    const cfg = bkCfg(), hist = bkHistorico(), ultimo = hist[0], completo = bkUltimoCompleto();
+    const diasSem = completo ? bkDias(completo.data, bkHoje()) : null;
+    const alerta = bkTemDados() && (!completo || diasSem > BK_DIAS_ALERTA);
+    box.className = 'bk-status' + (alerta ? ' alerta' : '');
+    box.textContent = ultimo
+      ? `Último backup: ${bkBR(ultimo.data)} às ${ultimo.hora} (${bkTamanho(ultimo.tamanho)})${alerta ? ` — atenção: o último backup completo foi há ${diasSem} dias.` : ''}`
+      : (alerta ? 'Nenhum backup foi realizado ainda.' : 'Nenhum backup realizado ainda.');
+    document.getElementById('bkAuto').checked = cfg.automatico;
+    document.getElementById('bkPerguntar').checked = cfg.perguntarLocal;
+    document.getElementById('bkPerguntarAviso').style.display = window.showSaveFilePicker ? 'none' : 'block';
+    document.getElementById('bkHistorico').innerHTML = hist.length ? `<div class="bk-scroll"><table>
+      <thead><tr><th>Data</th><th>Hora</th><th>Tamanho</th><th>Tipo</th><th>Conteúdo</th></tr></thead>
+      <tbody>${hist.map(h => `<tr><td>${bkBR(h.data)}</td><td>${bkEsc(h.hora)}</td><td>${bkTamanho(h.tamanho)}</td><td>${bkEsc(h.tipo)}</td><td>${h.completo ? 'Completo' : `${(h.itens || []).length} de ${BK.categorias.length} itens`}</td></tr>`).join('')}</tbody></table></div>`
+      : '<div class="empty-msg">Nenhum backup no histórico.</div>';
+  }
+  (function bkMontarPainel() {
+    const cats = document.getElementById('bkCategorias');
+    if (!cats) return;
+    cats.innerHTML = BK.categorias.map(c => `<label class="checkbox-item"><input type="checkbox" class="bk-cat" value="${c.id}" checked> ${bkEsc(c.label)}</label>`).join('');
+    document.getElementById('bkFazer').addEventListener('click', () => bkBackupManual([...cats.querySelectorAll('.bk-cat:checked')].map(i => i.value)));
+    document.getElementById('bkAuto').addEventListener('change', (e) => { save(BK.cfgKey, Object.assign(bkCfg(), { automatico: e.target.checked })); showToast(e.target.checked ? 'Backup automático ativado.' : 'Backup automático desativado.'); });
+    document.getElementById('bkPerguntar').addEventListener('change', (e) => { save(BK.cfgKey, Object.assign(bkCfg(), { perguntarLocal: e.target.checked })); });
+    document.getElementById('bkRestaurar').addEventListener('click', () => document.getElementById('bkArquivo').click());
+    document.getElementById('bkArquivo').addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = '';
+      if (file) bkRestaurarArquivo(file);
+    });
+  })();
+
   function iniciarApp() {
     document.getElementById('telaAtivacao').style.display = 'none';
     document.getElementById('telaLogin').style.display = 'none';
     document.getElementById('appContainer').style.display = 'flex';
     applyConfig();
     applyRoleRestrictions();
+    normalizarClientes();
+    sincronizarStatusClientes();
     renderUserFooter();
     populateTodosSelects();
     renderServicos();
     renderProfissionais();
+    renderEstoque();
     renderClientes();
     renderAgendaCompleta();
     renderGaleria();
@@ -2268,6 +4458,7 @@
     renderDashboard();
     verificarBannerRenovacao(licencaAtiva);
     goToPage(session.tipo === 'admin' ? 'dashboard' : 'agendamentos');
+    setTimeout(bkVerificarDiario, 600);
   }
 
   function iniciar() {

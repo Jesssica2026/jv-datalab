@@ -517,8 +517,8 @@
     if (!cliente) {
       cliente = {
         id: uid(), nome, telefone, email: '', idade: '',
-        anamneseFacial: { tipoPele: '', acne: false, manchas: false, rugas: false, rosacea: false, alergiasCosmeticos: '', usoAcidosRetinol: false, historicoProcedimentos: '' },
-        anamneseCorporal: { peso: '', altura: '', historicoCirurgias: '', medicamentos: '', problemasCirculatorios: false, marcapasso: false, gestante: false, amamentando: false, diabetes: false, varizes: false, alergias: '' },
+        criadoEm: new Date().toLocaleDateString('en-CA'), dataAvaliacao: new Date().toLocaleDateString('en-CA'),
+        anamneseCapilar: {}, anamneseCorporal: {}, anamneseFacial: {},
         objetivos: { reducaoMedidas: false, celulite: false, flacidez: false, gorduraLocalizada: false, modelagemCorporal: false },
         mapaCorporal: {}, medidas: [], protocolo: { protocoloId: '', sessoesFeitas: 0 }
       };

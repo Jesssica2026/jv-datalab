@@ -496,7 +496,8 @@
         nome,
         telefone,
         email: '',
-        anamnese: { tipoPele: '', alergias: '', condicoes: '', observacoes: '' }
+        anamneseCapilar: {}, evolucoes: [],
+        criadoEm: new Date().toLocaleDateString('en-CA'), dataAvaliacao: new Date().toLocaleDateString('en-CA')
       };
       clientes.push(cliente);
       save(STORAGE_KEYS.clientes, clientes);
