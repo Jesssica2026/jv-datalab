@@ -1,1 +1,12 @@
-{ 
+{
+  "version": 2,
+  "routes": [
+    {"src": "/painel.html", "dest": "/painel.html"},
+    {"src": "/estetica.html", "dest": "/estetica.html"},
+    {"src": "/dentista.html", "dest": "/dentista.html"},
+    {"src": "/admin-jv.html", "dest": "/admin-jv.html"},
+    {"src": "/agendamento-cliente.html", "dest": "/agendamento-cliente.html"},
+    {"src": "/agendamento-estetica.html", "dest": "/agendamento-estetica.html"},
+    {"src": "/agendamento-dentista.html", "dest": "/agendamento-dentista.html"}
+  ]
+}
