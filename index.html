@@ -426,10 +426,62 @@
       margin-top: 10px;
     }
 
-    @media (max-width: 600px) {
-      nav { padding: 0.75rem 1rem; }
-      .hero { padding: 3rem 1rem 2rem; }
+    /* ── HAMBURGER BUTTON ── */
+    .nav-hamburger {
+      display: none;
+      flex-direction: column; gap: 5px;
+      background: none; border: none; cursor: pointer; padding: 4px;
+    }
+    .nav-hamburger span {
+      display: block; width: 22px; height: 2px;
+      background: var(--navy); border-radius: 2px;
+      transition: all 0.2s;
+    }
+
+    @media (max-width: 640px) {
+      nav { padding: 0.75rem 1rem; position: relative; flex-wrap: wrap; }
+
+      .nav-hamburger { display: flex; }
+
+      .nav-right {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        gap: 0;
+        padding: 0.5rem 0 0.25rem;
+        border-top: 1px solid var(--border);
+        margin-top: 0.5rem;
+      }
+      .nav-right.open { display: flex; }
+      .nav-link {
+        padding: 10px 4px;
+        font-size: 15px;
+        border-bottom: 1px solid var(--border);
+      }
+      .btn-nav {
+        margin-top: 8px; text-align: center;
+        padding: 10px 20px; border-radius: 8px;
+      }
+
+      .hero { padding: 2.5rem 1rem 2rem; }
+      .hero h1 { font-size: 24px; }
+      .hero p { font-size: 15px; }
+      .btn-hero, .btn-hero-outline { padding: 12px 20px; font-size: 14px; width: 100%; text-align: center; }
+      .hero-cta-group { flex-direction: column; align-items: center; }
+
+      .nichos-grid { grid-template-columns: repeat(2, 1fr); }
+
+      .steps-grid { grid-template-columns: 1fr; }
+
+      .plans-grid { grid-template-columns: 1fr !important; }
+      .plan-card { padding: 1.75rem 1.25rem; }
+      .plan-price { font-size: 38px; }
+
       .form-row { grid-template-columns: 1fr; }
+
+      .about { padding: 2rem 1rem; }
+      .customize { padding: 2rem 1rem; }
+      .customize-box { padding: 1.5rem 1rem; }
     }
   </style>
 </head>
@@ -443,7 +495,10 @@
     </div>
     <div class="logo-name">Data<span>lab</span></div>
   </a>
-  <div class="nav-right">
+  <button class="nav-hamburger" id="navHamburger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="nav-right" id="navRight">
     <a href="#sobre" class="nav-link">Quem somos</a>
     <a href="#como-funciona" class="nav-link">Como funciona</a>
     <a href="#planos" class="btn-nav">Ver planos</a>
@@ -746,6 +801,15 @@ function copiarLink() {
   const txt = document.getElementById('link-text').textContent;
   navigator.clipboard.writeText(txt).then(() => alert('Link copiado!'));
 }
+
+// Menu hambúrguer mobile
+document.getElementById('navHamburger').addEventListener('click', () => {
+  document.getElementById('navRight').classList.toggle('open');
+});
+// Fecha menu ao clicar em link
+document.querySelectorAll('.nav-right a').forEach(a => {
+  a.addEventListener('click', () => document.getElementById('navRight').classList.remove('open'));
+});
 
 // Fecha modal ao clicar fora
 document.getElementById('modal').addEventListener('click', e => {
