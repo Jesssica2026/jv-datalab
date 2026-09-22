@@ -279,6 +279,78 @@
     licencas: load(STORAGE_KEYS.licencas, [])
   };
 
+  // ===== SUPABASE =====
+  const SUPA_URL = 'https://dhcbgwoqvemveltqlkyb.supabase.co';
+  const SUPA_KEY = 'sb_publishable_2NBJeTDfI7FRe3xGfo_QpQ_voN44OJm';
+  const SUPA_HEADERS = {
+    'apikey': SUPA_KEY,
+    'Authorization': 'Bearer ' + SUPA_KEY,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  };
+
+  async function supaUpsertLicenca(lic) {
+    try {
+      const row = {
+        id: lic.id,
+        codigo: lic.codigo,
+        nome_assinante: lic.nomeAssinante || lic.nome || '',
+        telefone: lic.telefone || '',
+        segmento: lic.segmento || '',
+        plano: lic.plano || 'Starter',
+        periodicidade: lic.periodicidade || 'mensal',
+        limite_profissionais: lic.limiteProfissionais || 1,
+        limite_clientes: lic.limiteClientes || 50,
+        tem_ia: lic.temIA || false,
+        data_criacao: lic.dataCriacao || todayISO(),
+        data_vencimento: lic.dataVencimento || ''
+      };
+      const res = await fetch(`${SUPA_URL}/rest/v1/licencas`, {
+        method: 'POST',
+        headers: { ...SUPA_HEADERS, 'Prefer': 'resolution=merge-duplicates,return=representation' },
+        body: JSON.stringify(row)
+      });
+      if (!res.ok) console.warn('[Supabase] upsert falhou:', await res.text());
+    } catch(e) { console.warn('[Supabase] erro upsert:', e); }
+  }
+
+  async function supaDeleteLicenca(id) {
+    try {
+      await fetch(`${SUPA_URL}/rest/v1/licencas?id=eq.${id}`, {
+        method: 'DELETE', headers: SUPA_HEADERS
+      });
+    } catch(e) { console.warn('[Supabase] erro delete:', e); }
+  }
+
+  async function supaCarregarLicencas() {
+    try {
+      const res = await fetch(`${SUPA_URL}/rest/v1/licencas?select=*&order=data_criacao.desc`, {
+        headers: SUPA_HEADERS
+      });
+      if (!res.ok) return;
+      const rows = await res.json();
+      if (!rows.length) return;
+      // converte para formato local
+      const licencas = rows.map(r => ({
+        id: r.id,
+        codigo: r.codigo,
+        nomeAssinante: r.nome_assinante,
+        telefone: r.telefone,
+        segmento: r.segmento,
+        plano: r.plano,
+        periodicidade: r.periodicidade,
+        limiteProfissionais: r.limite_profissionais,
+        limiteClientes: r.limite_clientes,
+        temIA: r.tem_ia,
+        dataCriacao: r.data_criacao,
+        dataVencimento: r.data_vencimento
+      }));
+      state.licencas = licencas;
+      save(STORAGE_KEYS.licencas, licencas);
+      renderAssinantes();
+    } catch(e) { console.warn('[Supabase] erro carregar:', e); }
+  }
+
   function gerarCodigoAtivacao(segmento) {
     const ano = new Date().getFullYear();
     const letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -345,6 +417,7 @@
     };
     state.licencas.push(lic);
     save(STORAGE_KEYS.licencas, state.licencas);
+    supaUpsertLicenca(lic);
     e.target.reset();
     atualizarLimitesPlano();
     renderAssinantes();
@@ -452,8 +525,10 @@
       modalEditar.classList.add('open');
     } else if (btnExcluir) {
       if (confirm('Excluir este assinante? O código de ativação dele deixará de funcionar imediatamente.')) {
-        state.licencas = state.licencas.filter(l => l.id !== btnExcluir.dataset.excluir);
+        const idExcluir = btnExcluir.dataset.excluir;
+        state.licencas = state.licencas.filter(l => l.id !== idExcluir);
         save(STORAGE_KEYS.licencas, state.licencas);
+        supaDeleteLicenca(idExcluir);
         renderAssinantes();
       }
     }
@@ -476,6 +551,7 @@
     if (!licencaSelecionada) return;
     licencaSelecionada.dataVencimento = document.getElementById('renovarData').value;
     save(STORAGE_KEYS.licencas, state.licencas);
+    supaUpsertLicenca(licencaSelecionada);
     modalRenovar.classList.remove('open');
     renderAssinantes();
     showToast('Assinatura renovada! O acesso será desbloqueado automaticamente.');
@@ -497,6 +573,7 @@
     lic.temIA = cfgEditado.temIA;
     lic.dataVencimento = document.getElementById('editVencimento').value;
     save(STORAGE_KEYS.licencas, state.licencas);
+    supaUpsertLicenca(lic);
     modalEditar.classList.remove('open');
     renderAssinantes();
     showToast('Assinante atualizado!');
@@ -572,6 +649,7 @@
     applyConfig();
     renderStats();
     renderAssinantes();
+    supaCarregarLicencas(); // atualiza lista do Supabase em background
 
     // Bind plan selects AFTER DOM is visible
     const selPlano = document.getElementById('assPlano');
