@@ -161,8 +161,8 @@
               <option value="anual">Anual (-20%)</option>
             </select>
           </div>
-          <div class="field"><label>Limite de profissionais (auto)</label><input type="number" id="assLimite" min="1" step="1" value="1" required style="pointer-events:none;background:#f0f1f5;color:#6b7280"></div>
-          <div class="field"><label>Limite de clientes (auto)</label><input type="number" id="assLimiteClientes" min="1" step="1" value="50" required style="pointer-events:none;background:#f0f1f5;color:#6b7280"></div>
+          <div class="field"><label>Limite de profissionais (auto)</label><input type="text" id="assLimite" value="1" readonly style="background:#f0f1f5;color:#6b7280"></div>
+          <div class="field"><label>Limite de clientes (auto)</label><input type="text" id="assLimiteClientes" value="50" readonly style="background:#f0f1f5;color:#6b7280"></div>
           <div class="field"><label>Armazenamento (GB)</label><input type="text" id="assLimiteGB" value="1 GB" style="pointer-events:none;background:#f0f1f5;color:#6b7280"></div>
           <div class="field"><label>Data de vencimento</label><input type="date" id="assVencimento" required></div>
         </div>
@@ -371,24 +371,35 @@
     renderStats();
     const busca = (document.getElementById('buscaAssinante').value || '').toLowerCase();
     const lista = state.licencas
-      .filter(l => l.nomeAssinante.toLowerCase().includes(busca) || l.codigo.toLowerCase().includes(busca))
-      .sort((a, b) => a.dataVencimento.localeCompare(b.dataVencimento));
+      .filter(l => {
+        const nome = (l.nomeAssinante || l.nome || '').toLowerCase();
+        const cod = (l.codigo || '').toLowerCase();
+        return nome.includes(busca) || cod.includes(busca);
+      })
+      .sort((a, b) => (a.dataVencimento || '').localeCompare(b.dataVencimento || ''));
     const box = document.getElementById('listaAssinantes');
     if (!lista.length) { box.innerHTML = '<div class="empty-msg">Nenhum assinante cadastrado ainda.</div>'; return; }
     box.innerHTML = lista.map(l => {
+      // compatibilidade com dados antigos (sem periodicidade/limiteClientes)
+      const nome = l.nomeAssinante || l.nome || '(sem nome)';
+      const plano = l.plano || 'Starter';
+      const periodicidade = l.periodicidade || 'mensal';
+      const limProf = l.limiteProfissionais || l.limite || 1;
+      const limCli = l.limiteClientes || 50;
+      const temIA = l.temIA || false;
       const status = statusLicenca(l);
       const badgeLabel = status === 'ativo' ? 'Ativo' : (status === 'vencendo' ? 'Vencendo' : 'Vencido');
       return `
         <div class="assinante-card">
           <div class="topo-card">
             <div>
-              <div class="nome">${l.nomeAssinante} <span class="badge ${status}">${badgeLabel}</span></div>
-              <div class="codigo">${l.codigo}</div>
+              <div class="nome">${nome} <span class="badge ${status}">${badgeLabel}</span></div>
+              <div class="codigo">${l.codigo || ''}</div>
             </div>
             <div style="text-align:right">
-              <div class="meta">${SEGMENTO_LABEL[l.segmento] || l.segmento}</div>
-              <div class="meta">Plano: ${l.plano}${l.periodicidade === 'anual' ? ' · Anual' : ''} ${l.temIA ? '· 🤖 IA' : ''}</div>
-              <div class="meta">${l.limiteProfissionais >= 999 ? '∞' : l.limiteProfissionais} profissional(is) · ${l.limiteClientes >= 99999 ? '∞' : (l.limiteClientes || '?')} clientes</div>
+              <div class="meta">${SEGMENTO_LABEL[l.segmento] || l.segmento || ''}</div>
+              <div class="meta">Plano: ${plano}${periodicidade === 'anual' ? ' · Anual' : ''}${temIA ? ' · 🤖 IA' : ''}</div>
+              <div class="meta">${limProf >= 99999 ? '∞' : limProf} profissional(is) · ${limCli >= 99999 ? '∞' : limCli} clientes</div>
               <div class="meta">Vence em: ${formatDateBR(l.dataVencimento)}</div>
             </div>
           </div>
@@ -534,17 +545,6 @@
     if (confirm('Deseja sair?')) { localStorage.removeItem(STORAGE_KEYS.sessao); location.reload(); }
   });
 
-  function iniciar() {
-    if (!state.config.senhaAdmin) { renderSetupForm(); return; }
-    const sessao = load(STORAGE_KEYS.sessao, null);
-    if (!sessao || !sessao.ativo) { renderLoginForm(); return; }
-    document.getElementById('telaLogin').style.display = 'none';
-    document.getElementById('appContainer').style.display = 'block';
-    applyConfig();
-    renderAssinantes();
-  }
-
-
   // ===== CONFIGURAÇÃO DOS PLANOS =====
   const PLANOS = {
     'Starter':      { profissionais: 1,     clientes: 50,    gb: 1,  temIA: false },
@@ -558,12 +558,22 @@
     const elProf = document.getElementById(prefixo + 'Limite');
     const elCli  = document.getElementById(prefixo + 'LimiteClientes');
     const elGb   = document.getElementById(prefixo + 'LimiteGB');
-    if (elProf) { elProf.value = cfg.profissionais >= 99999 ? 'Ilimitado' : cfg.profissionais; elProf.dataset.val = cfg.profissionais; }
-    if (elCli)  { elCli.value  = cfg.clientes >= 99999 ? 'Ilimitado' : cfg.clientes; elCli.dataset.val = cfg.clientes; }
+    if (elProf) { elProf.value = cfg.profissionais >= 99999 ? 'Ilimitado' : String(cfg.profissionais); elProf.dataset.val = String(cfg.profissionais); }
+    if (elCli)  { elCli.value  = cfg.clientes >= 99999 ? 'Ilimitado' : String(cfg.clientes); elCli.dataset.val = String(cfg.clientes); }
     if (elGb)   { elGb.value   = cfg.gb + ' GB'; }
   }
 
-  function bindPlanSelects() {
+  function iniciar() {
+    if (!state.config.senhaAdmin) { renderSetupForm(); return; }
+    const sessao = load(STORAGE_KEYS.sessao, null);
+    if (!sessao || !sessao.ativo) { renderLoginForm(); return; }
+    document.getElementById('telaLogin').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'block';
+    applyConfig();
+    renderStats();
+    renderAssinantes();
+
+    // Bind plan selects AFTER DOM is visible
     const selPlano = document.getElementById('assPlano');
     const selPer   = document.getElementById('assPeriodicidade');
     const selEdit  = document.getElementById('editPlano');
@@ -576,15 +586,14 @@
       if (elVenc) elVenc.value = somarDias(todayISO(), dias);
     }
 
-    if (selPlano) { selPlano.addEventListener('change', refreshForm); }
-    if (selPer)   { selPer.addEventListener('change', refreshForm); }
-    if (selEdit)  { selEdit.addEventListener('change', () => setLimitFields(selEdit.value, 'edit')); }
+    if (selPlano) selPlano.addEventListener('change', refreshForm);
+    if (selPer)   selPer.addEventListener('change', refreshForm);
+    if (selEdit)  selEdit.addEventListener('change', () => setLimitFields(selEdit.value, 'edit'));
 
-    refreshForm(); // init values
+    refreshForm(); // preenche valores iniciais
   }
 
   iniciar();
-  bindPlanSelects();
 })();
 </script>
 </body>
