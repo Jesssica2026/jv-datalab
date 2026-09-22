@@ -294,6 +294,27 @@
   .bk-cats { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 8px; margin: 10px 0 14px; }
   .bk-scroll { overflow-x: auto; }
   .bk-erro { margin-top: 12px; padding: 10px 12px; border-radius: 8px; background: #fdeaea; color: #8a1a14; font-size: 13px; font-weight: 600; }
+
+  /* ===== IA & PROMOÇÕES ===== */
+  .ia-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media(max-width:700px){ .ia-grid { grid-template-columns: 1fr; } }
+  .ia-card { background:#fff; border-radius:var(--radius); padding:24px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .ia-card h3 { font-size:15px; font-weight:700; margin-bottom:4px; }
+  .ia-card p.sub { font-size:12px; color:#888; margin-bottom:14px; }
+  .ia-textarea { width:100%; border:1.5px solid var(--cor-borda); border-radius:8px; padding:10px 12px; font-size:14px; min-height:80px; resize:vertical; font-family:inherit; }
+  .ia-resultado { background:#f4f5f8; border-radius:8px; padding:12px; font-size:13.5px; line-height:1.6; min-height:60px; white-space:pre-wrap; margin:10px 0; }
+  .ia-btn { display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; border:none; transition:.15s; }
+  .ia-btn-primary { background:var(--cor-secundaria); color:var(--cor-primaria); }
+  .ia-btn-primary:hover { opacity:.88; }
+  .ia-btn-wpp { background:#25D366; color:#fff; }
+  .ia-btn-wpp:hover { opacity:.88; }
+  .ia-btn-copy { background:#e8eaf0; color:#333; }
+  .ia-loading { display:none; font-size:13px; color:#888; margin-top:6px; }
+  .ia-inativos-lista { list-style:none; padding:0; margin:0; }
+  .ia-inativos-lista li { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--cor-borda); font-size:14px; }
+  .ia-inativos-lista li:last-child { border-bottom:none; }
+  .ia-badge { background:#fdeaea; color:#c0392b; border-radius:20px; padding:2px 10px; font-size:12px; font-weight:600; }
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -474,6 +495,7 @@
       <button data-page="galeria"><span class="icon">📸</span><span class="menu-label">Galeria Antes/Depois</span></button>
       <button data-page="personalizacao" class="admin-only"><span class="icon">🎨</span><span class="menu-label">Personalização</span></button>
       <button data-page="financeiro" class="admin-only"><span class="icon">💰</span><span class="menu-label">Financeiro</span></button>
+      <button data-page="ia" class="admin-only"><span class="icon">🤖</span><span class="menu-label">IA &amp; Promoções</span></button>
     </nav>
     <div class="sidebar-footer" id="sidebarFooter"></div>
   </aside>
@@ -1064,6 +1086,46 @@
         </div>
       </section>
 
+      <!-- IA & PROMOÇÕES -->
+      <section class="page admin-only" id="page-ia">
+        <h2 class="page-title">🤖 IA & Promoções</h2>
+        <p class="page-sub">Crie mensagens com inteligência artificial e envie para seus clientes</p>
+        <div class="ia-grid">
+
+          <!-- Gerador de Promoção -->
+          <div class="ia-card">
+            <h3>✨ Gerador de Promoção</h3>
+            <p class="sub">Descreva a promoção e a IA escreve a mensagem pronta para WhatsApp</p>
+            <textarea class="ia-textarea" id="iaPromptPromo" placeholder="Ex: Black Friday 50% de desconto em todos os serviços este fim de semana"></textarea>
+            <br><br>
+            <button class="ia-btn ia-btn-primary" onclick="iaGerarPromocao()">✨ Gerar mensagem</button>
+            <div class="ia-loading" id="iaLoadingPromo">⏳ Gerando...</div>
+            <div class="ia-resultado" id="iaResultadoPromo" style="display:none"></div>
+            <div id="iaBotoesPromo" style="display:none;margin-top:8px;display:none;gap:8px;flex-wrap:wrap">
+              <button class="ia-btn ia-btn-copy" onclick="iaCopiar('iaResultadoPromo')">📋 Copiar</button>
+              <button class="ia-btn ia-btn-wpp" onclick="iaEnviarTodos()">📤 Enviar para todos via WhatsApp</button>
+            </div>
+          </div>
+
+          <!-- Clientes Inativos -->
+          <div class="ia-card">
+            <h3>😴 Clientes Inativos</h3>
+            <p class="sub">Clientes que não aparecem há mais de 30 dias</p>
+            <div id="iaListaInativos"><p style="color:#aaa;font-size:13px">Carregando...</p></div>
+            <br>
+            <button class="ia-btn ia-btn-primary" onclick="iaGerarMsgRetorno()" style="margin-top:4px">✨ Gerar mensagem de retorno</button>
+            <div class="ia-loading" id="iaLoadingRetorno">⏳ Gerando...</div>
+            <div class="ia-resultado" id="iaResultadoRetorno" style="display:none"></div>
+            <div id="iaBotoesRetorno" style="display:none;gap:8px;flex-wrap:wrap;margin-top:8px">
+              <button class="ia-btn ia-btn-copy" onclick="iaCopiar('iaResultadoRetorno')">📋 Copiar</button>
+              <button class="ia-btn ia-btn-wpp" onclick="iaEnviarInativos()">📤 Enviar para inativos</button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+
     </div>
   </div>
 </div>
@@ -1494,6 +1556,7 @@
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-' + pageId).classList.add('active');
     document.querySelectorAll('nav.menu button').forEach(b => b.classList.toggle('active', b.dataset.page === pageId));
+    if (pageId === 'ia') iaRenderizarInativos();
     document.getElementById('topbarTitle').textContent = document.querySelector('#page-' + pageId + ' .page-title').textContent;
     if (pageId === 'dashboard') renderDashboard();
     if (pageId === 'agendamentos') renderAgendaCompleta();
@@ -5289,6 +5352,126 @@
     }
     licencaAtiva = resultado.licenca;
     iniciar();
+  }
+
+  
+  // ===== IA GEMINI =====
+  const GEMINI_KEY = 'AIzaSyAQ.Ab8RN6LAHBV4lO2iXUrDGXXo2zpyFjiPfrh7WPQ1mJIU7UQuVg';
+  const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_KEY;
+  const IA_SEGMENTO = 'clínica de estética';
+
+  async function geminiGerarTexto(prompt) {
+    const resp = await fetch(GEMINI_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error?.message || 'Erro na API');
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  }
+
+  async function iaGerarPromocao() {
+    const tema = document.getElementById('iaPromptPromo').value.trim();
+    if (!tema) { alert('Digite o tema da promoção!'); return; }
+    const loading = document.getElementById('iaLoadingPromo');
+    const resultado = document.getElementById('iaResultadoPromo');
+    const botoes = document.getElementById('iaBotoesPromo');
+    loading.style.display = 'block';
+    resultado.style.display = 'none';
+    botoes.style.display = 'none';
+    try {
+      const prompt = `Você é um assistente de marketing para ${IA_SEGMENTO}. Crie uma mensagem de WhatsApp promocional, amigável e persuasiva, com no máximo 3 parágrafos curtos, sobre: ${tema}. Use emojis. Não inclua saudação genérica. Escreva em português brasileiro.`;
+      const texto = await geminiGerarTexto(prompt);
+      resultado.textContent = texto;
+      resultado.style.display = 'block';
+      botoes.style.display = 'flex';
+    } catch(e) {
+      resultado.textContent = '❌ Erro: ' + e.message;
+      resultado.style.display = 'block';
+    }
+    loading.style.display = 'none';
+  }
+
+  async function iaGerarMsgRetorno() {
+    const loading = document.getElementById('iaLoadingRetorno');
+    const resultado = document.getElementById('iaResultadoRetorno');
+    const botoes = document.getElementById('iaBotoesRetorno');
+    loading.style.display = 'block';
+    resultado.style.display = 'none';
+    botoes.style.display = 'none';
+    try {
+      const prompt = `Você é um assistente de marketing para ${IA_SEGMENTO}. Crie uma mensagem de WhatsApp carinhosa para reconquistar clientes que não aparecem há mais de 30 dias. Seja caloroso, use emojis, máximo 3 parágrafos curtos. Português brasileiro.`;
+      const texto = await geminiGerarTexto(prompt);
+      resultado.textContent = texto;
+      resultado.style.display = 'block';
+      botoes.style.display = 'flex';
+    } catch(e) {
+      resultado.textContent = '❌ Erro: ' + e.message;
+      resultado.style.display = 'block';
+    }
+    loading.style.display = 'none';
+  }
+
+  function iaCopiar(id) {
+    const texto = document.getElementById(id).textContent;
+    navigator.clipboard.writeText(texto).then(() => alert('✅ Mensagem copiada!')).catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = texto; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      alert('✅ Mensagem copiada!');
+    });
+  }
+
+  function iaEnviarTodos() {
+    const msg = document.getElementById('iaResultadoPromo').textContent;
+    const clientes = load('estetica_clientes', []);
+    if (!clientes.length) { alert('Nenhum cliente cadastrado!'); return; }
+    if (!confirm(`Vai abrir ${clientes.length} conversas no WhatsApp. Confirma?`)) return;
+    clientes.forEach((c, i) => {
+      if (!c.telefone) return;
+      const tel = c.telefone.replace(/\D/g, '');
+      const full = tel.startsWith('55') ? tel : '55' + tel;
+      setTimeout(() => window.open('https://wa.me/' + full + '?text=' + encodeURIComponent(msg), '_blank'), i * 800);
+    });
+  }
+
+  function iaEnviarInativos() {
+    const msg = document.getElementById('iaResultadoRetorno').textContent;
+    const inativos = iaGetInativos();
+    if (!inativos.length) { alert('Sem clientes inativos!'); return; }
+    if (!confirm(`Vai abrir ${inativos.length} conversas no WhatsApp. Confirma?`)) return;
+    inativos.forEach((c, i) => {
+      if (!c.telefone) return;
+      const tel = c.telefone.replace(/\D/g, '');
+      const full = tel.startsWith('55') ? tel : '55' + tel;
+      setTimeout(() => window.open('https://wa.me/' + full + '?text=' + encodeURIComponent(msg), '_blank'), i * 800);
+    });
+  }
+
+  function iaGetInativos() {
+    const clientes = load('estetica_clientes', []);
+    const hoje = new Date();
+    return clientes.filter(c => {
+      if (!c.ultimaVisita) return true;
+      const diff = (hoje - new Date(c.ultimaVisita)) / (1000*60*60*24);
+      return diff >= 30;
+    });
+  }
+
+  function iaRenderizarInativos() {
+    const lista = document.getElementById('iaListaInativos');
+    if (!lista) return;
+    const inativos = iaGetInativos();
+    if (!inativos.length) {
+      lista.innerHTML = '<p style="color:#27ae60;font-size:13px">✅ Nenhum cliente inativo no momento!</p>';
+      return;
+    }
+    const hoje = new Date();
+    lista.innerHTML = '<ul class="ia-inativos-lista">' + inativos.slice(0,8).map(c => {
+      const dias = c.ultimaVisita ? Math.floor((hoje - new Date(c.ultimaVisita)) / (1000*60*60*24)) : '?';
+      return `<li><span>${c.nome}</span><span class="ia-badge">${dias} dias</span></li>`;
+    }).join('') + '</ul>' + (inativos.length > 8 ? `<p style="font-size:12px;color:#888;margin-top:8px">+${inativos.length-8} clientes</p>` : '');
   }
 
   iniciarComLicenca();
