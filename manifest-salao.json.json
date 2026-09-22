@@ -1,0 +1,22 @@
+{
+  "name": "Painel do Salão - Datalab",
+  "short_name": "Salão JV",
+  "description": "Sistema de gestão para salão de beleza",
+  "start_url": "./painel.html",
+  "display": "standalone",
+  "background_color": "#0d1b3e",
+  "theme_color": "#c9a24b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://placehold.co/192x192/0d1b3e/c9a24b?text=JV",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://placehold.co/512x512/0d1b3e/c9a24b?text=JV",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
