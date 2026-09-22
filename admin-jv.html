@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JV Datalab — Painel de Licenças</title>
+<style>
+  :root {
+    --cor-primaria: #0d1b3e;
+    --cor-secundaria: #c9a24b;
+    --cor-fundo: #f4f5f8;
+    --cor-texto: #1f2430;
+    --cor-borda: #e3e5ec;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif; background: var(--cor-fundo); color: var(--cor-texto); min-height: 100vh; }
+
+  .topo {
+    background: var(--cor-primaria); color: #fff; padding: 18px 26px;
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+  }
+  .topo .marca { display: flex; align-items: center; gap: 12px; }
+  .topo .marca .logo-placeholder {
+    width: 40px; height: 40px; border-radius: 50%; background: var(--cor-secundaria); color: var(--cor-primaria);
+    display: flex; align-items: center; justify-content: center; font-weight: 700;
+  }
+  .topo h1 { font-size: 17px; }
+  .topo .sub { font-size: 11.5px; opacity: .7; }
+  .btn-sair { background: none; border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 7px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+  .btn-sair:hover { background: rgba(255,255,255,0.1); }
+
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 26px 20px 60px; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: #fff; border-radius: var(--radius); border: 1px solid var(--cor-borda); padding: 18px; border-left: 4px solid var(--cor-secundaria); }
+  .stat-card .label { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; }
+  .stat-card .value { font-size: 26px; font-weight: 700; color: var(--cor-primaria); margin-top: 6px; }
+
+  .card { background: #fff; border-radius: var(--radius); border: 1px solid var(--cor-borda); padding: 20px; box-shadow: 0 1px 3px rgba(13,27,62,0.04); margin-bottom: 20px; }
+  .card h3 { color: var(--cor-primaria); font-size: 15.5px; margin-bottom: 14px; }
+
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px,1fr)); gap: 13px; }
+  label { display: block; font-size: 12px; color: #4b5162; font-weight: 600; margin-bottom: 5px; }
+  input[type=text], input[type=number], input[type=date], input[type=password], input[type=tel], select {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--cor-borda); border-radius: 8px; font-size: 13.5px; font-family: inherit; background: #fbfbfd;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--cor-secundaria); box-shadow: 0 0 0 3px rgba(201,162,75,0.15); }
+  input[readonly] { background: #f0f1f5; color: #6b7280; }
+  .field { margin-bottom: 13px; }
+  .btn { background: var(--cor-primaria); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
+  .btn:hover { opacity: .88; }
+  .btn.secondary { background: #fff; color: var(--cor-primaria); border: 1px solid var(--cor-primaria); }
+  .btn.danger { background: #b3261e; }
+  .btn.gold { background: var(--cor-secundaria); color: var(--cor-primaria); }
+  .btn.small { padding: 6px 11px; font-size: 12px; }
+  .btn-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+
+  .search-box { margin-bottom: 14px; max-width: 320px; }
+
+  .assinante-card { background: #fff; border: 1px solid var(--cor-borda); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+  .assinante-card .topo-card { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+  .assinante-card .nome { font-weight: 700; color: var(--cor-primaria); font-size: 15px; }
+  .assinante-card .codigo { font-family: 'Consolas', monospace; font-size: 13px; color: #4b5162; background: var(--cor-fundo); padding: 3px 8px; border-radius: 6px; display: inline-block; margin-top: 4px; }
+  .assinante-card .meta { font-size: 12.5px; color: #6b7280; margin-top: 3px; }
+  .badge { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; margin-left: 6px; }
+  .badge.ativo { background: #e6f4ea; color: #1a7d3a; }
+  .badge.vencendo { background: #fff4dc; color: #a56a00; }
+  .badge.vencido { background: #fdecea; color: #b3261e; }
+  .assinante-card .acoes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+  .empty-msg { color: #9aa0ab; font-size: 13.5px; padding: 20px 0; text-align: center; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(13,27,62,0.5); align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: var(--radius); padding: 22px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; }
+  .modal h3 { color: var(--cor-primaria); margin-bottom: 15px; }
+
+  .login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--cor-primaria); padding: 20px; }
+  .login-box { background: #fff; border-radius: 16px; padding: 34px 30px; width: 100%; max-width: 380px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); text-align: center; }
+  .login-box .logo-wrap .logo-placeholder { width: 62px; height: 62px; border-radius: 50%; background: var(--cor-secundaria); color: var(--cor-primaria); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 22px; margin: 0 auto 14px; }
+  .login-box h1 { font-size: 18px; color: var(--cor-primaria); margin-bottom: 20px; }
+  .login-box .field { text-align: left; }
+  .login-box .error-msg { color: #b3261e; font-size: 12.5px; margin-top: 6px; margin-bottom: 4px; display: none; text-align: left; }
+  .login-box .error-msg.show { display: block; }
+
+  .toast {
+    position: fixed; bottom: 22px; right: 22px; background: var(--cor-primaria); color: #fff; padding: 12px 18px;
+    border-radius: 8px; font-size: 13.5px; box-shadow: 0 4px 14px rgba(0,0,0,0.2); z-index: 2000; opacity: 0;
+    transform: translateY(10px); transition: opacity .2s, transform .2s; pointer-events: none; max-width: 320px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 700px) {
+    .wrap { padding: 18px 14px 50px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="telaLogin">
+  <div class="login-box">
+    <div class="logo-wrap"><div class="logo-placeholder">JV</div></div>
+    <h1>JV Datalab — Painel de Licenças</h1>
+    <div id="loginConteudo"></div>
+  </div>
+</div>
+
+<div id="appContainer" style="display:none">
+  <div class="topo">
+    <div class="marca">
+      <div class="logo-placeholder">JV</div>
+      <div>
+        <h1 id="tituloEmpresa">JV Datalab</h1>
+        <div class="sub">Painel de licenças e assinantes</div>
+      </div>
+    </div>
+    <button class="btn-sair" id="btnSair">Sair</button>
+  </div>
+
+  <div class="wrap">
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <div class="card">
+      <h3>Configurações</h3>
+      <div class="form-grid">
+        <div class="field"><label>Nome da empresa</label><input type="text" id="cfgNomeEmpresa" placeholder="JV Datalab"></div>
+        <div class="field"><label>WhatsApp de suporte</label><input type="tel" id="cfgWhatsapp" placeholder="(11) 99999-9999"></div>
+      </div>
+      <div class="btn-row"><button type="button" class="btn" id="btnSalvarConfig">Salvar configurações</button></div>
+    </div>
+
+    <div class="card">
+      <h3>Novo assinante</h3>
+      <form id="formAssinante">
+        <div class="form-grid">
+          <div class="field"><label>Nome do assinante / negócio</label><input type="text" id="assNome" required></div>
+          <div class="field"><label>Telefone (WhatsApp)</label><input type="tel" id="assTelefone" placeholder="(11) 99999-9999" required></div>
+          <div class="field">
+            <label>Segmento</label>
+            <select id="assSegmento">
+              <option value="SAL">Salão de Beleza (painel.html)</option>
+              <option value="BAR">Barbearia (painel.html)</option>
+              <option value="EST">Estética (estetica.html)</option>
+              <option value="DEN">Dentista (dentista.html)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Plano</label>
+            <select id="assPlano" required>
+              <option value="Starter">Starter — R$49/mês</option>
+              <option value="Profissional">Profissional — R$89/mês</option>
+              <option value="Clínica">Clínica — R$149/mês (com IA)</option>
+              <option value="Premium">Premium — R$249/mês (com IA)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Periodicidade</label>
+            <select id="assPeriodicidade" onchange="atualizarVencimentoPlano()">
+              <option value="mensal">Mensal</option>
+              <option value="anual">Anual (-20%)</option>
+            </select>
+          </div>
+          <div class="field"><label>Limite de profissionais (auto)</label><input type="number" id="assLimite" min="1" step="1" value="1" required style="pointer-events:none;background:#f0f1f5;color:#6b7280"></div>
+          <div class="field"><label>Limite de clientes (auto)</label><input type="number" id="assLimiteClientes" min="1" step="1" value="50" required style="pointer-events:none;background:#f0f1f5;color:#6b7280"></div>
+          <div class="field"><label>Armazenamento (GB)</label><input type="text" id="assLimiteGB" value="1 GB" style="pointer-events:none;background:#f0f1f5;color:#6b7280"></div>
+          <div class="field"><label>Data de vencimento</label><input type="date" id="assVencimento" required></div>
+        </div>
+        <div class="btn-row"><button type="submit" class="btn">Gerar código e cadastrar</button></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>Assinantes</h3>
+      <div class="search-box"><input type="text" id="buscaAssinante" placeholder="Buscar por nome ou código..."></div>
+      <div id="listaAssinantes"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: link de acesso -->
+<div class="modal-overlay" id="modalLinkAcesso">
+  <div class="modal">
+    <h3>Link de acesso</h3>
+    <div class="field"><input type="text" id="linkAcessoValor" readonly></div>
+    <div class="btn-row">
+      <button type="button" class="btn" id="btnCopiarLinkAcesso">Copiar link</button>
+      <button type="button" class="btn secondary" id="btnFecharModalLinkAcesso">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: renovar -->
+<div class="modal-overlay" id="modalRenovar">
+  <div class="modal">
+    <h3>Renovar assinatura</h3>
+    <div class="field"><label>Nova data de vencimento</label><input type="date" id="renovarData"></div>
+    <div class="btn-row">
+      <button type="button" class="btn secondary small" id="btnRenovar30">+30 dias</button>
+      <button type="button" class="btn secondary small" id="btnRenovar1Ano">+1 ano</button>
+    </div>
+    <div class="btn-row" style="margin-top:16px">
+      <button type="button" class="btn gold" id="btnConfirmarRenovacao">Marcar como pago e renovar</button>
+      <button type="button" class="btn secondary" id="btnFecharModalRenovar">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: editar assinante -->
+<div class="modal-overlay" id="modalEditarAssinante">
+  <div class="modal">
+    <h3>Editar assinante</h3>
+    <form id="formEditarAssinante">
+      <input type="hidden" id="editId">
+      <div class="field"><label>Nome do assinante / negócio</label><input type="text" id="editNome" required></div>
+      <div class="field"><label>Telefone (WhatsApp)</label><input type="tel" id="editTelefone" required></div>
+      <div class="field">
+        <label>Plano</label>
+        <select id="editPlano" required>
+          <option value="Starter">Starter — R$49/mês</option>
+          <option value="Profissional">Profissional — R$89/mês</option>
+          <option value="Clínica">Clínica — R$149/mês (com IA)</option>
+          <option value="Premium">Premium — R$249/mês (com IA)</option>
+        </select>
+      </div>
+      <div class="field"><label>Limite de profissionais</label><input type="number" id="editLimite" min="1" step="1" required></div>
+      <div class="field"><label>Limite de clientes</label><input type="number" id="editLimiteClientes" min="1" step="1" required></div>
+      <div class="field"><label>Data de vencimento</label><input type="date" id="editVencimento" required></div>
+      <div class="btn-row">
+        <button type="submit" class="btn">Salvar</button>
+        <button type="button" class="btn secondary" id="btnFecharModalEditar">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  const STORAGE_KEYS = {
+    config: 'jv_datalab_config',
+    licencas: 'jv_datalab_licencas',
+    sessao: 'jv_admin_sessao'
+  };
+
+  const DEFAULT_CONFIG = { senhaAdmin: '', nomeEmpresa: 'JV Datalab', whatsappSuporte: '' };
+
+  const SEGMENTO_ARQUIVO = { SAL: 'painel.html', BAR: 'painel.html', EST: 'estetica.html', DEN: 'dentista.html' };
+  const SEGMENTO_LABEL = { SAL: 'Salão de Beleza', BAR: 'Barbearia', EST: 'Estética', DEN: 'Dentista' };
+
+  function load(key, fallback) {
+    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
+    catch (e) { return fallback; }
+  }
+  function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function todayISO() { return new Date().toISOString().slice(0, 10); }
+  function somarDias(iso, n) { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
+  function formatDateBR(iso) { if (!iso) return ''; const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; }
+  function limparTelefoneWhats(tel) {
+    let digits = (tel || '').replace(/\D/g, '');
+    if (!digits) return '';
+    if (!digits.startsWith('55')) digits = '55' + digits;
+    return digits;
+  }
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => t.classList.remove('show'), 2300);
+  }
+
+  let state = {
+    config: Object.assign({}, DEFAULT_CONFIG, load(STORAGE_KEYS.config, DEFAULT_CONFIG)),
+    licencas: load(STORAGE_KEYS.licencas, [])
+  };
+
+  function gerarCodigoAtivacao(segmento) {
+    const ano = new Date().getFullYear();
+    const letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    let sufixo = '';
+    for (let i = 0; i < 4; i++) sufixo += letras.charAt(Math.floor(Math.random() * letras.length));
+    return `JV-${ano}-${segmento}-${sufixo}`;
+  }
+  function gerarCodigoUnico(segmento) {
+    let codigo;
+    do { codigo = gerarCodigoAtivacao(segmento); } while (state.licencas.some(l => l.codigo === codigo));
+    return codigo;
+  }
+  function getLinkAcesso(lic) {
+    const arquivo = SEGMENTO_ARQUIVO[lic.segmento];
+    const url = new URL(arquivo, window.location.href);
+    url.searchParams.set('cod', lic.codigo);
+    return url.toString();
+  }
+  function mensagemBoasVindas(lic) {
+    return `Olá ${lic.nomeAssinante}! Seu acesso ao sistema ${state.config.nomeEmpresa || 'JV Datalab'} foi liberado 🎉\n\nSeu código de ativação: ${lic.codigo}\nAcesse pelo link: ${getLinkAcesso(lic)}\n\nQualquer dúvida, estamos à disposição!`;
+  }
+  function statusLicenca(lic) {
+    const hoje = todayISO();
+    if (lic.dataVencimento < hoje) return 'vencido';
+    const dias = Math.round((new Date(lic.dataVencimento + 'T00:00:00') - new Date(hoje + 'T00:00:00')) / 86400000);
+    if (dias <= 7) return 'vencendo';
+    return 'ativo';
+  }
+
+  // ---------- Configurações ----------
+  function applyConfig() {
+    document.getElementById('tituloEmpresa').textContent = state.config.nomeEmpresa || 'JV Datalab';
+    document.getElementById('cfgNomeEmpresa').value = state.config.nomeEmpresa || '';
+    document.getElementById('cfgWhatsapp').value = state.config.whatsappSuporte || '';
+  }
+  document.getElementById('btnSalvarConfig').addEventListener('click', () => {
+    state.config.nomeEmpresa = document.getElementById('cfgNomeEmpresa').value.trim() || 'JV Datalab';
+    state.config.whatsappSuporte = document.getElementById('cfgWhatsapp').value.trim();
+    save(STORAGE_KEYS.config, state.config);
+    applyConfig();
+    showToast('Configurações salvas!');
+  });
+
+  // ---------- Novo assinante ----------
+  document.getElementById('assVencimento').value = somarDias(todayISO(), 30);
+  document.getElementById('formAssinante').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const segmento = document.getElementById('assSegmento').value;
+    const planoSel = document.getElementById('assPlano').value;
+    const cfgPlano = PLANOS[planoSel] || PLANOS['Starter'];
+    const lic = {
+      id: uid(),
+      codigo: gerarCodigoUnico(segmento),
+      nomeAssinante: document.getElementById('assNome').value.trim(),
+      telefone: document.getElementById('assTelefone').value.trim(),
+      segmento,
+      plano: planoSel,
+      periodicidade: document.getElementById('assPeriodicidade').value,
+      limiteProfissionais: parseInt(document.getElementById('assLimite').dataset.val || document.getElementById('assLimite').value, 10) || cfgPlano.profissionais,
+      limiteClientes: parseInt(document.getElementById('assLimiteClientes').dataset.val || document.getElementById('assLimiteClientes').value, 10) || cfgPlano.clientes,
+      temIA: cfgPlano.temIA,
+      dataCriacao: todayISO(),
+      dataVencimento: document.getElementById('assVencimento').value
+    };
+    state.licencas.push(lic);
+    save(STORAGE_KEYS.licencas, state.licencas);
+    e.target.reset();
+    atualizarLimitesPlano();
+    renderAssinantes();
+    showToast(`Assinante cadastrado! Código: ${lic.codigo}`);
+  });
+
+  // ---------- Lista de assinantes ----------
+  document.getElementById('buscaAssinante').addEventListener('input', renderAssinantes);
+
+  function renderStats() {
+    const total = state.licencas.length;
+    const ativos = state.licencas.filter(l => statusLicenca(l) === 'ativo').length;
+    const vencendo = state.licencas.filter(l => statusLicenca(l) === 'vencendo').length;
+    const vencidos = state.licencas.filter(l => statusLicenca(l) === 'vencido').length;
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card"><div class="label">Total de assinantes</div><div class="value">${total}</div></div>
+      <div class="stat-card"><div class="label">Ativos</div><div class="value">${ativos}</div></div>
+      <div class="stat-card"><div class="label">Vencendo em 7 dias</div><div class="value">${vencendo}</div></div>
+      <div class="stat-card"><div class="label">Vencidos</div><div class="value">${vencidos}</div></div>
+    `;
+  }
+
+  function renderAssinantes() {
+    renderStats();
+    const busca = (document.getElementById('buscaAssinante').value || '').toLowerCase();
+    const lista = state.licencas
+      .filter(l => l.nomeAssinante.toLowerCase().includes(busca) || l.codigo.toLowerCase().includes(busca))
+      .sort((a, b) => a.dataVencimento.localeCompare(b.dataVencimento));
+    const box = document.getElementById('listaAssinantes');
+    if (!lista.length) { box.innerHTML = '<div class="empty-msg">Nenhum assinante cadastrado ainda.</div>'; return; }
+    box.innerHTML = lista.map(l => {
+      const status = statusLicenca(l);
+      const badgeLabel = status === 'ativo' ? 'Ativo' : (status === 'vencendo' ? 'Vencendo' : 'Vencido');
+      return `
+        <div class="assinante-card">
+          <div class="topo-card">
+            <div>
+              <div class="nome">${l.nomeAssinante} <span class="badge ${status}">${badgeLabel}</span></div>
+              <div class="codigo">${l.codigo}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="meta">${SEGMENTO_LABEL[l.segmento] || l.segmento}</div>
+              <div class="meta">Plano: ${l.plano}${l.periodicidade === 'anual' ? ' · Anual' : ''} ${l.temIA ? '· 🤖 IA' : ''}</div>
+              <div class="meta">${l.limiteProfissionais >= 999 ? '∞' : l.limiteProfissionais} profissional(is) · ${l.limiteClientes >= 99999 ? '∞' : (l.limiteClientes || '?')} clientes</div>
+              <div class="meta">Vence em: ${formatDateBR(l.dataVencimento)}</div>
+            </div>
+          </div>
+          <div class="acoes">
+            <button class="btn secondary small" data-link="${l.id}">Copiar link de acesso</button>
+            <button class="btn gold small" data-whats="${l.id}">🟢 WhatsApp</button>
+            <button class="btn secondary small" data-renovar="${l.id}">Renovar</button>
+            <button class="btn secondary small" data-editar="${l.id}">Editar</button>
+            <button class="btn danger small" data-excluir="${l.id}">Excluir</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  const modalLinkAcesso = document.getElementById('modalLinkAcesso');
+  const modalRenovar = document.getElementById('modalRenovar');
+  const modalEditar = document.getElementById('modalEditarAssinante');
+  let licencaSelecionada = null;
+
+  document.getElementById('listaAssinantes').addEventListener('click', (e) => {
+    const btnLink = e.target.closest('[data-link]');
+    const btnWhats = e.target.closest('[data-whats]');
+    const btnRenovar = e.target.closest('[data-renovar]');
+    const btnEditar = e.target.closest('[data-editar]');
+    const btnExcluir = e.target.closest('[data-excluir]');
+
+    if (btnLink) {
+      const lic = state.licencas.find(l => l.id === btnLink.dataset.link);
+      document.getElementById('linkAcessoValor').value = getLinkAcesso(lic);
+      modalLinkAcesso.classList.add('open');
+    } else if (btnWhats) {
+      const lic = state.licencas.find(l => l.id === btnWhats.dataset.whats);
+      const numero = limparTelefoneWhats(lic.telefone);
+      if (!numero) { alert('Este assinante não tem telefone cadastrado.'); return; }
+      window.open(`https://wa.me/${numero}?text=${encodeURIComponent(mensagemBoasVindas(lic))}`, '_blank');
+    } else if (btnRenovar) {
+      licencaSelecionada = state.licencas.find(l => l.id === btnRenovar.dataset.renovar);
+      document.getElementById('renovarData').value = somarDias(todayISO(), 30);
+      modalRenovar.classList.add('open');
+    } else if (btnEditar) {
+      const lic = state.licencas.find(l => l.id === btnEditar.dataset.editar);
+      document.getElementById('editId').value = lic.id;
+      document.getElementById('editNome').value = lic.nomeAssinante;
+      document.getElementById('editTelefone').value = lic.telefone;
+      document.getElementById('editPlano').value = lic.plano;
+      document.getElementById('editLimite').value = lic.limiteProfissionais;
+      document.getElementById('editLimiteClientes').value = lic.limiteClientes || 50;
+      document.getElementById('editVencimento').value = lic.dataVencimento;
+      modalEditar.classList.add('open');
+    } else if (btnExcluir) {
+      if (confirm('Excluir este assinante? O código de ativação dele deixará de funcionar imediatamente.')) {
+        state.licencas = state.licencas.filter(l => l.id !== btnExcluir.dataset.excluir);
+        save(STORAGE_KEYS.licencas, state.licencas);
+        renderAssinantes();
+      }
+    }
+  });
+
+  document.getElementById('btnFecharModalLinkAcesso').addEventListener('click', () => modalLinkAcesso.classList.remove('open'));
+  modalLinkAcesso.addEventListener('click', (e) => { if (e.target === modalLinkAcesso) modalLinkAcesso.classList.remove('open'); });
+  document.getElementById('btnCopiarLinkAcesso').addEventListener('click', async () => {
+    const input = document.getElementById('linkAcessoValor');
+    input.select();
+    try { await navigator.clipboard.writeText(input.value); showToast('Link copiado!'); }
+    catch (e) { document.execCommand('copy'); showToast('Link copiado!'); }
+  });
+
+  document.getElementById('btnFecharModalRenovar').addEventListener('click', () => modalRenovar.classList.remove('open'));
+  modalRenovar.addEventListener('click', (e) => { if (e.target === modalRenovar) modalRenovar.classList.remove('open'); });
+  document.getElementById('btnRenovar30').addEventListener('click', () => { document.getElementById('renovarData').value = somarDias(todayISO(), 30); });
+  document.getElementById('btnRenovar1Ano').addEventListener('click', () => { document.getElementById('renovarData').value = somarDias(todayISO(), 365); });
+  document.getElementById('btnConfirmarRenovacao').addEventListener('click', () => {
+    if (!licencaSelecionada) return;
+    licencaSelecionada.dataVencimento = document.getElementById('renovarData').value;
+    save(STORAGE_KEYS.licencas, state.licencas);
+    modalRenovar.classList.remove('open');
+    renderAssinantes();
+    showToast('Assinatura renovada! O acesso será desbloqueado automaticamente.');
+  });
+
+  document.getElementById('btnFecharModalEditar').addEventListener('click', () => modalEditar.classList.remove('open'));
+  modalEditar.addEventListener('click', (e) => { if (e.target === modalEditar) modalEditar.classList.remove('open'); });
+  document.getElementById('formEditarAssinante').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const lic = state.licencas.find(l => l.id === document.getElementById('editId').value);
+    if (!lic) return;
+    const planoEditado = document.getElementById('editPlano').value;
+    const cfgEditado = PLANOS[planoEditado] || PLANOS['Starter'];
+    lic.nomeAssinante = document.getElementById('editNome').value.trim();
+    lic.telefone = document.getElementById('editTelefone').value.trim();
+    lic.plano = planoEditado;
+    lic.limiteProfissionais = Math.max(1, parseInt(document.getElementById('editLimite').value, 10) || 1);
+    lic.limiteClientes = parseInt(document.getElementById('editLimiteClientes').value, 10) || cfgEditado.clientes;
+    lic.temIA = cfgEditado.temIA;
+    lic.dataVencimento = document.getElementById('editVencimento').value;
+    save(STORAGE_KEYS.licencas, state.licencas);
+    modalEditar.classList.remove('open');
+    renderAssinantes();
+    showToast('Assinante atualizado!');
+  });
+
+  // ---------- Autenticação ----------
+  function renderSetupForm() {
+    const box = document.getElementById('loginConteudo');
+    box.innerHTML = `
+      <p style="font-size:13px;color:#6b7280;margin-bottom:16px">Primeiro acesso — crie a senha do painel de licenças.</p>
+      <form id="formSetup">
+        <div class="field"><label>Crie uma senha</label><input type="password" id="setupSenha" required></div>
+        <div class="field"><label>Confirme a senha</label><input type="password" id="setupSenhaConfirma" required></div>
+        <div class="error-msg" id="setupErro">As senhas não coincidem.</div>
+        <button type="submit" class="btn" style="width:100%;margin-top:8px">Criar acesso</button>
+      </form>
+    `;
+    document.getElementById('formSetup').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const senha = document.getElementById('setupSenha').value;
+      const confirma = document.getElementById('setupSenhaConfirma').value;
+      if (!senha || senha !== confirma) { document.getElementById('setupErro').classList.add('show'); return; }
+      state.config.senhaAdmin = senha;
+      save(STORAGE_KEYS.config, state.config);
+      save(STORAGE_KEYS.sessao, { ativo: true });
+      location.reload();
+    });
+  }
+  function renderLoginForm() {
+    const box = document.getElementById('loginConteudo');
+    box.innerHTML = `
+      <form id="formLogin">
+        <div class="field"><label>Senha</label><input type="password" id="loginSenha" required autofocus></div>
+        <div class="error-msg" id="loginErro">Senha incorreta.</div>
+        <button type="submit" class="btn" style="width:100%;margin-top:8px">Entrar</button>
+      </form>
+    `;
+    document.getElementById('formLogin').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const senha = document.getElementById('loginSenha').value;
+      if (senha && senha === state.config.senhaAdmin) { save(STORAGE_KEYS.sessao, { ativo: true }); location.reload(); return; }
+      document.getElementById('loginErro').classList.add('show');
+    });
+  }
+  document.getElementById('btnSair').addEventListener('click', () => {
+    if (confirm('Deseja sair?')) { localStorage.removeItem(STORAGE_KEYS.sessao); location.reload(); }
+  });
+
+  function iniciar() {
+    if (!state.config.senhaAdmin) { renderSetupForm(); return; }
+    const sessao = load(STORAGE_KEYS.sessao, null);
+    if (!sessao || !sessao.ativo) { renderLoginForm(); return; }
+    document.getElementById('telaLogin').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'block';
+    applyConfig();
+    renderAssinantes();
+  }
+
+
+  // ===== CONFIGURAÇÃO DOS PLANOS =====
+  const PLANOS = {
+    'Starter':      { profissionais: 1,     clientes: 50,    gb: 1,  temIA: false },
+    'Profissional': { profissionais: 3,     clientes: 150,   gb: 3,  temIA: false },
+    'Clínica':      { profissionais: 5,     clientes: 300,   gb: 6,  temIA: true  },
+    'Premium':      { profissionais: 99999, clientes: 99999, gb: 20, temIA: true  }
+  };
+
+  function setLimitFields(plano, prefixo) {
+    const cfg = PLANOS[plano] || PLANOS['Starter'];
+    const elProf = document.getElementById(prefixo + 'Limite');
+    const elCli  = document.getElementById(prefixo + 'LimiteClientes');
+    const elGb   = document.getElementById(prefixo + 'LimiteGB');
+    if (elProf) { elProf.value = cfg.profissionais >= 99999 ? 'Ilimitado' : cfg.profissionais; elProf.dataset.val = cfg.profissionais; }
+    if (elCli)  { elCli.value  = cfg.clientes >= 99999 ? 'Ilimitado' : cfg.clientes; elCli.dataset.val = cfg.clientes; }
+    if (elGb)   { elGb.value   = cfg.gb + ' GB'; }
+  }
+
+  function bindPlanSelects() {
+    const selPlano = document.getElementById('assPlano');
+    const selPer   = document.getElementById('assPeriodicidade');
+    const selEdit  = document.getElementById('editPlano');
+
+    function refreshForm() {
+      const plano = selPlano ? selPlano.value : 'Starter';
+      setLimitFields(plano, 'ass');
+      const dias = selPer && selPer.value === 'anual' ? 365 : 30;
+      const elVenc = document.getElementById('assVencimento');
+      if (elVenc) elVenc.value = somarDias(todayISO(), dias);
+    }
+
+    if (selPlano) { selPlano.addEventListener('change', refreshForm); }
+    if (selPer)   { selPer.addEventListener('change', refreshForm); }
+    if (selEdit)  { selEdit.addEventListener('change', () => setLimitFields(selEdit.value, 'edit')); }
+
+    refreshForm(); // init values
+  }
+
+  iniciar();
+  bindPlanSelects();
+})();
+</script>
+</body>
+</html>
