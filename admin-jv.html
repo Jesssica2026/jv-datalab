@@ -305,13 +305,23 @@
         data_criacao: lic.dataCriacao || todayISO(),
         data_vencimento: lic.dataVencimento || ''
       };
+      console.log('[Supabase] Salvando licença...', row.codigo, row.segmento);
       const res = await fetch(`${SUPA_URL}/rest/v1/licencas`, {
         method: 'POST',
         headers: { ...SUPA_HEADERS, 'Prefer': 'resolution=merge-duplicates,return=representation' },
         body: JSON.stringify(row)
       });
-      if (!res.ok) console.warn('[Supabase] upsert falhou:', await res.text());
-    } catch(e) { console.warn('[Supabase] erro upsert:', e); }
+      const texto = await res.text();
+      if (!res.ok) {
+        console.error('[Supabase] ERRO ao salvar:', res.status, texto);
+        showToast('⚠️ Erro ao salvar no Supabase: ' + res.status);
+      } else {
+        console.log('[Supabase] ✅ Licença salva com sucesso!', texto);
+      }
+    } catch(e) {
+      console.error('[Supabase] EXCEÇÃO ao salvar:', e.message);
+      showToast('⚠️ Falha de conexão com Supabase');
+    }
   }
 
   async function supaDeleteLicenca(id) {
@@ -324,11 +334,16 @@
 
   async function supaCarregarLicencas() {
     try {
+      console.log('[Supabase] Carregando licenças...');
       const res = await fetch(`${SUPA_URL}/rest/v1/licencas?select=*&order=data_criacao.desc`, {
         headers: SUPA_HEADERS
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        console.error('[Supabase] Erro ao carregar:', res.status, await res.text());
+        return;
+      }
       const rows = await res.json();
+      console.log('[Supabase] Licenças carregadas:', rows.length, rows.map(r=>r.codigo));
       if (!rows.length) return;
       // converte para formato local
       const licencas = rows.map(r => ({
