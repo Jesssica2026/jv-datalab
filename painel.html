@@ -440,172 +440,7 @@
   .barra-res { height: 8px; border-radius: 4px; background: var(--cor-secundaria); min-width: 3px; }
   .ficha-custo-linha { display: grid; grid-template-columns: 1fr 100px 90px 32px; gap: 8px; align-items: center; margin-bottom: 8px; }
   @media (max-width: 520px) { .ficha-custo-linha { grid-template-columns: 1fr 80px 70px 32px; } }
-
-  /* ===== IA & PROMOÇÕES ===== */
-  .ia-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  @media(max-width:700px){ .ia-grid { grid-template-columns: 1fr; } }
-  .ia-card { background:#fff; border-radius:var(--radius); padding:24px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
-  .ia-card h3 { font-size:15px; font-weight:700; margin-bottom:4px; }
-  .ia-card p.sub { font-size:12px; color:#888; margin-bottom:14px; }
-  .ia-textarea { width:100%; border:1.5px solid var(--cor-borda); border-radius:8px; padding:10px 12px; font-size:14px; min-height:80px; resize:vertical; font-family:inherit; }
-  .ia-resultado { background:#f4f5f8; border-radius:8px; padding:12px; font-size:13.5px; line-height:1.6; min-height:60px; white-space:pre-wrap; margin:10px 0; }
-  .ia-btn { display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; border:none; transition:.15s; }
-  .ia-btn-primary { background:var(--cor-secundaria); color:var(--cor-primaria); }
-  .ia-btn-primary:hover { opacity:.88; }
-  .ia-btn-wpp { background:#25D366; color:#fff; }
-  .ia-btn-wpp:hover { opacity:.88; }
-  .ia-btn-copy { background:#e8eaf0; color:#333; }
-  .ia-loading { display:none; font-size:13px; color:#888; margin-top:6px; }
-  .ia-inativos-lista { list-style:none; padding:0; margin:0; }
-  .ia-inativos-lista li { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--cor-borda); font-size:14px; }
-  .ia-inativos-lista li:last-child { border-bottom:none; }
-  .ia-badge { background:#fdeaea; color:#c0392b; border-radius:20px; padding:2px 10px; font-size:12px; font-weight:600; }
-
 </style>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script>
-(function() {
-  const SUPA_URL = "https://dhcbgwoqvemveltqlkyb.supabase.co";
-  const SUPA_KEY = "sb_publishable_2NBJeTDfI7FRe3xGfo_QpQ_voN44OJm";
-  const TABELA_CLIENTES = "salao_clientes";
-  const STORAGE_CLIENTES = "salao_clientes";
-  const LICENCAS_KEY = "jv_datalab_licencas";
-  const LICENCA_PAINEL_KEY = "salao_licenca";
-
-  // Inicializa cliente Supabase
-  const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
-  window._supaClient = supa;
-
-  // Obtém código de licença do painel
-  function getLicencaCodigo() {
-    try {
-      const lic = JSON.parse(localStorage.getItem(LICENCA_PAINEL_KEY) || 'null');
-      return lic && lic.codigo ? lic.codigo : null;
-    } catch(e) { return null; }
-  }
-
-  // Sincroniza licenças do Supabase → localStorage (para validação funcionar)
-  async function sincronizarLicencas() {
-    try {
-      const { data } = await supa.from('licencas').select('*');
-      if (data && data.length > 0) {
-        const licencasFormatadas = data.map(l => ({
-          codigo: l.codigo,
-          segmento: l.segmento,
-          plano: l.plano,
-          limiteProfissionais: l.limite_profissionais || 3,
-          dataVencimento: l.data_vencimento,
-          nomeCliente: l.nome_cliente
-        }));
-        localStorage.setItem(LICENCAS_KEY, JSON.stringify(licencasFormatadas));
-        console.log('[Supabase] Licenças sincronizadas:', licencasFormatadas.length);
-      }
-    } catch(e) { console.warn('[Supabase] Erro ao sincronizar licenças:', e); }
-  }
-
-  // Sincroniza clientes do Supabase → localStorage
-  async function sincronizarClientes() {
-    const codigo = getLicencaCodigo();
-    if (!codigo) return;
-    try {
-      const { data } = await supa.from(TABELA_CLIENTES).select('*').eq('licenca_codigo', codigo);
-      if (data && data.length > 0) {
-        const clientesLocais = JSON.parse(localStorage.getItem(STORAGE_CLIENTES) || '[]');
-        // Mescla: usa Supabase como fonte de verdade, preserva dados extras locais
-        const mapaLocal = {};
-        clientesLocais.forEach(c => { if (c.id) mapaLocal[c.id] = c; });
-        const merged = data.map(c => {
-          const local = mapaLocal[c.id] || {};
-          return Object.assign({}, local, {
-            id: c.id,
-            nome: c.nome,
-            telefone: c.telefone || local.telefone || '',
-            email: c.email || local.email || '',
-            observacoes: c.observacoes || local.observacoes || ''
-          });
-        });
-        // Adiciona clientes locais que ainda não foram para o Supabase
-        clientesLocais.forEach(c => {
-          if (!merged.find(m => m.id === c.id)) merged.push(c);
-        });
-        localStorage.setItem(STORAGE_CLIENTES, JSON.stringify(merged));
-        console.log('[Supabase] Clientes sincronizados:', merged.length);
-      }
-    } catch(e) { console.warn('[Supabase] Erro ao sincronizar clientes:', e); }
-  }
-
-  // Salva um cliente no Supabase
-  window._supaUpserCliente = async function(cliente) {
-    const codigo = getLicencaCodigo();
-    if (!codigo || !cliente) return;
-    try {
-      await supa.from(TABELA_CLIENTES).upsert({
-        id: cliente.id,
-        licenca_codigo: codigo,
-        nome: cliente.nome || '',
-        telefone: cliente.telefone || '',
-        email: cliente.email || '',
-        status: (cliente.statusCliente && cliente.statusCliente.valor) || cliente.status || 'ativo',
-        observacoes: cliente.observacoes || ''
-      }, { onConflict: 'id' });
-    } catch(e) { console.warn('[Supabase] Erro ao salvar cliente:', e); }
-  };
-
-  // Salva todos os clientes no Supabase
-  window._supaUpserTodosClientes = async function() {
-    const codigo = getLicencaCodigo();
-    if (!codigo) return;
-    try {
-      const clientes = JSON.parse(localStorage.getItem(STORAGE_CLIENTES) || '[]');
-      for (const c of clientes) {
-        await window._supaUpserCliente(c);
-      }
-    } catch(e) { console.warn('[Supabase] Erro ao salvar todos clientes:', e); }
-  };
-
-  // Intercepta localStorage.setItem para sincronizar automaticamente
-  const _setItemOriginal = localStorage.setItem.bind(localStorage);
-  localStorage.setItem = function(key, value) {
-    _setItemOriginal(key, value);
-    if (key === STORAGE_CLIENTES) {
-      try {
-        const clientes = JSON.parse(value || '[]');
-        const codigo = getLicencaCodigo();
-        if (codigo && clientes.length > 0) {
-          // Sincroniza em background sem bloquear UI
-          setTimeout(async () => {
-            for (const c of clientes) {
-              await window._supaUpserCliente(c);
-            }
-          }, 100);
-        }
-      } catch(e) {}
-    }
-  };
-
-  // Executa ao carregar a página
-  document.addEventListener('DOMContentLoaded', async function() {
-    await sincronizarLicencas();
-    await sincronizarClientes();
-  });
-
-  console.log('[Supabase] Integração carregada para tabela:', TABELA_CLIENTES);
-})();
-</script>
-
-
-  <!-- PWA -->
-  <link rel="manifest" href="manifest-salao.json">
-  <meta name="theme-color" content="#c9a24b">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Salão JV">
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
-    }
-  </script>
 </head>
 <body>
 
@@ -639,7 +474,6 @@
       <button data-page="galeria"><span class="icon">📸</span><span class="menu-label">Galeria de Evolução</span></button>
       <button data-page="personalizacao" class="admin-only"><span class="icon">🎨</span><span class="menu-label">Personalização</span></button>
       <button data-page="financeiro" class="admin-only"><span class="icon">💰</span><span class="menu-label">Financeiro</span></button>
-      <button data-page="ia" class="admin-only"><span class="icon">🤖</span><span class="menu-label">IA &amp; Promoções</span></button>
     </nav>
     <div class="sidebar-footer" id="sidebarFooter"></div>
   </aside>
@@ -1181,46 +1015,6 @@
         </div>
       </section>
 
-      <!-- IA & PROMOÇÕES -->
-      <section class="page admin-only" id="page-ia">
-        <h2 class="page-title">🤖 IA & Promoções</h2>
-        <p class="page-sub">Crie mensagens com inteligência artificial e envie para seus clientes</p>
-        <div class="ia-grid">
-
-          <!-- Gerador de Promoção -->
-          <div class="ia-card">
-            <h3>✨ Gerador de Promoção</h3>
-            <p class="sub">Descreva a promoção e a IA escreve a mensagem pronta para WhatsApp</p>
-            <textarea class="ia-textarea" id="iaPromptPromo" placeholder="Ex: Black Friday 50% de desconto em todos os serviços este fim de semana"></textarea>
-            <br><br>
-            <button class="ia-btn ia-btn-primary" onclick="iaGerarPromocao()">✨ Gerar mensagem</button>
-            <div class="ia-loading" id="iaLoadingPromo">⏳ Gerando...</div>
-            <div class="ia-resultado" id="iaResultadoPromo" style="display:none"></div>
-            <div id="iaBotoesPromo" style="display:none;margin-top:8px;display:none;gap:8px;flex-wrap:wrap">
-              <button class="ia-btn ia-btn-copy" onclick="iaCopiar('iaResultadoPromo')">📋 Copiar</button>
-              <button class="ia-btn ia-btn-wpp" onclick="iaEnviarTodos()">📤 Enviar para todos via WhatsApp</button>
-            </div>
-          </div>
-
-          <!-- Clientes Inativos -->
-          <div class="ia-card">
-            <h3>😴 Clientes Inativos</h3>
-            <p class="sub">Clientes que não aparecem há mais de 30 dias</p>
-            <div id="iaListaInativos"><p style="color:#aaa;font-size:13px">Carregando...</p></div>
-            <br>
-            <button class="ia-btn ia-btn-primary" onclick="iaGerarMsgRetorno()" style="margin-top:4px">✨ Gerar mensagem de retorno</button>
-            <div class="ia-loading" id="iaLoadingRetorno">⏳ Gerando...</div>
-            <div class="ia-resultado" id="iaResultadoRetorno" style="display:none"></div>
-            <div id="iaBotoesRetorno" style="display:none;gap:8px;flex-wrap:wrap;margin-top:8px">
-              <button class="ia-btn ia-btn-copy" onclick="iaCopiar('iaResultadoRetorno')">📋 Copiar</button>
-              <button class="ia-btn ia-btn-wpp" onclick="iaEnviarInativos()">📤 Enviar para inativos</button>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-
     </div>
   </div>
 </div>
@@ -1467,9 +1261,7 @@
     if (session && session.tipo !== 'admin' && ADMIN_ONLY_PAGES.includes(pageId)) pageId = 'agendamentos';
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-' + pageId).classList.add('active');
-    window._paginaAtual = pageId;
     document.querySelectorAll('nav.menu button').forEach(b => b.classList.toggle('active', b.dataset.page === pageId));
-    if (pageId === 'ia') iaRenderizarInativos();
     document.getElementById('topbarTitle').textContent = document.querySelector('#page-' + pageId + ' .page-title').textContent;
     if (pageId === 'dashboard') renderDashboard();
     if (pageId === 'agendamentos') renderAgendamentos();
@@ -2172,8 +1964,6 @@
 
   document.getElementById('formCliente').addEventListener('submit', (e) => {
     e.preventDefault();
-    const isNovo = !document.getElementById('clienteId').value;
-    if (isNovo && !verificarLimiteClientes()) return;
     const id = document.getElementById('clienteId').value;
     const dados = lerDadosPessoais(clienteDadosModal, 'cli_');
     if (id) {
@@ -3164,7 +2954,7 @@
   document.getElementById('galDepois').addEventListener('change', async (e) => { pendingDepois = await fileToBase64(e.target.files[0]); });
   document.getElementById('galData').value = todayISO();
 
-  document.getElementById('formGaleria').addEventListener('submit', async (e) => {
+  document.getElementById('formGaleria').addEventListener('submit', (e) => {
     e.preventDefault();
     if (!pendingAntes || !pendingDepois) {
       alert('Envie as duas fotos (antes e depois).');
@@ -3172,35 +2962,21 @@
     }
     const clienteId = document.getElementById('galCliente').value;
     if (!clienteId) { alert('Selecione um cliente.'); return; }
-    const btnSubmitGal = e.target.querySelector('[type=submit]');
-    if (btnSubmitGal) { btnSubmitGal.disabled = true; btnSubmitGal.textContent = '⏳ Salvando fotos...'; }
-    try {
-      // Tenta upload no Supabase Storage
-      let urlAntes = pendingAntes, urlDepois = pendingDepois;
-      try {
-        const urls = await salvarFotoGaleriaSupabase(clienteId, pendingAntes, pendingDepois, document.getElementById('galObs').value.trim(), document.getElementById('galData').value);
-        urlAntes = urls.antes; urlDepois = urls.depois;
-      } catch(errUp) {
-        console.warn('Upload Supabase falhou, salvando local:', errUp);
-      }
-      state.galeria.push({
-        id: uid(),
-        clienteId,
-        profissionalId: session.tipo === 'profissional' ? session.profissionalId : '',
-        data: document.getElementById('galData').value,
-        antes: urlAntes,
-        depois: urlDepois,
-        observacao: document.getElementById('galObs').value.trim()
-      });
-      save(STORAGE_KEYS.galeria, state.galeria);
-      e.target.reset();
-      document.getElementById('galData').value = todayISO();
-      pendingAntes = ''; pendingDepois = '';
-      renderGaleria();
-      showToast('Registro de evolução salvo!');
-    } finally {
-      if (btnSubmitGal) { btnSubmitGal.disabled = false; btnSubmitGal.textContent = 'Salvar evolução'; }
-    }
+    state.galeria.push({
+      id: uid(),
+      clienteId,
+      profissionalId: session.tipo === 'profissional' ? session.profissionalId : '',
+      data: document.getElementById('galData').value,
+      antes: pendingAntes,
+      depois: pendingDepois,
+      observacao: document.getElementById('galObs').value.trim()
+    });
+    save(STORAGE_KEYS.galeria, state.galeria);
+    e.target.reset();
+    document.getElementById('galData').value = todayISO();
+    pendingAntes = ''; pendingDepois = '';
+    renderGaleria();
+    showToast('Registro de evolução salvo!');
   });
 
   function populateTodosSelects() {
@@ -4186,7 +3962,6 @@
   }
 
   function iniciar() {
-    aplicarRestricoesPorPlano();
     applyLoginBranding();
     if (!state.config.senhaAdmin) {
       renderSetupForm();
@@ -4206,6 +3981,43 @@
   // ---------- Licenciamento (ativação via admin-jv.html) ----------
   function obterLicencasCompartilhadas() { return load(LICENCAS_SHARED_KEY, []); }
   function obterConfigJvDatalab() { return load(JV_CONFIG_KEY, { nomeEmpresa: 'JV Datalab', whatsappSuporte: '' }); }
+
+  // --- Supabase fallback para validação de licença ---
+  const SUPA_URL_PAI = 'https://dhcbgwoqvemveltqlkyb.supabase.co';
+  const SUPA_KEY_PAI = 'sb_publishable_2NBJeTDfI7FRe3xGfo_QpQ_voN44OJm';
+  async function buscarLicencaSupabase(codigo) {
+    try {
+      const res = await fetch(`${SUPA_URL_PAI}/rest/v1/licencas?codigo=eq.${encodeURIComponent(codigo)}&limit=1`, {
+        headers: { 'apikey': SUPA_KEY_PAI, 'Authorization': 'Bearer ' + SUPA_KEY_PAI }
+      });
+      if (!res.ok) return null;
+      const rows = await res.json();
+      if (!rows || rows.length === 0) return null;
+      const r = rows[0];
+      const lic = {
+        id: r.id, codigo: r.codigo,
+        nomeAssinante: r.nome_assinante, telefone: r.telefone, segmento: r.segmento, plano: r.plano,
+        periodicidade: r.periodicidade,
+        limiteProfissionais: r.limite_profissionais || 1,
+        limiteClientes: r.limite_clientes || 50,
+        temIA: r.tem_ia || false,
+        dataCriacao: r.data_criacao, dataVencimento: r.data_vencimento
+      };
+      // cacheia no localStorage compartilhado
+      const lista = load(LICENCAS_SHARED_KEY, []);
+      const idx = lista.findIndex(l => l.codigo === lic.codigo);
+      if (idx >= 0) lista[idx] = lic; else lista.push(lic);
+      localStorage.setItem(LICENCAS_SHARED_KEY, JSON.stringify(lista));
+      return lic;
+    } catch(e) { return null; }
+  }
+  function validarLicencaObj(lic, codigo) {
+    if (!lic) return { ok: false, motivo: 'invalido' };
+    if (!ACCEPTED_SEGMENTOS.includes(lic.segmento)) return { ok: false, motivo: 'invalido' };
+    if (lic.dataVencimento < todayISO()) return { ok: false, motivo: 'expirado', licenca: lic };
+    return { ok: true, licenca: lic };
+  }
+
   function validarCodigoAtivacao(codigo) {
     const lic = obterLicencasCompartilhadas().find(l => l.codigo === (codigo || '').trim().toUpperCase());
     if (!lic) return { ok: false, motivo: 'invalido' };
@@ -4276,8 +4088,12 @@
     `;
     document.getElementById('btnWhatsExpirado').addEventListener('click', () => abrirWhatsSuporte('Olá! Minha assinatura do sistema venceu e gostaria de renovar.'));
   }
-  function tentarAtivarCodigo(codigo) {
-    const resultado = validarCodigoAtivacao(codigo);
+  async function tentarAtivarCodigo(codigo) {
+    let resultado = validarCodigoAtivacao(codigo);
+    if (!resultado.ok && resultado.motivo === 'invalido') {
+      const licSupa = await buscarLicencaSupabase(codigo);
+      resultado = validarLicencaObj(licSupa, codigo);
+    }
     if (!resultado.ok) {
       if (resultado.motivo === 'expirado') { mostrarTelaExpirada(); return; }
       mostrarTelaAtivacao('Código inválido. Verifique e tente novamente, ou entre em contato com a JV Datalab.');
@@ -4287,12 +4103,16 @@
     licencaAtiva = resultado.licenca;
     iniciar();
   }
-  function iniciarComLicenca() {
+  async function iniciarComLicenca() {
     const licencaSalva = load(STORAGE_KEYS.licenca, null);
     const codigoUrl = new URLSearchParams(window.location.search).get('cod');
-    if (!licencaSalva && codigoUrl) { tentarAtivarCodigo(codigoUrl); return; }
+    if (!licencaSalva && codigoUrl) { await tentarAtivarCodigo(codigoUrl); return; }
     if (!licencaSalva) { mostrarTelaAtivacao(); return; }
-    const resultado = validarCodigoAtivacao(licencaSalva.codigo);
+    let resultado = validarCodigoAtivacao(licencaSalva.codigo);
+    if (!resultado.ok && resultado.motivo === 'invalido') {
+      const licSupa = await buscarLicencaSupabase(licencaSalva.codigo);
+      resultado = validarLicencaObj(licSupa, licencaSalva.codigo);
+    }
     if (!resultado.ok) {
       if (resultado.motivo === 'expirado') { mostrarTelaExpirada(); return; }
       mostrarTelaAtivacao('Código inválido. Entre em contato com a JV Datalab.');
@@ -4300,194 +4120,6 @@
     }
     licencaAtiva = resultado.licenca;
     iniciar();
-  }
-
-  
-  // ===== IA GEMINI =====
-  const GEMINI_KEY = 'AIzaSyAQ.Ab8RN6LAHBV4lO2iXUrDGXXo2zpyFjiPfrh7WPQ1mJIU7UQuVg';
-  const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_KEY;
-  const IA_SEGMENTO = 'salão de beleza';
-
-  async function geminiGerarTexto(prompt) {
-    const resp = await fetch(GEMINI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-    });
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(data.error?.message || 'Erro na API');
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  }
-
-  async function iaGerarPromocao() {
-    const tema = document.getElementById('iaPromptPromo').value.trim();
-    if (!tema) { alert('Digite o tema da promoção!'); return; }
-    const loading = document.getElementById('iaLoadingPromo');
-    const resultado = document.getElementById('iaResultadoPromo');
-    const botoes = document.getElementById('iaBotoesPromo');
-    loading.style.display = 'block';
-    resultado.style.display = 'none';
-    botoes.style.display = 'none';
-    try {
-      const prompt = `Você é um assistente de marketing para ${IA_SEGMENTO}. Crie uma mensagem de WhatsApp promocional, amigável e persuasiva, com no máximo 3 parágrafos curtos, sobre: ${tema}. Use emojis. Não inclua saudação genérica. Escreva em português brasileiro.`;
-      const texto = await geminiGerarTexto(prompt);
-      resultado.textContent = texto;
-      resultado.style.display = 'block';
-      botoes.style.display = 'flex';
-    } catch(e) {
-      resultado.textContent = '❌ Erro: ' + e.message;
-      resultado.style.display = 'block';
-    }
-    loading.style.display = 'none';
-  }
-
-  async function iaGerarMsgRetorno() {
-    const loading = document.getElementById('iaLoadingRetorno');
-    const resultado = document.getElementById('iaResultadoRetorno');
-    const botoes = document.getElementById('iaBotoesRetorno');
-    loading.style.display = 'block';
-    resultado.style.display = 'none';
-    botoes.style.display = 'none';
-    try {
-      const prompt = `Você é um assistente de marketing para ${IA_SEGMENTO}. Crie uma mensagem de WhatsApp carinhosa para reconquistar clientes que não aparecem há mais de 30 dias. Seja caloroso, use emojis, máximo 3 parágrafos curtos. Português brasileiro.`;
-      const texto = await geminiGerarTexto(prompt);
-      resultado.textContent = texto;
-      resultado.style.display = 'block';
-      botoes.style.display = 'flex';
-    } catch(e) {
-      resultado.textContent = '❌ Erro: ' + e.message;
-      resultado.style.display = 'block';
-    }
-    loading.style.display = 'none';
-  }
-
-  function iaCopiar(id) {
-    const texto = document.getElementById(id).textContent;
-    navigator.clipboard.writeText(texto).then(() => alert('✅ Mensagem copiada!')).catch(() => {
-      const ta = document.createElement('textarea');
-      ta.value = texto; document.body.appendChild(ta); ta.select();
-      document.execCommand('copy'); document.body.removeChild(ta);
-      alert('✅ Mensagem copiada!');
-    });
-  }
-
-  function iaEnviarTodos() {
-    const msg = document.getElementById('iaResultadoPromo').textContent;
-    const clientes = load('salao_clientes', []);
-    if (!clientes.length) { alert('Nenhum cliente cadastrado!'); return; }
-    if (!confirm(`Vai abrir ${clientes.length} conversas no WhatsApp. Confirma?`)) return;
-    clientes.forEach((c, i) => {
-      if (!c.telefone) return;
-      const tel = c.telefone.replace(/\D/g, '');
-      const full = tel.startsWith('55') ? tel : '55' + tel;
-      setTimeout(() => window.open('https://wa.me/' + full + '?text=' + encodeURIComponent(msg), '_blank'), i * 800);
-    });
-  }
-
-  function iaEnviarInativos() {
-    const msg = document.getElementById('iaResultadoRetorno').textContent;
-    const inativos = iaGetInativos();
-    if (!inativos.length) { alert('Sem clientes inativos!'); return; }
-    if (!confirm(`Vai abrir ${inativos.length} conversas no WhatsApp. Confirma?`)) return;
-    inativos.forEach((c, i) => {
-      if (!c.telefone) return;
-      const tel = c.telefone.replace(/\D/g, '');
-      const full = tel.startsWith('55') ? tel : '55' + tel;
-      setTimeout(() => window.open('https://wa.me/' + full + '?text=' + encodeURIComponent(msg), '_blank'), i * 800);
-    });
-  }
-
-  function iaGetInativos() {
-    const clientes = load('salao_clientes', []);
-    const hoje = new Date();
-    return clientes.filter(c => {
-      if (!c.ultimaVisita) return true;
-      const diff = (hoje - new Date(c.ultimaVisita)) / (1000*60*60*24);
-      return diff >= 30;
-    });
-  }
-
-  function iaRenderizarInativos() {
-    const lista = document.getElementById('iaListaInativos');
-    if (!lista) return;
-    const inativos = iaGetInativos();
-    if (!inativos.length) {
-      lista.innerHTML = '<p style="color:#27ae60;font-size:13px">✅ Nenhum cliente inativo no momento!</p>';
-      return;
-    }
-    const hoje = new Date();
-    lista.innerHTML = '<ul class="ia-inativos-lista">' + inativos.slice(0,8).map(c => {
-      const dias = c.ultimaVisita ? Math.floor((hoje - new Date(c.ultimaVisita)) / (1000*60*60*24)) : '?';
-      return `<li><span>${c.nome}</span><span class="ia-badge">${dias} dias</span></li>`;
-    }).join('') + '</ul>' + (inativos.length > 8 ? `<p style="font-size:12px;color:#888;margin-top:8px">+${inativos.length-8} clientes</p>` : '');
-  }
-
-  
-  // ===== LÓGICA DE PLANOS =====
-  const PLANOS_CONFIG = {
-    'Starter':       { limiteClientes: 50,  limiteProfissionais: 1,  temIA: false },
-    'Profissional':  { limiteClientes: 150, limiteProfissionais: 3,  temIA: false },
-    'Clínica':       { limiteClientes: 300, limiteProfissionais: 5,  temIA: true  },
-    'Premium':       { limiteClientes: 99999, limiteProfissionais: 99999, temIA: true }
-  };
-
-  function obterConfigPlano(licenca) {
-    if (!licenca) return PLANOS_CONFIG['Starter'];
-    return PLANOS_CONFIG[licenca.plano] || PLANOS_CONFIG['Starter'];
-  }
-
-  function verificarLimiteClientes() {
-    const lic = licencaAtualFresca();
-    const cfg = obterConfigPlano(lic);
-    if (state.clientes.length >= cfg.limiteClientes) {
-      const plano = lic ? lic.plano : 'Starter';
-      showToast(`⛔ Limite de ${cfg.limiteClientes} clientes atingido no plano ${plano}. Faça upgrade!`, 'erro');
-      return false;
-    }
-    return true;
-  }
-
-  function aplicarRestricoesPorPlano() {
-    const lic = licencaAtualFresca();
-    const cfg = obterConfigPlano(lic);
-    // IA: esconde/mostra menu
-    const btnIA = document.querySelector('button[data-page="ia"]');
-    if (btnIA) btnIA.style.display = cfg.temIA ? '' : 'none';
-    // Se estiver na página de IA sem permissão, vai pro dashboard
-    if (!cfg.temIA && window._paginaAtual === 'ia') navegarPara('dashboard');
-  }
-
-  // ===== GALERIA COM SUPABASE STORAGE =====
-  const SUPA_STORAGE_URL = '${SUPA_URL}/storage/v1/object/fotos-clientes/';
-  const SUPA_STORAGE_HEADERS = { 'apikey': '${SUPA_KEY}', 'Authorization': 'Bearer ${SUPA_KEY}' };
-
-  async function uploadFotoSupabase(base64DataUrl, nomeArquivo) {
-    // Converte base64 para blob
-    const arr = base64DataUrl.split(',');
-    const mime = arr[0].match(/:(.*?);/)[1];
-    const bstr = atob(arr[1]);
-    const u8arr = new Uint8Array(bstr.length);
-    for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
-    const blob = new Blob([u8arr], { type: mime });
-
-    const resp = await fetch(SUPA_STORAGE_URL + nomeArquivo, {
-      method: 'POST',
-      headers: { ...SUPA_STORAGE_HEADERS, 'Content-Type': mime, 'x-upsert': 'true' },
-      body: blob
-    });
-    if (!resp.ok) throw new Error('Erro ao fazer upload da foto');
-    return SUPA_STORAGE_URL + nomeArquivo;
-  }
-
-  async function salvarFotoGaleriaSupabase(clienteId, antes64, depois64, observacao, data) {
-    const lic = licencaAtualFresca();
-    const prefix = lic ? lic.codigo.toLowerCase() + '/' : 'sem-licenca/';
-    const ts = Date.now();
-    const [urlAntes, urlDepois] = await Promise.all([
-      uploadFotoSupabase(antes64, prefix + clienteId + '_antes_' + ts + '.jpg'),
-      uploadFotoSupabase(depois64, prefix + clienteId + '_depois_' + ts + '.jpg')
-    ]);
-    return { antes: urlAntes, depois: urlDepois };
   }
 
   iniciarComLicenca();

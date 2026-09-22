@@ -1555,7 +1555,6 @@
     if (session && session.tipo !== 'admin' && ADMIN_ONLY_PAGES.includes(pageId)) pageId = 'agendamentos';
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-' + pageId).classList.add('active');
-    window._paginaAtual = pageId;
     document.querySelectorAll('nav.menu button').forEach(b => b.classList.toggle('active', b.dataset.page === pageId));
     if (pageId === 'ia') iaRenderizarInativos();
     document.getElementById('topbarTitle').textContent = document.querySelector('#page-' + pageId + ' .page-title').textContent;
@@ -2337,8 +2336,6 @@
 
   document.getElementById('formCliente').addEventListener('submit', (e) => {
     e.preventDefault();
-    const isNovo = !document.getElementById('clienteId').value;
-    if (isNovo && !verificarLimiteClientes()) return;
     const id = document.getElementById('clienteId').value;
     const dados = lerDadosPessoais(clienteDadosModal, 'cli_');
     if (id) {
@@ -4288,33 +4285,24 @@
   }
   document.getElementById('galTipo').addEventListener('change', populateRegiaoGaleria);
 
-  document.getElementById('formGaleria').addEventListener('submit', async (e) => {
+  document.getElementById('formGaleria').addEventListener('submit', (e) => {
     e.preventDefault();
     if (!pendingAntes || !pendingDepois) { alert('Envie as duas fotos (antes e depois).'); return; }
     const clienteId = document.getElementById('galCliente').value;
     if (!clienteId) { alert('Selecione uma cliente.'); return; }
-    const btnSub = e.target.querySelector('[type=submit]');
-    if (btnSub) { btnSub.disabled = true; btnSub.textContent = '⏳ Salvando...'; }
-    try {
-      let urlAntes = pendingAntes, urlDepois = pendingDepois;
-      try {
-        const urls = await salvarFotoGaleriaSupabase(clienteId, pendingAntes, pendingDepois, document.getElementById('galObs').value.trim(), document.getElementById('galData').value);
-        urlAntes = urls.antes; urlDepois = urls.depois;
-      } catch(e2) { console.warn('Upload falhou, salvando local:', e2); }
-      state.galeria.push({
-        id: uid(), clienteId, profissionalId: session.tipo === 'profissional' ? session.profissionalId : '',
-        tipo: document.getElementById('galTipo').value, regiao: document.getElementById('galRegiao').value,
-        data: document.getElementById('galData').value, antes: urlAntes, depois: urlDepois,
-        observacao: document.getElementById('galObs').value.trim()
-      });
-      save(STORAGE_KEYS.galeria, state.galeria);
-      e.target.reset();
-      document.getElementById('galData').value = todayISO();
-      populateRegiaoGaleria();
-      pendingAntes = ''; pendingDepois = '';
-      renderGaleria();
-      showToast('Registro de evolução salvo!');
-    } finally { if (btnSub) { btnSub.disabled = false; btnSub.textContent = 'Salvar evolução'; } }
+    state.galeria.push({
+      id: uid(), clienteId, profissionalId: session.tipo === 'profissional' ? session.profissionalId : '',
+      tipo: document.getElementById('galTipo').value, regiao: document.getElementById('galRegiao').value,
+      data: document.getElementById('galData').value, antes: pendingAntes, depois: pendingDepois,
+      observacao: document.getElementById('galObs').value.trim()
+    });
+    save(STORAGE_KEYS.galeria, state.galeria);
+    e.target.reset();
+    document.getElementById('galData').value = todayISO();
+    populateRegiaoGaleria();
+    pendingAntes = ''; pendingDepois = '';
+    renderGaleria();
+    showToast('Registro de evolução salvo!');
   });
 
   function populateTodosSelects() {
@@ -5259,7 +5247,6 @@
   }
 
   function iniciar() {
-    aplicarRestricoesPorPlano();
     applyLoginBranding();
     if (!state.config.senhaAdmin) { renderSetupForm(); return; }
     const sessaoSalva = load(STORAGE_KEYS.sessao, null);
@@ -5269,14 +5256,47 @@
   }
 
   // ---------- Licenciamento (ativação via admin-jv.html) ----------
+  const SUPA_URL_EST = 'https://dhcbgwoqvemveltqlkyb.supabase.co';
+  const SUPA_KEY_EST = 'sb_publishable_2NBJeTDfI7FRe3xGfo_QpQ_voN44OJm';
+
+  async function buscarLicencaSupabase(codigo) {
+    try {
+      const res = await fetch(`${SUPA_URL_EST}/rest/v1/licencas?codigo=eq.${encodeURIComponent(codigo)}&select=*`, {
+        headers: { 'apikey': SUPA_KEY_EST, 'Authorization': 'Bearer ' + SUPA_KEY_EST }
+      });
+      if (!res.ok) return null;
+      const rows = await res.json();
+      if (!rows.length) return null;
+      const r = rows[0];
+      // converte para formato local
+      const lic = {
+        id: r.id, codigo: r.codigo,
+        nomeAssinante: r.nome_assinante, telefone: r.telefone,
+        segmento: r.segmento, plano: r.plano, periodicidade: r.periodicidade,
+        limiteProfissionais: r.limite_profissionais, limiteClientes: r.limite_clientes,
+        temIA: r.tem_ia, dataCriacao: r.data_criacao, dataVencimento: r.data_vencimento
+      };
+      // salva no cache local para uso offline
+      const cache = load(LICENCAS_SHARED_KEY, []);
+      const idx = cache.findIndex(l => l.codigo === lic.codigo);
+      if (idx >= 0) cache[idx] = lic; else cache.push(lic);
+      localStorage.setItem(LICENCAS_SHARED_KEY, JSON.stringify(cache));
+      return lic;
+    } catch(e) { return null; }
+  }
+
   function obterLicencasCompartilhadas() { return load(LICENCAS_SHARED_KEY, []); }
   function obterConfigJvDatalab() { return load(JV_CONFIG_KEY, { nomeEmpresa: 'JV Datalab', whatsappSuporte: '' }); }
-  function validarCodigoAtivacao(codigo) {
-    const lic = obterLicencasCompartilhadas().find(l => l.codigo === (codigo || '').trim().toUpperCase());
+
+  function validarLicencaObj(lic, codigo) {
     if (!lic) return { ok: false, motivo: 'invalido' };
     if (!ACCEPTED_SEGMENTOS.includes(lic.segmento)) return { ok: false, motivo: 'invalido' };
     if (lic.dataVencimento < todayISO()) return { ok: false, motivo: 'expirado', licenca: lic };
     return { ok: true, licenca: lic };
+  }
+  function validarCodigoAtivacao(codigo) {
+    const lic = obterLicencasCompartilhadas().find(l => l.codigo === (codigo || '').trim().toUpperCase());
+    return validarLicencaObj(lic, codigo);
   }
   function licencaAtualFresca() {
     const salva = load(STORAGE_KEYS.licenca, null);
@@ -5341,8 +5361,12 @@
     `;
     document.getElementById('btnWhatsExpirado').addEventListener('click', () => abrirWhatsSuporte('Olá! Minha assinatura do sistema venceu e gostaria de renovar.'));
   }
-  function tentarAtivarCodigo(codigo) {
-    const resultado = validarCodigoAtivacao(codigo);
+  async function tentarAtivarCodigo(codigo) {
+    let resultado = validarCodigoAtivacao(codigo);
+    if (!resultado.ok && resultado.motivo === 'invalido') {
+      const licSupa = await buscarLicencaSupabase(codigo);
+      resultado = validarLicencaObj(licSupa, codigo);
+    }
     if (!resultado.ok) {
       if (resultado.motivo === 'expirado') { mostrarTelaExpirada(); return; }
       mostrarTelaAtivacao('Código inválido. Verifique e tente novamente, ou entre em contato com a JV Datalab.');
@@ -5352,12 +5376,16 @@
     licencaAtiva = resultado.licenca;
     iniciar();
   }
-  function iniciarComLicenca() {
+  async function iniciarComLicenca() {
     const licencaSalva = load(STORAGE_KEYS.licenca, null);
     const codigoUrl = new URLSearchParams(window.location.search).get('cod');
-    if (!licencaSalva && codigoUrl) { tentarAtivarCodigo(codigoUrl); return; }
+    if (!licencaSalva && codigoUrl) { await tentarAtivarCodigo(codigoUrl); return; }
     if (!licencaSalva) { mostrarTelaAtivacao(); return; }
-    const resultado = validarCodigoAtivacao(licencaSalva.codigo);
+    let resultado = validarCodigoAtivacao(licencaSalva.codigo);
+    if (!resultado.ok && resultado.motivo === 'invalido') {
+      const licSupa = await buscarLicencaSupabase(licencaSalva.codigo);
+      resultado = validarLicencaObj(licSupa, licencaSalva.codigo);
+    }
     if (!resultado.ok) {
       if (resultado.motivo === 'expirado') { mostrarTelaExpirada(); return; }
       mostrarTelaAtivacao('Código inválido. Entre em contato com a JV Datalab.');
@@ -5485,74 +5513,6 @@
       const dias = c.ultimaVisita ? Math.floor((hoje - new Date(c.ultimaVisita)) / (1000*60*60*24)) : '?';
       return `<li><span>${c.nome}</span><span class="ia-badge">${dias} dias</span></li>`;
     }).join('') + '</ul>' + (inativos.length > 8 ? `<p style="font-size:12px;color:#888;margin-top:8px">+${inativos.length-8} clientes</p>` : '');
-  }
-
-  
-  // ===== LÓGICA DE PLANOS =====
-  const PLANOS_CONFIG = {
-    'Starter':       { limiteClientes: 50,  limiteProfissionais: 1,  temIA: false },
-    'Profissional':  { limiteClientes: 150, limiteProfissionais: 3,  temIA: false },
-    'Clínica':       { limiteClientes: 300, limiteProfissionais: 5,  temIA: true  },
-    'Premium':       { limiteClientes: 99999, limiteProfissionais: 99999, temIA: true }
-  };
-
-  function obterConfigPlano(licenca) {
-    if (!licenca) return PLANOS_CONFIG['Starter'];
-    return PLANOS_CONFIG[licenca.plano] || PLANOS_CONFIG['Starter'];
-  }
-
-  function verificarLimiteClientes() {
-    const lic = licencaAtualFresca();
-    const cfg = obterConfigPlano(lic);
-    if (state.clientes.length >= cfg.limiteClientes) {
-      const plano = lic ? lic.plano : 'Starter';
-      showToast(`⛔ Limite de ${cfg.limiteClientes} clientes atingido no plano ${plano}. Faça upgrade!`, 'erro');
-      return false;
-    }
-    return true;
-  }
-
-  function aplicarRestricoesPorPlano() {
-    const lic = licencaAtualFresca();
-    const cfg = obterConfigPlano(lic);
-    // IA: esconde/mostra menu
-    const btnIA = document.querySelector('button[data-page="ia"]');
-    if (btnIA) btnIA.style.display = cfg.temIA ? '' : 'none';
-    // Se estiver na página de IA sem permissão, vai pro dashboard
-    if (!cfg.temIA && window._paginaAtual === 'ia') navegarPara('dashboard');
-  }
-
-  // ===== GALERIA COM SUPABASE STORAGE =====
-  const SUPA_STORAGE_URL = '${SUPA_URL}/storage/v1/object/fotos-clientes/';
-  const SUPA_STORAGE_HEADERS = { 'apikey': '${SUPA_KEY}', 'Authorization': 'Bearer ${SUPA_KEY}' };
-
-  async function uploadFotoSupabase(base64DataUrl, nomeArquivo) {
-    // Converte base64 para blob
-    const arr = base64DataUrl.split(',');
-    const mime = arr[0].match(/:(.*?);/)[1];
-    const bstr = atob(arr[1]);
-    const u8arr = new Uint8Array(bstr.length);
-    for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
-    const blob = new Blob([u8arr], { type: mime });
-
-    const resp = await fetch(SUPA_STORAGE_URL + nomeArquivo, {
-      method: 'POST',
-      headers: { ...SUPA_STORAGE_HEADERS, 'Content-Type': mime, 'x-upsert': 'true' },
-      body: blob
-    });
-    if (!resp.ok) throw new Error('Erro ao fazer upload da foto');
-    return SUPA_STORAGE_URL + nomeArquivo;
-  }
-
-  async function salvarFotoGaleriaSupabase(clienteId, antes64, depois64, observacao, data) {
-    const lic = licencaAtualFresca();
-    const prefix = lic ? lic.codigo.toLowerCase() + '/' : 'sem-licenca/';
-    const ts = Date.now();
-    const [urlAntes, urlDepois] = await Promise.all([
-      uploadFotoSupabase(antes64, prefix + clienteId + '_antes_' + ts + '.jpg'),
-      uploadFotoSupabase(depois64, prefix + clienteId + '_depois_' + ts + '.jpg')
-    ]);
-    return { antes: urlAntes, depois: urlDepois };
   }
 
   iniciarComLicenca();
