@@ -5368,7 +5368,16 @@
     let resultado = validarCodigoAtivacao(codigo);
     if (!resultado.ok && resultado.motivo === 'invalido') {
       const licSupa = await buscarLicencaSupabase(codigo);
-      resultado = validarLicencaObj(licSupa, codigo);
+      if (licSupa) {
+        resultado = validarLicencaObj(licSupa, codigo);
+      } else {
+        // Sem conexão com Supabase — tenta cache local
+        resultado = validarCodigoAtivacao(codigo);
+        if (!resultado.ok) {
+          mostrarTelaAtivacao('Sem conexão para validar. Abra pelo Safari e ative o código primeiro.');
+          return;
+        }
+      }
     }
     if (!resultado.ok) {
       if (resultado.motivo === 'expirado') { mostrarTelaExpirada(); return; }
