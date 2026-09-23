@@ -333,6 +333,7 @@
       <button data-page="galeria"><span class="icon">📸</span><span class="menu-label">Galeria</span></button>
       <button data-page="personalizacao" class="admin-only"><span class="icon">🎨</span><span class="menu-label">Personalização</span></button>
       <button data-page="financeiro" class="admin-only"><span class="icon">💰</span><span class="menu-label">Financeiro</span></button>
+      <button data-page="ia" class="admin-only ia-only" style="display:none"><span class="icon">🤖</span><span class="menu-label">Assistente IA</span></button>
     </nav>
     <div class="sidebar-footer" id="sidebarFooter"></div>
   </aside>
@@ -4461,6 +4462,9 @@
     renderParcelasGlobais();
     renderDashboard();
     verificarBannerRenovacao(licencaAtiva);
+    if (licencaAtiva && licencaAtiva.temIA) {
+      document.querySelectorAll('.ia-only').forEach(el => el.style.display = '');
+    }
     goToPage(session.tipo === 'admin' ? 'dashboard' : 'agendamentos');
     setTimeout(bkVerificarDiario, 600);
   }
