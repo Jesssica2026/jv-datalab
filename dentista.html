@@ -2,6 +2,10 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Painel da Clínica Odontológica</title>
 <style>
@@ -300,7 +304,7 @@
 
 <div class="login-screen" id="telaAtivacao" style="display:none">
   <div class="login-box">
-    <div class="logo-wrap"><div class="logo-placeholder">JV</div></div>
+    <div class="logo-wrap"><img src="/logo.png" alt="JV Datalab" style="width:80px;height:80px;border-radius:12px;object-fit:contain;background:#0d1b3e;padding:6px;"></div>
     <h1>Ativação do sistema</h1>
     <div id="ativacaoConteudo"></div>
   </div>
@@ -1295,8 +1299,7 @@
     document.documentElement.style.setProperty('--cor-secundaria', c.corSecundaria);
     const header = document.getElementById('sidebarHeader');
     header.innerHTML = '';
-    if (c.logo) { const img = document.createElement('img'); img.src = c.logo; header.appendChild(img); }
-    else { const div = document.createElement('div'); div.className = 'logo-placeholder'; div.textContent = (c.nomeNegocio || 'C').trim().charAt(0).toUpperCase(); header.appendChild(div); }
+    { const img = document.createElement('img'); img.src = c.logo || '/logo.png'; img.alt = 'Logo'; img.style.cssText = 'width:42px;height:42px;border-radius:8px;object-fit:contain;background:#fff;padding:3px;'; header.appendChild(img); }
     const h1 = document.createElement('h1'); h1.textContent = c.nomeNegocio || 'Clínica Odontológica'; header.appendChild(h1);
     document.getElementById('custNome').value = c.nomeNegocio || '';
     document.getElementById('custCorPrimaria').value = c.corPrimaria;
