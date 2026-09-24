@@ -728,7 +728,9 @@
           <div class="ficha-tabs" id="tratTabs" style="margin-top:16px">
             <button type="button" class="ficha-tab-btn active" data-trat-aba="novo">+ Novo tratamento</button>
             <button type="button" class="ficha-tab-btn" data-trat-aba="historico">Histórico</button>
-            <button type="button" class="ficha-tab-btn admin-only" data-trat-aba="pacotes">📦 Pacotes cadastrados</button>
+            <button type="button" class="ficha-tab-btn" data-trat-aba="mapa">🗺️ Mapa Corporal</button>
+            <button type="button" class="ficha-tab-btn" data-trat-aba="medidas">📏 Medidas & Evolução</button>
+            <button type="button" class="ficha-tab-btn admin-only" data-trat-aba="protocolos-pacotes">📋 Protocolos & Pacotes</button>
           </div>
 
           <!-- ABA: Novo tratamento -->
@@ -813,9 +815,14 @@
                     </select>
                   </div>
                 </div>
-                <div class="field">
+                <div class="field" style="grid-column:1/-1">
                   <label>Objetivo / Observações</label>
-                  <textarea id="tratObjetivo" placeholder="Ex: Reduzir medidas no abdômen, melhorar flacidez..."></textarea>
+                  <div style="margin-bottom:8px">
+                    <div style="font-size:11.5px;color:#6b7280;margin-bottom:6px">Selecione ou escreva livremente abaixo:</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px" id="tratObjetivoSugestoes">
+                    </div>
+                  </div>
+                  <textarea id="tratObjetivo" placeholder="Ex: Reduzir medidas no abdômen, melhorar flacidez, harmonização facial pré-evento..." rows="3"></textarea>
                 </div>
               </div>
 
@@ -861,8 +868,29 @@
             </div>
           </div>
 
-          <!-- ABA: Pacotes cadastrados -->
-          <div class="trat-aba" id="tratAba-pacotes">
+          <!-- ABA: Mapa Corporal -->
+          <div class="trat-aba" id="tratAba-mapa">
+            <div class="card" style="margin-top:14px" id="tratMapaCorpoCard">
+              <h3>Mapa Corporal</h3>
+              <div id="tratMapaCorpoConteudo"><div class="empty-msg">Selecione uma cliente para ver o mapa corporal.</div></div>
+            </div>
+          </div>
+
+          <!-- ABA: Medidas & Evolução -->
+          <div class="trat-aba" id="tratAba-medidas">
+            <div id="tratMedidasConteudo" style="margin-top:14px">
+              <div class="empty-msg">Selecione uma cliente para ver as medidas.</div>
+            </div>
+          </div>
+
+          <!-- ABA: Protocolos & Pacotes -->
+          <div class="trat-aba" id="tratAba-protocolos-pacotes">
+            <!-- Protocolos do cliente -->
+            <div class="card" style="margin-top:14px">
+              <h3>Protocolo de Tratamento da Cliente</h3>
+              <div id="tratProtocoloConteudo"><div class="empty-msg">Selecione uma cliente para ver o protocolo.</div></div>
+            </div>
+            <!-- Pacotes cadastrados -->
             <div class="card" style="margin-top:14px">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
                 <h3 style="margin:0">Pacotes de tratamento</h3>
@@ -1008,7 +1036,7 @@
       <!-- CLIENTES -->
       <section class="page" id="page-clientes">
         <h2 class="page-title" id="clientesPageTitle">Clientes</h2>
-        <p class="page-sub" id="clientesPageSub">Cadastro, anamnese completa, mapa corporal, medidas e protocolo</p>
+        <p class="page-sub" id="clientesPageSub">Cadastro e anamneses da cliente — mapa, medidas e protocolo ficam em Tratamento</p>
         <div class="clientes-layout">
           <div class="card">
             <div class="search-box"><input type="text" id="buscaCliente" placeholder="Buscar cliente..."></div>
@@ -1814,7 +1842,6 @@
   let session = null;
   let licencaAtiva = null;
   let clienteSelecionadoId = null;
-  let abaAtivaCliente = 'capilar';
   let regiaoAtivaMapa = null;
   let timelineModo = 'dia';
   let timelineData = todayISO();
@@ -2717,24 +2744,23 @@
     const row = e.target.closest('[data-cliente]');
     if (!row) return;
     clienteSelecionadoId = row.dataset.cliente;
-    abaAtivaCliente = 'capilar';
+    abaAtivaCliente = 'cadastro';
     regiaoAtivaMapa = null;
     renderClientes();
   });
 
   // ---------- Ficha da cliente (abas) ----------
   const ABAS_CLIENTE = [
+    { id: 'cadastro', label: '👤 Cadastro' },
     { id: 'capilar', label: 'Anamnese Capilar' },
     { id: 'corporal', label: 'Anamnese Corporal' },
     { id: 'facial', label: 'Anamnese Facial' },
     { id: 'depilacao', label: 'Depilação' },
     { id: 'sobrancelha', label: 'Sobrancelhas' },
     { id: 'cilios', label: 'Cílios' },
-    { id: 'objetivos', label: 'Objetivos' },
-    { id: 'mapa', label: 'Mapa Corporal' },
-    { id: 'medidas', label: 'Medidas & Evolução' },
-    { id: 'protocolo', label: 'Protocolo de Tratamento' }
+    { id: 'objetivos', label: 'Objetivos' }
   ];
+  let abaAtivaCliente = 'cadastro';
 
   function renderClienteDetalhe() {
     const box = document.getElementById('clienteDetalhe');
@@ -2751,10 +2777,9 @@
           <div style="font-size:13px;color:#6b7280">${c.cpf ? 'CPF: ' + c.cpf + ' · ' : ''}${c.telefone || 'sem telefone'} ${c.email ? '· ' + c.email : ''}</div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn small" id="btnVerEvolucao">📈 Ver evolução</button>
           ${podeGerenciar ? `
-          <button class="btn secondary small" id="btnEditarCliente">Editar</button>
-          <button class="btn danger small" id="btnExcluirCliente">Excluir</button>` : ''}
+          <button class="btn secondary small" id="btnEditarCliente">✏️ Editar</button>
+          <button class="btn danger small" id="btnExcluirCliente">🗑️ Excluir</button>` : ''}
         </div>
       </div>
       <div class="status-painel" id="statusClientePainel"></div>
@@ -2762,7 +2787,6 @@
       <div id="fichaAbaConteudo"></div>
     `;
     renderStatusPainel(c);
-    document.getElementById('btnVerEvolucao').addEventListener('click', () => abrirEvolucao(c));
 
     if (podeGerenciar) {
       document.getElementById('btnEditarCliente').addEventListener('click', () => abrirModalCliente(c));
@@ -2783,11 +2807,36 @@
 
   function renderAbaCliente(c) {
     const el = document.getElementById('fichaAbaConteudo');
+    if (abaAtivaCliente === 'cadastro') { renderAbaCadastro(el, c); return; }
     if (ANAMNESES[abaAtivaCliente]) { renderAbaAnamnese(el, c, abaAtivaCliente); return; }
     if (abaAtivaCliente === 'objetivos') { renderAbaObjetivos(el, c); return; }
-    if (abaAtivaCliente === 'mapa') { renderAbaMapa(el, c); return; }
-    if (abaAtivaCliente === 'medidas') { renderAbaMedidas(el, c); return; }
-    if (abaAtivaCliente === 'protocolo') { renderAbaProtocolo(el, c); return; }
+  }
+
+  // ---------- Aba Cadastro (ficha do cliente) ----------
+  function renderAbaCadastro(el, c) {
+    el.innerHTML = `
+      <form id="formCadastroCliente" style="margin-top:10px">
+        <div class="card" style="margin-bottom:14px">
+          <h4 class="ficha-secao">Dados pessoais</h4>
+          ${htmlDadosPessoais(c, 'cad_')}
+        </div>
+        <div class="btn-row">
+          <button type="submit" class="btn">Salvar cadastro</button>
+        </div>
+      </form>
+    `;
+    const form = el.querySelector('#formCadastroCliente');
+    ligarDadosPessoais(form, 'cad_');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const dados = lerDadosPessoais(form, 'cad_');
+      if (!dados.nome) { showToast('Informe o nome.'); return; }
+      Object.assign(c, dados);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderClientes();
+      populateTodosSelects();
+      showToast('Cadastro salvo!');
+    });
   }
 
   // ---------- Anamneses profissionais (Capilar, Corporal, Facial) ----------
@@ -2962,28 +3011,117 @@
   function renderAbaAnamnese(el, c, tipo) {
     const sc = ANAMNESES[tipo];
     const a = c[sc.prop] || {};
+    const jaSalva = !!(a._assinadoEm || a._salvoPor === 'profissional' || a._salvoEm);
+    const dataExib = a._assinadoEm ? formatDateBR(a._assinadoEm.slice(0,10)) : (a._salvoEm ? formatDateBR(a._salvoEm.slice(0,10)) : null);
+
+    // Botão enviar link de anamnese
+    const linkBtn = `<button type="button" class="btn secondary small" id="btnEnviarLinkAnaEsta" style="margin-bottom:14px">📤 Enviar ficha ao cliente por WhatsApp</button>`;
+
+    if (jaSalva) {
+      // Modo visualização — campos desabilitados, só excluir ou editar
+      el.innerHTML = `
+        <div style="margin-top:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+            <div>
+              ${dataExib ? `<span style="background:#e8f5e9;color:#1a7d3a;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Salva em ${dataExib}</span>` : `<span style="background:#e3f0fd;color:#1565c0;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Anamnese registrada</span>`}
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              ${linkBtn.replace('style="margin-bottom:14px"','')}
+              <button type="button" class="btn secondary small" id="btnEditarAnamnese">✏️ Editar</button>
+              <button type="button" class="btn danger small" id="btnExcluirAnamnese">🗑️ Excluir</button>
+            </div>
+          </div>
+          <div id="anamneseVisualizacao">
+            ${htmlSecoesAnamneseReadonly(sc.secoes, a)}
+          </div>
+        </div>
+      `;
+      el.querySelector('#btnEnviarLinkAnaEsta')?.addEventListener('click', () => enviarLinkAnamnese(c, tipo));
+      el.querySelector('#btnEditarAnamnese').addEventListener('click', () => {
+        c[sc.prop]._editando = true;
+        renderAbaAnamnese(el, c, tipo);
+      });
+      el.querySelector('#btnExcluirAnamnese').addEventListener('click', () => {
+        if (!confirm(`Excluir a ${sc.titulo}? Essa ação não pode ser desfeita.`)) return;
+        c[sc.prop] = {};
+        save(STORAGE_KEYS.clientes, state.clientes);
+        showToast('Anamnese excluída.');
+        renderAbaAnamnese(el, c, tipo);
+      });
+      return;
+    }
+
+    // Modo edição (nova ou editando existente)
     el.innerHTML = `
-      <form id="formAnamnese">
-        <h4 class="ficha-secao">Dados</h4>
-        ${htmlDadosPessoais(c, 'dp_')}
-        ${htmlSecoesAnamnese(sc.secoes, a)}
-        <div class="btn-row"><button type="submit" class="btn">Salvar ${sc.titulo}</button></div>
-      </form>
+      <div style="margin-top:10px">
+        ${!a._editando ? linkBtn : ''}
+        <form id="formAnamnese">
+          ${htmlSecoesAnamnese(sc.secoes, a)}
+          <div class="btn-row">
+            <button type="submit" class="btn">Salvar ${sc.titulo}</button>
+            ${a._editando ? `<button type="button" class="btn secondary" id="btnCancelarEditAnamnese">Cancelar</button>` : ''}
+          </div>
+        </form>
+      </div>
     `;
-    const form = document.getElementById('formAnamnese');
-    ligarDadosPessoais(form, 'dp_');
+    if (!a._editando) {
+      el.querySelector('#btnEnviarLinkAnaEsta')?.addEventListener('click', () => enviarLinkAnamnese(c, tipo));
+    }
+    el.querySelector('#btnCancelarEditAnamnese')?.addEventListener('click', () => {
+      delete c[sc.prop]._editando;
+      renderAbaAnamnese(el, c, tipo);
+    });
+    const form = el.querySelector('#formAnamnese');
     ligarAnamnese(form);
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const dados = lerDadosPessoais(form, 'dp_');
-      if (!dados.nome) { showToast('Informe o nome.'); return; }
-      Object.assign(c, dados);
-      c[sc.prop] = Object.assign({}, c[sc.prop], lerAnamnese(form, sc.secoes));
+      const novaData = new Date().toISOString();
+      c[sc.prop] = Object.assign({}, c[sc.prop], lerAnamnese(form, sc.secoes), { _salvoPor: 'profissional', _salvoEm: novaData });
+      delete c[sc.prop]._editando;
       save(STORAGE_KEYS.clientes, state.clientes);
-      renderClientes();
-      populateTodosSelects();
-      showToast('Ficha salva!');
+      showToast('Anamnese salva!');
+      renderAbaAnamnese(el, c, tipo);
     });
+  }
+
+  function htmlSecoesAnamneseReadonly(secoes, dados) {
+    return secoes.map(sec => {
+      const linhas = sec.campos.map(f => {
+        const v = dados[f.k];
+        if (!v && v !== 0) return '';
+        let exibVal = v;
+        if (Array.isArray(v)) exibVal = v.join(', ');
+        return `<div class="list-row"><span style="font-size:12px;color:#6b7280">${f.label}</span><span style="font-size:13px;font-weight:500">${esc(String(exibVal))}</span></div>`;
+      }).filter(Boolean).join('');
+      if (!linhas) return '';
+      return `<div class="card" style="margin-bottom:12px"><h4 style="color:var(--cor-primaria);font-size:13.5px;margin-bottom:10px">${sec.titulo}</h4>${linhas}</div>`;
+    }).filter(Boolean).join('') || '<div class="empty-msg">Nenhum campo preenchido.</div>';
+  }
+
+  function enviarLinkAnamnese(c, tipoPreSel) {
+    const tiposAnamnese = [
+      { key: 'facial', label: 'Facial' },
+      { key: 'corporal', label: 'Corporal' },
+      { key: 'depilacao', label: 'Depilação' },
+      { key: 'sobrancelha', label: 'Sobrancelhas' },
+      { key: 'cilios', label: 'Cílios' },
+      { key: 'capilar', label: 'Capilar' }
+    ];
+    let tipo = tipoPreSel;
+    if (!tipo) {
+      const sel = prompt('Qual ficha enviar?\n' + tiposAnamnese.map((t,i) => `${i+1}. ${t.label}`).join('\n') + '\n\nDigite o número:');
+      const idx = parseInt(sel) - 1;
+      if (idx < 0 || idx >= tiposAnamnese.length || isNaN(idx)) return;
+      tipo = tiposAnamnese[idx].key;
+    }
+    const tipoObj = tiposAnamnese.find(t => t.key === tipo) || { label: tipo };
+    const link = gerarLinkAnamnese(c.id, tipo);
+    if (c.telefone) {
+      const msg = `Olá ${c.nome}! 😊 Segue o link para você preencher sua ficha de ${tipoObj.label.toLowerCase()}:\n\n${link}`;
+      window.open(`https://wa.me/55${c.telefone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
+    } else {
+      prompt('Copie o link abaixo e envie para a cliente:', link);
+    }
   }
 
   function classificacaoIMC(imc) {
@@ -3000,32 +3138,89 @@
     return p / (aM * aM);
   }
 
+  const OBJETIVOS_SUGESTOES = [
+    'Redução de medidas','Celulite','Flacidez','Gordura localizada','Modelagem corporal',
+    'Rejuvenescimento facial','Manchas','Acne','Cicatrizes','Rugas e linhas de expressão',
+    'Olheiras','Pápado caído','Harmonização facial','Preenchimento labial','Botox',
+    'Depilação definitiva','Design de sobrancelhas','Volume de cílios','Extensão de cílios',
+    'Queda capilar','Oleosidade do couro cabeludo','Hidratação capilar','Crescimento capilar',
+    'Drenagem linfática','Relaxamento muscular','Dor crônica','Outro'
+  ];
+
   function renderAbaObjetivos(el, c) {
-    const o = c.objetivos;
-    el.innerHTML = `
-      <form id="formObjetivos">
-        <div class="checkbox-grid">
-          <label class="checkbox-item"><input type="checkbox" id="objReducao" ${o.reducaoMedidas ? 'checked' : ''}> Redução de medidas</label>
-          <label class="checkbox-item"><input type="checkbox" id="objCelulite" ${o.celulite ? 'checked' : ''}> Celulite</label>
-          <label class="checkbox-item"><input type="checkbox" id="objFlacidez" ${o.flacidez ? 'checked' : ''}> Flacidez</label>
-          <label class="checkbox-item"><input type="checkbox" id="objGordura" ${o.gorduraLocalizada ? 'checked' : ''}> Gordura localizada</label>
-          <label class="checkbox-item"><input type="checkbox" id="objModelagem" ${o.modelagemCorporal ? 'checked' : ''}> Modelagem corporal</label>
+    if (!c.objetivos || typeof c.objetivos !== 'object' || Array.isArray(c.objetivos)) c.objetivos = {};
+    // Garante estrutura: lista de strings selecionadas
+    if (!Array.isArray(c.objetivos._lista)) c.objetivos._lista = [];
+    const lista = c.objetivos._lista;
+
+    function html() {
+      return `
+        <div class="card" style="margin-top:10px">
+          <h4 style="color:var(--cor-primaria);font-size:13.5px;margin-bottom:12px">Objetivos do tratamento</h4>
+          <div class="checkbox-grid" id="objGrid">
+            ${OBJETIVOS_SUGESTOES.map((s,i) => `
+              <label class="checkbox-item">
+                <input type="checkbox" data-obj-sug="${i}" ${lista.includes(s) ? 'checked' : ''}> ${s}
+              </label>`).join('')}
+          </div>
+          <div style="margin-top:14px;border-top:1px solid var(--cor-borda);padding-top:14px">
+            <label style="font-size:12px;font-weight:600;color:#4b5162;margin-bottom:6px;display:block">Adicionar objetivo personalizado</label>
+            <div style="display:flex;gap:8px">
+              <input type="text" id="objCustomInput" placeholder="Ex: Tratamento pré-casamento, Emagrecimento pós-cirurgia..." style="flex:1">
+              <button type="button" class="btn secondary small" id="btnAddObjCustom">+ Adicionar</button>
+            </div>
+          </div>
+          ${lista.filter(s => !OBJETIVOS_SUGESTOES.includes(s)).length ? `
+          <div style="margin-top:12px">
+            <div style="font-size:12px;color:#4b5162;font-weight:600;margin-bottom:6px">Objetivos personalizados:</div>
+            <div id="objCustomLista">
+              ${lista.filter(s => !OBJETIVOS_SUGESTOES.includes(s)).map(s => `
+                <div class="list-row">
+                  <span>${esc(s)}</span>
+                  <button type="button" class="btn danger small" data-obj-del="${esc(s)}">✕</button>
+                </div>`).join('')}
+            </div>
+          </div>` : ''}
+          <div class="btn-row" style="margin-top:14px">
+            <button type="button" class="btn" id="btnSalvarObjetivos">Salvar objetivos</button>
+          </div>
         </div>
-        <div class="btn-row"><button type="submit" class="btn">Salvar objetivos</button></div>
-      </form>
-    `;
-    document.getElementById('formObjetivos').addEventListener('submit', (e) => {
-      e.preventDefault();
-      c.objetivos = {
-        reducaoMedidas: document.getElementById('objReducao').checked,
-        celulite: document.getElementById('objCelulite').checked,
-        flacidez: document.getElementById('objFlacidez').checked,
-        gorduraLocalizada: document.getElementById('objGordura').checked,
-        modelagemCorporal: document.getElementById('objModelagem').checked
-      };
+      `;
+    }
+
+    el.innerHTML = html();
+
+    function salvarObjetivos() {
+      const selecionados = [...el.querySelectorAll('[data-obj-sug]')]
+        .filter(cb => cb.checked)
+        .map(cb => OBJETIVOS_SUGESTOES[cb.dataset.objSug]);
+      const personalizados = lista.filter(s => !OBJETIVOS_SUGESTOES.includes(s));
+      c.objetivos._lista = [...selecionados, ...personalizados];
       save(STORAGE_KEYS.clientes, state.clientes);
       showToast('Objetivos salvos!');
-    });
+      el.innerHTML = html();
+      ligarObjetivos();
+    }
+
+    function ligarObjetivos() {
+      el.querySelector('#btnSalvarObjetivos')?.addEventListener('click', salvarObjetivos);
+      el.querySelector('#btnAddObjCustom')?.addEventListener('click', () => {
+        const v = el.querySelector('#objCustomInput').value.trim();
+        if (!v) return;
+        if (!lista.includes(v)) lista.push(v);
+        salvarObjetivos();
+      });
+      el.querySelectorAll('[data-obj-del]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = btn.dataset.objDel;
+          c.objetivos._lista = lista.filter(s => s !== val);
+          save(STORAGE_KEYS.clientes, state.clientes);
+          el.innerHTML = html();
+          ligarObjetivos();
+        });
+      });
+    }
+    ligarObjetivos();
   }
 
   function silhuetaSvg() {
@@ -4199,7 +4394,7 @@
 
   function abrirFichaDaCliente(id) {
     clienteSelecionadoId = id;
-    abaAtivaCliente = 'protocolo';
+    abaAtivaCliente = 'cadastro';
     regiaoAtivaMapa = null;
     goToPage('clientes');
     renderClientes();
@@ -6280,6 +6475,53 @@
     document.getElementById('tratAnamneseModal').classList.add('open');
   }
 
+  function tratRenderObjetivosSugestoes() {
+    const el = document.getElementById('tratObjetivoSugestoes');
+    if (!el) return;
+    // Objetivos do cliente selecionado (lista salva) + sugestões gerais
+    const c = state.clientes.find(x => x.id === tratClienteId);
+    const objCliente = (c?.objetivos?._lista || []);
+    // Todas as sugestões: objetivos do cliente primeiro, depois as gerais não duplicadas
+    const todas = [...new Set([...objCliente, ...OBJETIVOS_SUGESTOES])];
+    el.innerHTML = todas.map(s => `
+      <button type="button" class="btn secondary small" data-obj-pill="${esc(s)}"
+        style="font-size:11.5px;padding:4px 10px;border-radius:20px;${objCliente.includes(s) ? 'border-color:var(--cor-secundaria);color:var(--cor-secundaria);font-weight:700' : ''}">
+        ${objCliente.includes(s) ? '⭐ ' : ''}${esc(s)}
+      </button>`).join('');
+    el.querySelectorAll('[data-obj-pill]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ta = document.getElementById('tratObjetivo');
+        const val = btn.dataset.objPill;
+        const atual = ta.value.trim();
+        if (!atual) { ta.value = val; }
+        else if (!atual.includes(val)) { ta.value = atual + ', ' + val; }
+      });
+    });
+  }
+
+  function tratRenderMapaCorporal() {
+    const c = state.clientes.find(x => x.id === tratClienteId);
+    const el = document.getElementById('tratMapaCorpoConteudo');
+    if (!c) { el.innerHTML = '<div class="empty-msg">Selecione uma cliente para ver o mapa corporal.</div>'; return; }
+    // Reuse renderAbaMapa logic inline
+    const fakeEl = { innerHTML: '' };
+    renderAbaMapa(el, c);
+  }
+
+  function tratRenderMedidas() {
+    const c = state.clientes.find(x => x.id === tratClienteId);
+    const el = document.getElementById('tratMedidasConteudo');
+    if (!c) { el.innerHTML = '<div class="empty-msg">Selecione uma cliente para ver as medidas.</div>'; return; }
+    renderAbaMedidas(el, c);
+  }
+
+  function tratRenderProtocolo() {
+    const c = state.clientes.find(x => x.id === tratClienteId);
+    const el = document.getElementById('tratProtocoloConteudo');
+    if (!c) { el.innerHTML = '<div class="empty-msg">Selecione uma cliente para ver o protocolo.</div>'; return; }
+    renderAbaProtocolo(el, c);
+  }
+
   function tratRenderHistorico() {
     const lista = (state_tratamentos || []).filter(t => t.clienteId === tratClienteId)
       .sort((a,b) => b.data.localeCompare(a.data));
@@ -6470,25 +6712,7 @@
     document.getElementById('btnEnviarLinkAnamnese')?.addEventListener('click', () => {
       const c = state.clientes.find(x => x.id === tratClienteId);
       if (!c) return;
-      const tiposAnamnese = [
-        { key: 'corporal', label: 'Corporal' },
-        { key: 'facial', label: 'Facial' },
-        { key: 'depilacao', label: 'Depilação' },
-        { key: 'sobrancelha', label: 'Sobrancelhas' },
-        { key: 'cilios', label: 'Cílios' },
-        { key: 'capilar', label: 'Capilar' }
-      ];
-      const sel = prompt('Qual ficha enviar?\n' + tiposAnamnese.map((t,i) => `${i+1}. ${t.label}`).join('\n') + '\n\nDigite o número:');
-      const idx = parseInt(sel) - 1;
-      if (idx < 0 || idx >= tiposAnamnese.length) return;
-      const tipo = tiposAnamnese[idx].key;
-      const link = gerarLinkAnamnese(c.id, tipo);
-      if (c.telefone) {
-        const msg = `Olá ${c.nome}! 😊 Segue o link para você preencher sua ficha de ${tiposAnamnese[idx].label.toLowerCase()}:\n\n${link}`;
-        window.open(`https://wa.me/55${c.telefone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
-      } else {
-        prompt('Copie o link abaixo e envie para a cliente:', link);
-      }
+      enviarLinkAnamnese(c, null);
     });
 
     // Pacotes — botão novo
@@ -6570,7 +6794,9 @@
       e.target.classList.add('active');
       document.getElementById('tratAba-'+aba)?.classList.add('active');
       if (aba === 'historico') tratRenderHistorico();
-      if (aba === 'pacotes') { pacotesRenderLista(); pacotesPopularSelect(); }
+      if (aba === 'protocolos-pacotes') { pacotesRenderLista(); pacotesPopularSelect(); tratRenderProtocolo(); }
+      if (aba === 'mapa') tratRenderMapaCorporal();
+      if (aba === 'medidas') tratRenderMedidas();
     });
 
     // Categorias
@@ -6586,6 +6812,7 @@
       tratRenderMapa();
       tratRenderProcedimentos();
       tratRenderInsumos();
+      tratRenderObjetivosSugestoes();
       // Popular profissionais
       const sel = document.getElementById('tratProfissional');
       if (sel) sel.innerHTML = '<option value="">Qualquer disponível</option>' +
