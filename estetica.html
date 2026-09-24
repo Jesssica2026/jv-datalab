@@ -718,6 +718,7 @@
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
                 <div id="tratAnamneseBadges"></div>
+                <button type="button" class="btn secondary small" id="btnEnviarLinkAnamnese">📤 Enviar ficha ao cliente</button>
                 <button type="button" class="btn secondary small" id="btnTratLimpar">↩ Trocar cliente</button>
               </div>
             </div>
@@ -727,10 +728,24 @@
           <div class="ficha-tabs" id="tratTabs" style="margin-top:16px">
             <button type="button" class="ficha-tab-btn active" data-trat-aba="novo">+ Novo tratamento</button>
             <button type="button" class="ficha-tab-btn" data-trat-aba="historico">Histórico</button>
+            <button type="button" class="ficha-tab-btn admin-only" data-trat-aba="pacotes">📦 Pacotes cadastrados</button>
           </div>
 
           <!-- ABA: Novo tratamento -->
           <div class="trat-aba active" id="tratAba-novo">
+
+            <!-- Selecionar pacote salvo -->
+            <div class="card" style="margin-top:14px">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+                <h3 style="margin:0">Usar pacote salvo <span style="font-size:12px;font-weight:400;color:#6b7280">(opcional — preenche os campos automaticamente)</span></h3>
+              </div>
+              <div style="margin-top:10px">
+                <select id="tratPacoteSelect" style="max-width:420px">
+                  <option value="">— Selecionar pacote —</option>
+                </select>
+                <button type="button" class="btn secondary small" id="btnAplicarPacote" style="margin-left:8px">Aplicar</button>
+              </div>
+            </div>
 
             <!-- Categoria -->
             <div class="card" style="margin-top:14px">
@@ -846,6 +861,54 @@
             </div>
           </div>
 
+          <!-- ABA: Pacotes cadastrados -->
+          <div class="trat-aba" id="tratAba-pacotes">
+            <div class="card" style="margin-top:14px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+                <h3 style="margin:0">Pacotes de tratamento</h3>
+                <button type="button" class="btn small" id="btnNovoPacote">+ Novo pacote</button>
+              </div>
+              <div id="tratPacotesLista"></div>
+            </div>
+            <!-- Form novo/editar pacote -->
+            <div class="card" id="tratPacoteForm" style="display:none;margin-top:14px">
+              <h3 id="tratPacoteFormTitulo">Novo pacote</h3>
+              <input type="hidden" id="pacoteId">
+              <div class="form-grid">
+                <div class="field"><label>Nome do pacote</label><input type="text" id="pacoteNome" required placeholder="Ex: Pacote Cílios Volume + Design Sobrancelha"></div>
+                <div class="field"><label>Categoria</label>
+                  <select id="pacoteCategoria">
+                    <option value="">Selecione</option>
+                    <option value="estetica">Estética</option>
+                    <option value="harmonizacao_facial">Harmonização Facial</option>
+                    <option value="harmonizacao_corporal">Harmonização Corporal</option>
+                    <option value="sobrancelha">Sobrancelhas</option>
+                    <option value="cilios">Cílios</option>
+                    <option value="depilacao">Depilação</option>
+                  </select>
+                </div>
+                <div class="field"><label>Nº de sessões</label><input type="number" id="pacoteSessoes" min="1" step="1" placeholder="Ex: 10"></div>
+                <div class="field"><label>Frequência</label>
+                  <select id="pacoteFrequencia">
+                    <option value="">Selecione</option>
+                    <option value="1x por semana">1x por semana</option>
+                    <option value="2x por semana">2x por semana</option>
+                    <option value="Quinzenal">Quinzenal</option>
+                    <option value="Mensal">Mensal</option>
+                    <option value="Sessão única">Sessão única</option>
+                  </select>
+                </div>
+                <div class="field"><label>Valor sugerido (R$)</label><input type="number" id="pacoteValor" min="0" step="0.01" placeholder="0,00"></div>
+              </div>
+              <div class="field"><label>Objetivo / Descrição</label><textarea id="pacoteObjetivo" placeholder="Ex: Volume russo + Design de sobrancelha com henna, resultado duradouro..."></textarea></div>
+              <div class="field"><label>Procedimentos incluídos</label><textarea id="pacoteProcedimentos" placeholder="Liste os procedimentos separados por vírgula"></textarea></div>
+              <div class="btn-row">
+                <button type="button" class="btn" id="btnSalvarPacote">Salvar pacote</button>
+                <button type="button" class="btn secondary" id="btnCancelarPacote">Cancelar</button>
+              </div>
+            </div>
+          </div>
+
         </div><!-- /tratClienteCard -->
       </section>
 
@@ -882,7 +945,7 @@
           <h3>Produtos cadastrados</h3>
           <div class="tabela-scroll">
             <table id="estoqueTabela">
-              <thead><tr><th>Produto</th><th>Estoque</th><th>Usos restantes</th><th>Valor de compra</th><th>Custo por uso</th><th>Mínimo</th><th>Fornecedor</th><th>Validade</th><th>Situação</th><th></th></tr></thead>
+              <thead><tr><th>#</th><th>Produto</th><th>Estoque</th><th>Usos restantes</th><th>Valor de compra</th><th>Custo por uso</th><th>Mínimo</th><th>Fornecedor</th><th>Validade</th><th>Situação</th><th></th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -1655,6 +1718,9 @@
       anamneseCapilar: {},
       anamneseCorporal: {},
       anamneseFacial: {},
+      anamneseDepilacao: {},
+      anamneseSobrancelha: {},
+      anamneseCilios: {},
       objetivos: { reducaoMedidas: false, celulite: false, flacidez: false, gorduraLocalizada: false, modelagemCorporal: false },
       mapaCorporal,
       medidas: [],
@@ -1731,6 +1797,9 @@
     if (!c.anamneseCapilar) c.anamneseCapilar = vazia.anamneseCapilar;
     if (!c.anamneseFacial) c.anamneseFacial = vazia.anamneseFacial;
     if (!c.anamneseCorporal) c.anamneseCorporal = vazia.anamneseCorporal;
+    if (!c.anamneseDepilacao) c.anamneseDepilacao = vazia.anamneseDepilacao;
+    if (!c.anamneseSobrancelha) c.anamneseSobrancelha = vazia.anamneseSobrancelha;
+    if (!c.anamneseCilios) c.anamneseCilios = vazia.anamneseCilios;
     if (!c.objetivos) c.objetivos = vazia.objetivos;
     if (!c.mapaCorporal) c.mapaCorporal = vazia.mapaCorporal;
     else REGIOES_MAPA.forEach(r => { if (!c.mapaCorporal[r.id]) c.mapaCorporal[r.id] = { marcada: false, obs: '' }; });
@@ -1991,7 +2060,8 @@
   document.getElementById('servFoto').addEventListener('change', async (e) => { pendingServicoFoto = await fileToBase64(e.target.files[0]); });
   document.getElementById('formServico').addEventListener('submit', (e) => {
     e.preventDefault();
-    state.servicos.push({ id: uid(), nome: document.getElementById('servNome').value.trim(), preco: parseFloat(document.getElementById('servPreco').value), duracao: parseInt(document.getElementById('servDuracao').value, 10), foto: pendingServicoFoto, insumos: [] });
+    const proximoServicoId = state.servicos.length > 0 ? Math.max(...state.servicos.map(s => s.servicoId || 0)) + 1 : 1;
+    state.servicos.push({ id: uid(), servicoId: proximoServicoId, nome: document.getElementById('servNome').value.trim(), preco: parseFloat(document.getElementById('servPreco').value), duracao: parseInt(document.getElementById('servDuracao').value, 10), foto: pendingServicoFoto, insumos: [] });
     save(STORAGE_KEYS.servicos, state.servicos);
     e.target.reset();
     pendingServicoFoto = '';
@@ -2009,7 +2079,7 @@
       <div class="item-card">
         ${s.foto ? `<img class="thumb" src="${s.foto}" alt="${s.nome}">` : `<div class="thumb">Sem foto</div>`}
         <div class="body">
-          <div class="name">${s.nome}</div>
+          <div class="name">${s.servicoId ? `<span style="font-size:11px;color:#888;font-weight:400;margin-right:6px">#${String(s.servicoId).padStart(3,'0')}</span>` : ''}${s.nome}</div>
           <div class="meta">${formatMoney(s.preco)} · ${s.duracao} min</div>
           <div class="meta">${s.insumos.length ? `Insumos: ${formatMoney(custo)} · Margem: ${fmtMargem(f.margem)}` : 'Sem ficha de custo'}</div>
           <div class="actions">
@@ -2112,7 +2182,10 @@
       validade: document.getElementById('prodValidade').value
     };
     if (id) Object.assign(state.produtos.find(x => x.id === id), dados);
-    else state.produtos.push(Object.assign({ id: uid() }, dados));
+    else {
+      const proximoProdutoId = state.produtos.length > 0 ? Math.max(...state.produtos.map(p => p.produtoId || 0)) + 1 : 1;
+      state.produtos.push(Object.assign({ id: uid(), produtoId: proximoProdutoId }, dados));
+    }
     save(STORAGE_KEYS.produtos, state.produtos);
     fecharFormProduto();
     renderEstoque();
@@ -2125,6 +2198,7 @@
     const lista = [...state.produtos].sort((a, b) => a.nome.localeCompare(b.nome));
     document.querySelector('#estoqueTabela tbody').innerHTML = lista.length ? lista.map(p => `
       <tr>
+        <td style="color:#888;font-size:12px;white-space:nowrap">${p.produtoId ? '#' + String(p.produtoId).padStart(3,'0') : '—'}</td>
         <td>${esc(p.nome)}</td>
         <td>${fmtQtd(p.quantidade)} ${esc(p.unidade)}</td>
         <td>${fmtQtd(p.quantidade * p.usosPorEmbalagem)}</td>
@@ -2135,7 +2209,7 @@
         <td>${p.validade ? formatDateBR(p.validade) : '—'}</td>
         <td>${htmlAlertasProduto(p) || '<span style="color:#1a7d3a;font-size:12px;font-weight:600">OK</span>'}</td>
         <td><button class="btn secondary small" data-edit-prod="${p.id}">Editar</button> <button class="btn danger small" data-del-prod="${p.id}">Excluir</button></td>
-      </tr>`).join('') : '<tr><td colspan="10" class="empty-msg">Nenhum produto cadastrado ainda.</td></tr>';
+      </tr>`).join('') : '<tr><td colspan="11" class="empty-msg">Nenhum produto cadastrado ainda.</td></tr>';
     const comAlerta = lista.filter(p => alertasProduto(p).length);
     document.getElementById('estoqueAlertas').innerHTML = comAlerta.length ? `
       <div class="card" style="border-left:4px solid #b3261e;margin-bottom:16px">
@@ -2653,6 +2727,9 @@
     { id: 'capilar', label: 'Anamnese Capilar' },
     { id: 'corporal', label: 'Anamnese Corporal' },
     { id: 'facial', label: 'Anamnese Facial' },
+    { id: 'depilacao', label: 'Depilação' },
+    { id: 'sobrancelha', label: 'Sobrancelhas' },
+    { id: 'cilios', label: 'Cílios' },
     { id: 'objetivos', label: 'Objetivos' },
     { id: 'mapa', label: 'Mapa Corporal' },
     { id: 'medidas', label: 'Medidas & Evolução' },
@@ -2771,6 +2848,89 @@
         { titulo: 'Queixa e expectativas', campos: [
           { k: 'queixaPrincipal', t: 'textarea', label: 'Queixa principal' },
           { k: 'expectativas', t: 'textarea', label: 'Expectativas/Objetivos' }
+        ] }
+      ]
+    },
+    depilacao: {
+      prop: 'anamneseDepilacao',
+      titulo: 'anamnese de depilação',
+      secoes: [
+        { titulo: 'Avaliação da pele', campos: [
+          { k: 'tipoPele', t: 'radio', label: 'Tipo de pele:', op: ['Normal', 'Seca', 'Oleosa', 'Mista', 'Sensível'] },
+          { k: 'fototipo', t: 'radio', label: 'Fototipo Fitzpatrick:', op: ['I', 'II', 'III', 'IV', 'V', 'VI'] },
+          { k: 'reacaoAnterior', t: 'radio', label: 'Já fez depilação anteriormente:', op: SIM_NAO },
+          { k: 'metodoAnterior', t: 'check', label: 'Método utilizado anteriormente:', op: ['Cera quente', 'Cera fria', 'Lâmina', 'Laser', 'Creme depilatório', 'Linha/pinça'] },
+          { k: 'reacaoAdversa', t: 'radio', label: 'Já teve reação adversa à depilação:', op: SIM_NAO },
+          { k: 'reacaoDescricao', t: 'textarea', label: 'Descreva a reação (se sim)' }
+        ] },
+        { titulo: 'Contraindicações', campos: [
+          { k: 'usaRetinol', t: 'radio', label: 'Usa retinol, ácidos ou esfoliantes na área:', op: SIM_NAO },
+          { k: 'exposicaoSol', t: 'radio', label: 'Expôs a área ao sol nas últimas 48h:', op: SIM_NAO },
+          { k: 'usaIsotretinoina', t: 'radio', label: 'Faz uso de isotretinoína (Roacutan):', op: SIM_NAO },
+          { k: 'lesaoAtiva', t: 'radio', label: 'Possui lesão ativa, ferida ou inflamação na área:', op: SIM_NAO },
+          { k: 'diabetes', t: 'radio', label: 'Diabetes:', op: SIM_NAO },
+          { k: 'gestante', t: 'radio', label: 'Gestante ou amamentando:', op: SIM_NAO },
+          { k: 'anticoagulante', t: 'radio', label: 'Uso de anticoagulante:', op: SIM_NAO }
+        ] },
+        { titulo: 'Regiões e objetivo', campos: [
+          { k: 'regioesDesejadas', t: 'check', label: 'Regiões a depilar:', op: ['Buço', 'Axilas', 'Virilha completa', 'Virilha meia lua', 'Pernas inteiras', 'Meia perna', 'Braços', 'Costas', 'Abdômen', 'Sobrancelha', 'Rosto completo'] },
+          { k: 'objetivo', t: 'textarea', label: 'Objetivo / Observações' },
+          { k: 'expectativas', t: 'textarea', label: 'Expectativas' }
+        ] }
+      ]
+    },
+    sobrancelha: {
+      prop: 'anamneseSobrancelha',
+      titulo: 'anamnese de sobrancelhas',
+      secoes: [
+        { titulo: 'Avaliação', campos: [
+          { k: 'tipoPele', t: 'radio', label: 'Tipo de pele na região:', op: ['Normal', 'Oleosa', 'Seca', 'Sensível'] },
+          { k: 'fototipo', t: 'radio', label: 'Fototipo Fitzpatrick:', op: ['I', 'II', 'III', 'IV', 'V', 'VI'] },
+          { k: 'modelagemAnterior', t: 'radio', label: 'Já fez modelagem de sobrancelha antes:', op: SIM_NAO },
+          { k: 'metodosAnteriores', t: 'check', label: 'Métodos já utilizados:', op: ['Cera', 'Linha', 'Pinça', 'Henna', 'Micropigmentação', 'Laser'] },
+          { k: 'dermite', t: 'radio', label: 'Dermatite seborreica ou psoríase na região:', op: SIM_NAO },
+          { k: 'queloides', t: 'radio', label: 'Tendência a queloides:', op: SIM_NAO }
+        ] },
+        { titulo: 'Contraindicações', campos: [
+          { k: 'usaRetinol', t: 'radio', label: 'Uso de retinol ou ácidos na região:', op: SIM_NAO },
+          { k: 'lesaoAtiva', t: 'radio', label: 'Lesão ativa, ferida ou foliculite na área:', op: SIM_NAO },
+          { k: 'alergiaCera', t: 'radio', label: 'Alergia a cera ou henna:', op: SIM_NAO },
+          { k: 'usaIsotretinoina', t: 'radio', label: 'Uso de isotretinoína (Roacutan):', op: SIM_NAO }
+        ] },
+        { titulo: 'Preferências e objetivo', campos: [
+          { k: 'formatoDesejado', t: 'radio', label: 'Formato preferido:', op: ['Natural', 'Arqueada', 'Reta', 'Levantada', 'Conforme sugestão da profissional'] },
+          { k: 'servicos', t: 'check', label: 'Serviços desejados:', op: ['Design com pinça', 'Design com cera', 'Design com linha', 'Henna', 'Laminação', 'Micropigmentação'] },
+          { k: 'objetivo', t: 'textarea', label: 'Objetivo / O que deseja melhorar' },
+          { k: 'expectativas', t: 'textarea', label: 'Expectativas' }
+        ] }
+      ]
+    },
+    cilios: {
+      prop: 'anamneseCilios',
+      titulo: 'anamnese de cílios',
+      secoes: [
+        { titulo: 'Avaliação', campos: [
+          { k: 'tipoPele', t: 'radio', label: 'Tipo de pele das pálpebras:', op: ['Normal', 'Oleosa', 'Seca', 'Sensível'] },
+          { k: 'extensaoAnterior', t: 'radio', label: 'Já fez extensão de cílios antes:', op: SIM_NAO },
+          { k: 'tempoSemExtensao', t: 'text', label: 'Há quanto tempo sem extensão (se aplicável)' },
+          { k: 'estadoNaturais', t: 'check', label: 'Estado dos cílios naturais:', op: ['Curtos', 'Longos', 'Finos', 'Grossos', 'Esparsos', 'Densos', 'Caídos'] },
+          { k: 'olhoSensivel', t: 'radio', label: 'Olhos sensíveis ou lacrimejantes:', op: SIM_NAO },
+          { k: 'alergia', t: 'radio', label: 'Alergia a cola de cílios ou látex:', op: SIM_NAO },
+          { k: 'alergiaTeste', t: 'radio', label: 'Deseja fazer teste de alergia antes:', op: SIM_NAO }
+        ] },
+        { titulo: 'Contraindicações', campos: [
+          { k: 'conjuntivite', t: 'radio', label: 'Conjuntivite ou infecção ocular ativa:', op: SIM_NAO },
+          { k: 'quimioterapia', t: 'radio', label: 'Em tratamento de quimioterapia:', op: SIM_NAO },
+          { k: 'alopeciaLocal', t: 'radio', label: 'Alopecia nos cílios (madarose):', op: SIM_NAO },
+          { k: 'usaMascara', t: 'radio', label: 'Usa máscara de cílios à prova d\'água regularmente:', op: SIM_NAO }
+        ] },
+        { titulo: 'Preferências e objetivo', campos: [
+          { k: 'efeitoDesejado', t: 'radio', label: 'Efeito desejado:', op: ['Natural', 'Cat eye', 'Boneca', 'Squirrel', 'Kim K', 'Mega volume'] },
+          { k: 'curvatura', t: 'radio', label: 'Curvatura preferida:', op: ['C', 'CC', 'D', 'DD', 'L', 'Conforme sugestão'] },
+          { k: 'espessura', t: 'radio', label: 'Espessura preferida:', op: ['0.05 (mega volume)', '0.07 (volume)', '0.10 (clássico híbrido)', '0.12 (clássico)', 'Conforme sugestão'] },
+          { k: 'comprimento', t: 'radio', label: 'Comprimento:', op: ['8-10mm (discreto)', '11-12mm (médio)', '13-14mm (marcante)', '15mm+ (dramático)', 'Conforme sugestão'] },
+          { k: 'objetivo', t: 'textarea', label: 'Objetivo / O que deseja' },
+          { k: 'expectativas', t: 'textarea', label: 'Expectativas' }
         ] }
       ]
     },
@@ -5513,6 +5673,8 @@
   }
 
   function iniciar() {
+    // Verificar se é um link de anamnese para cliente preencher
+    if (window.location.search.includes('anamnese=')) { verificarLinkAnamnese(); return; }
     applyLoginBranding();
     if (!state.config.senhaAdmin) { renderSetupForm(); return; }
     const sessaoSalva = load(STORAGE_KEYS.sessao, null);
@@ -5673,7 +5835,123 @@
   
   // ===== TRATAMENTO =====
   const TRAT_STORAGE = 'estetica_tratamentos';
+  const PACOTES_STORAGE = 'estetica_pacotes';
   let state_tratamentos = load(TRAT_STORAGE, []);
+  let state_pacotes = load(PACOTES_STORAGE, []);
+
+  // ---- Pacotes de tratamento ----
+  function pacotesRenderLista() {
+    const el = document.getElementById('tratPacotesLista');
+    if (!el) return;
+    if (!state_pacotes.length) { el.innerHTML = '<div class="empty-msg">Nenhum pacote cadastrado.</div>'; return; }
+    el.innerHTML = state_pacotes.map(p => {
+      const cat = TRAT_CATEGORIAS[p.categoria];
+      return `<div class="trat-hist-item" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px">
+          <div>
+            <strong>${esc(p.nome)}</strong>
+            <span style="font-size:12.5px;color:#6b7280"> · ${esc(cat?.label || p.categoria || '')}${p.sessoes ? ' · '+p.sessoes+' sessões' : ''}${p.frequencia ? ' · '+esc(p.frequencia) : ''}</span>
+            ${p.valor ? `<span style="font-size:12.5px;color:var(--cor-secundaria);font-weight:600"> · R$ ${parseFloat(p.valor).toFixed(2).replace('.',',')}</span>` : ''}
+          </div>
+          <div style="display:flex;gap:6px">
+            <button type="button" class="btn secondary small" data-edit-pac="${p.id}">Editar</button>
+            <button type="button" class="btn danger small" data-del-pac="${p.id}">Excluir</button>
+          </div>
+        </div>
+        ${p.objetivo ? `<div style="font-size:12.5px;color:#4b5162;margin-top:4px">${esc(p.objetivo)}</div>` : ''}
+        ${p.procedimentos ? `<div style="font-size:12px;color:#6b7280;margin-top:3px">📋 ${esc(p.procedimentos)}</div>` : ''}
+      </div>`;
+    }).join('');
+    el.querySelectorAll('[data-edit-pac]').forEach(btn => {
+      const p = state_pacotes.find(x => x.id === btn.dataset.editPac);
+      if (!p) return;
+      btn.addEventListener('click', () => {
+        document.getElementById('pacoteId').value = p.id;
+        document.getElementById('pacoteNome').value = p.nome || '';
+        document.getElementById('pacoteCategoria').value = p.categoria || '';
+        document.getElementById('pacoteSessoes').value = p.sessoes || '';
+        document.getElementById('pacoteFrequencia').value = p.frequencia || '';
+        document.getElementById('pacoteValor').value = p.valor || '';
+        document.getElementById('pacoteObjetivo').value = p.objetivo || '';
+        document.getElementById('pacoteProcedimentos').value = p.procedimentos || '';
+        document.getElementById('tratPacoteFormTitulo').textContent = 'Editar pacote';
+        document.getElementById('tratPacoteForm').style.display = 'block';
+        document.getElementById('tratPacoteForm').scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+    el.querySelectorAll('[data-del-pac]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!confirm('Excluir este pacote?')) return;
+        state_pacotes = state_pacotes.filter(x => x.id !== btn.dataset.delPac);
+        save(PACOTES_STORAGE, state_pacotes);
+        pacotesRenderLista();
+        pacotesPopularSelect();
+      });
+    });
+  }
+
+  function pacotesPopularSelect() {
+    const sel = document.getElementById('tratPacoteSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— Selecionar pacote —</option>' +
+      state_pacotes.map(p => `<option value="${p.id}">${esc(p.nome)}${p.categoria ? ' ('+( TRAT_CATEGORIAS[p.categoria]?.label || p.categoria)+')' : ''}</option>`).join('');
+  }
+
+  // ---- Link de anamnese para o cliente preencher ----
+  function gerarLinkAnamnese(clienteId, tipoAnamnese) {
+    const token = btoa(JSON.stringify({ cid: clienteId, tipo: tipoAnamnese, ts: Date.now() }));
+    const base = window.location.href.split('?')[0].replace('#','');
+    return `${base}?anamnese=${encodeURIComponent(token)}`;
+  }
+
+  function verificarLinkAnamnese() {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('anamnese');
+    if (!token) return;
+    try {
+      const dados = JSON.parse(atob(decodeURIComponent(token)));
+      const c = state.clientes.find(x => x.id === dados.cid);
+      if (!c) { document.body.innerHTML = '<div style="padding:40px;text-align:center"><h2>Link inválido</h2><p>Este link não corresponde a nenhum cliente cadastrado.</p></div>'; return; }
+      const sc = ANAMNESES[dados.tipo];
+      if (!sc) return;
+      // Renderizar formulário de anamnese público
+      document.body.innerHTML = `
+        <div style="max-width:680px;margin:0 auto;padding:30px 20px;font-family:system-ui,sans-serif">
+          <div style="text-align:center;margin-bottom:28px">
+            ${state.personalizacao?.logoUrl ? `<img src="${state.personalizacao.logoUrl}" style="height:60px;margin-bottom:12px"><br>` : ''}
+            <h2 style="color:#0d1b3e">${esc(state.personalizacao?.nome || 'Clínica')}</h2>
+            <p style="color:#6b7280">Ficha de ${sc.titulo} — ${esc(c.nome)}</p>
+          </div>
+          <form id="formAnamnesePublico" style="background:#fff;border:1px solid #e3e5ec;border-radius:12px;padding:24px">
+            ${htmlSecoesAnamnese(sc.secoes, c[sc.prop] || {})}
+            <div style="margin-top:20px;padding-top:16px;border-top:1px solid #e3e5ec">
+              <label style="display:flex;align-items:flex-start;gap:10px;font-size:13.5px;cursor:pointer">
+                <input type="checkbox" id="aceiteTermos" required style="margin-top:3px">
+                <span>Declaro que as informações acima são verídicas e autorizo a realização dos procedimentos conforme orientação profissional.</span>
+              </label>
+            </div>
+            <button type="submit" style="margin-top:16px;width:100%;padding:13px;background:#0d1b3e;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer">✅ Confirmar e assinar ficha</button>
+          </form>
+          <div id="msgSucesso" style="display:none;text-align:center;padding:40px 20px;background:#fff;border:1px solid #e3e5ec;border-radius:12px;margin-top:20px">
+            <div style="font-size:48px;margin-bottom:12px">✅</div>
+            <h3 style="color:#1a7d3a">Ficha enviada com sucesso!</h3>
+            <p style="color:#6b7280">Obrigada, ${esc(c.nome)}. Sua ficha foi recebida.</p>
+          </div>
+        </div>`;
+      ligarAnamnese(document.getElementById('formAnamnesePublico'));
+      document.getElementById('formAnamnesePublico').addEventListener('submit', e => {
+        e.preventDefault();
+        if (!document.getElementById('aceiteTermos').checked) { alert('Confirme o aceite antes de enviar.'); return; }
+        const novaAnamnese = lerAnamnese(document.getElementById('formAnamnesePublico'), sc.secoes);
+        novaAnamnese._assinadoEm = new Date().toISOString();
+        novaAnamnese._assinadoPor = c.nome;
+        c[sc.prop] = Object.assign({}, c[sc.prop], novaAnamnese);
+        save(STORAGE_KEYS.clientes, state.clientes);
+        document.getElementById('formAnamnesePublico').style.display = 'none';
+        document.getElementById('msgSucesso').style.display = 'block';
+      });
+    } catch(err) { console.error(err); }
+  }
 
   const TRAT_CATEGORIAS = {
     estetica: {
@@ -5962,6 +6240,9 @@
     if (c.anamneseCorporal && Object.keys(c.anamneseCorporal).length) badges.push({ tipo: 'corporal', label: '💪 Corporal' });
     if (c.anamneseFacial && Object.keys(c.anamneseFacial).length) badges.push({ tipo: 'facial', label: '✨ Facial' });
     if (c.anamneseCapilar && Object.keys(c.anamneseCapilar).length) badges.push({ tipo: 'capilar', label: '💆 Capilar' });
+    if (c.anamneseDepilacao && Object.keys(c.anamneseDepilacao).length) badges.push({ tipo: 'depilacao', label: '🌊 Depilação' });
+    if (c.anamneseSobrancelha && Object.keys(c.anamneseSobrancelha).length) badges.push({ tipo: 'sobrancelha', label: '👁️ Sobrancelha' });
+    if (c.anamneseCilios && Object.keys(c.anamneseCilios).length) badges.push({ tipo: 'cilios', label: '🌿 Cílios' });
 
     document.getElementById('tratAnamneseBadges').innerHTML = badges.length
       ? badges.map(b => `<button type="button" class="trat-anamnese-badge" data-anam="${b.tipo}">${b.label}</button>`).join('')
@@ -5983,13 +6264,19 @@
   function tratAbrirAnamnese(tipo) {
     const c = state.clientes.find(x => x.id === tratClienteId);
     if (!c) return;
-    const dados = tipo === 'corporal' ? c.anamneseCorporal : tipo === 'facial' ? c.anamneseFacial : c.anamneseCapilar;
-    const labels = { corporal: 'Anamnese Corporal', facial: 'Anamnese Facial', capilar: 'Anamnese Capilar' };
-    document.getElementById('tratAnamneseTitulo').textContent = labels[tipo] || 'Anamnese';
-    const conteudo = Object.entries(dados || {}).map(([k,v]) =>
-      `<div class="list-row"><span style="color:#4b5162;font-size:12.5px">${esc(k)}</span><span style="font-weight:600">${esc(String(v))}</span></div>`
-    ).join('') || '<div class="empty-msg">Anamnese vazia.</div>';
-    document.getElementById('tratAnamneseConteudo').innerHTML = conteudo;
+    const sc = ANAMNESES[tipo];
+    const dados = sc ? c[sc.prop] : {};
+    const titulosLabels = { corporal: 'Anamnese Corporal', facial: 'Anamnese Facial', capilar: 'Anamnese Capilar', depilacao: 'Anamnese de Depilação', sobrancelha: 'Anamnese de Sobrancelhas', cilios: 'Anamnese de Cílios' };
+    document.getElementById('tratAnamneseTitulo').textContent = titulosLabels[tipo] || 'Anamnese';
+    // Montar mapa de campo→label a partir das seções do ANAMNESE
+    const mapaLabels = {};
+    if (sc) sc.secoes.forEach(s => s.campos.forEach(f => { if (f.k && f.label) mapaLabels[f.k] = f.label; }));
+    const linhas = Object.entries(dados || {}).filter(([,v]) => v !== '' && v !== null && (!Array.isArray(v) || v.length)).map(([k,v]) => {
+      const label = mapaLabels[k] || k;
+      const valor = Array.isArray(v) ? v.join(', ') : String(v);
+      return `<div class="list-row"><span style="color:#4b5162;font-size:12.5px;flex:1">${esc(label)}</span><span style="font-weight:600;text-align:right;max-width:55%">${esc(valor)}</span></div>`;
+    });
+    document.getElementById('tratAnamneseConteudo').innerHTML = linhas.length ? linhas.join('') : '<div class="empty-msg">Anamnese vazia.</div>';
     document.getElementById('tratAnamneseModal').classList.add('open');
   }
 
@@ -6179,6 +6466,101 @@
       document.querySelectorAll('.trat-cat-btn').forEach(b => b.classList.remove('ativa'));
     });
 
+    // Botão enviar link de anamnese ao cliente
+    document.getElementById('btnEnviarLinkAnamnese')?.addEventListener('click', () => {
+      const c = state.clientes.find(x => x.id === tratClienteId);
+      if (!c) return;
+      const tiposAnamnese = [
+        { key: 'corporal', label: 'Corporal' },
+        { key: 'facial', label: 'Facial' },
+        { key: 'depilacao', label: 'Depilação' },
+        { key: 'sobrancelha', label: 'Sobrancelhas' },
+        { key: 'cilios', label: 'Cílios' },
+        { key: 'capilar', label: 'Capilar' }
+      ];
+      const sel = prompt('Qual ficha enviar?\n' + tiposAnamnese.map((t,i) => `${i+1}. ${t.label}`).join('\n') + '\n\nDigite o número:');
+      const idx = parseInt(sel) - 1;
+      if (idx < 0 || idx >= tiposAnamnese.length) return;
+      const tipo = tiposAnamnese[idx].key;
+      const link = gerarLinkAnamnese(c.id, tipo);
+      if (c.telefone) {
+        const msg = `Olá ${c.nome}! 😊 Segue o link para você preencher sua ficha de ${tiposAnamnese[idx].label.toLowerCase()}:\n\n${link}`;
+        window.open(`https://wa.me/55${c.telefone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
+      } else {
+        prompt('Copie o link abaixo e envie para a cliente:', link);
+      }
+    });
+
+    // Pacotes — botão novo
+    document.getElementById('btnNovoPacote')?.addEventListener('click', () => {
+      document.getElementById('pacoteId').value = '';
+      document.getElementById('pacoteNome').value = '';
+      document.getElementById('pacoteCategoria').value = '';
+      document.getElementById('pacoteSessoes').value = '';
+      document.getElementById('pacoteFrequencia').value = '';
+      document.getElementById('pacoteValor').value = '';
+      document.getElementById('pacoteObjetivo').value = '';
+      document.getElementById('pacoteProcedimentos').value = '';
+      document.getElementById('tratPacoteFormTitulo').textContent = 'Novo pacote';
+      document.getElementById('tratPacoteForm').style.display = 'block';
+      document.getElementById('tratPacoteForm').scrollIntoView({ behavior: 'smooth' });
+    });
+    document.getElementById('btnCancelarPacote')?.addEventListener('click', () => {
+      document.getElementById('tratPacoteForm').style.display = 'none';
+    });
+    document.getElementById('btnSalvarPacote')?.addEventListener('click', () => {
+      const nome = document.getElementById('pacoteNome').value.trim();
+      if (!nome) { showToast('Informe o nome do pacote.'); return; }
+      const id = document.getElementById('pacoteId').value;
+      const dados = {
+        nome,
+        categoria: document.getElementById('pacoteCategoria').value,
+        sessoes: document.getElementById('pacoteSessoes').value,
+        frequencia: document.getElementById('pacoteFrequencia').value,
+        valor: document.getElementById('pacoteValor').value,
+        objetivo: document.getElementById('pacoteObjetivo').value.trim(),
+        procedimentos: document.getElementById('pacoteProcedimentos').value.trim()
+      };
+      if (id) {
+        Object.assign(state_pacotes.find(x => x.id === id), dados);
+      } else {
+        state_pacotes.push(Object.assign({ id: uid() }, dados));
+      }
+      save(PACOTES_STORAGE, state_pacotes);
+      document.getElementById('tratPacoteForm').style.display = 'none';
+      pacotesRenderLista();
+      pacotesPopularSelect();
+      showToast('Pacote salvo!');
+    });
+
+    // Aplicar pacote no formulário de novo tratamento
+    document.getElementById('btnAplicarPacote')?.addEventListener('click', () => {
+      const pid = document.getElementById('tratPacoteSelect').value;
+      if (!pid) return;
+      const p = state_pacotes.find(x => x.id === pid);
+      if (!p) return;
+      // Selecionar categoria
+      if (p.categoria) {
+        tratCatAtiva = p.categoria;
+        tratRegioesSelected = [];
+        tratProcedimentos = [{ servicoId: '', qtd: 1 }];
+        tratInsumos = [];
+        document.querySelectorAll('.trat-cat-btn').forEach(b => b.classList.toggle('ativa', b.dataset.cat === p.categoria));
+        document.getElementById('tratConteudo').style.display = 'block';
+        tratRenderMapa(); tratRenderProcedimentos(); tratRenderInsumos();
+        const sel = document.getElementById('tratProfissional');
+        if (sel) sel.innerHTML = '<option value="">Qualquer disponível</option>' + state.profissionais.map(pr => `<option value="${pr.id}">${esc(pr.nome)}</option>`).join('');
+      }
+      if (p.sessoes) document.getElementById('tratSessoes').value = p.sessoes;
+      if (p.frequencia) document.getElementById('tratFrequencia').value = p.frequencia;
+      if (p.objetivo) document.getElementById('tratObjetivo').value = p.objetivo;
+      if (p.valor) document.getElementById('tratValor').value = p.valor;
+      showToast(`Pacote "${p.nome}" aplicado!`);
+      tratAtualizarMargem();
+    });
+
+    pacotesPopularSelect();
+
     // Tabs
     document.getElementById('tratTabs')?.addEventListener('click', e => {
       const aba = e.target.dataset.tratAba;
@@ -6188,6 +6570,7 @@
       e.target.classList.add('active');
       document.getElementById('tratAba-'+aba)?.classList.add('active');
       if (aba === 'historico') tratRenderHistorico();
+      if (aba === 'pacotes') { pacotesRenderLista(); pacotesPopularSelect(); }
     });
 
     // Categorias
