@@ -300,6 +300,74 @@
   .bk-scroll { overflow-x: auto; }
   .bk-erro { margin-top: 12px; padding: 10px 12px; border-radius: 8px; background: #fdeaea; color: #8a1a14; font-size: 13px; font-weight: 600; }
 
+  /* ===== TRATAMENTO ===== */
+  .trat-categorias { display:flex; flex-wrap:wrap; gap:10px; }
+  .trat-cat-btn {
+    padding:10px 18px; border-radius:10px; border:2px solid var(--cor-borda);
+    background:#fff; color:var(--cor-texto); font-size:13.5px; font-weight:600;
+    cursor:pointer; transition:all .15s;
+  }
+  .trat-cat-btn:hover { border-color:var(--cor-secundaria); background:#fffbf0; }
+  .trat-cat-btn.ativa { border-color:var(--cor-secundaria); background:var(--cor-secundaria); color:var(--cor-primaria); }
+  .trat-aba { display:none; }
+  .trat-aba.active { display:block; }
+  .trat-anamnese-badge {
+    display:inline-flex; align-items:center; gap:5px; background:#e8f4e8;
+    color:#1a5c2a; border-radius:20px; padding:4px 11px; font-size:12px;
+    font-weight:600; cursor:pointer; border:none; transition:background .15s;
+    margin:3px;
+  }
+  .trat-anamnese-badge:hover { background:#c8e6c9; }
+  .trat-busca-resultado {
+    padding:10px 14px; border-radius:8px; border:1px solid var(--cor-borda);
+    cursor:pointer; margin-bottom:6px; transition:background .15s;
+    display:flex; gap:12px; align-items:center;
+  }
+  .trat-busca-resultado:hover { background:#f0f4ff; }
+  .trat-busca-id { background:var(--cor-secundaria); color:var(--cor-primaria); font-weight:700; border-radius:6px; padding:2px 8px; font-size:12px; }
+  .trat-procedimento-row, .trat-insumo-row {
+    display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;
+  }
+  .trat-procedimento-row select, .trat-insumo-row select { flex:1; min-width:180px; }
+  .trat-procedimento-row input, .trat-insumo-row input { width:80px; }
+  .trat-remove-btn { background:none; border:none; color:#b3261e; font-size:16px; cursor:pointer; padding:0 4px; }
+  /* Mapa corporal SVG */
+  .trat-mapa-wrap { display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
+  .trat-mapa-svg-area { flex-shrink:0; }
+  .trat-mapa-svg-area svg { width:110px; height:auto; }
+  .trat-mapa-regioes { display:flex; flex-wrap:wrap; gap:8px; }
+  .trat-regiao-btn {
+    padding:7px 14px; border-radius:8px; border:1px solid var(--cor-borda);
+    background:#fff; font-size:13px; cursor:pointer; transition:all .15s;
+  }
+  .trat-regiao-btn.sel { background:var(--cor-primaria); color:#fff; border-color:var(--cor-primaria); }
+  /* Modal anamnese */
+  .trat-modal-overlay {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+    z-index:1000; align-items:center; justify-content:center;
+  }
+  .trat-modal-overlay.open { display:flex; }
+  .trat-modal {
+    background:#fff; border-radius:var(--radius); max-width:600px; width:94vw;
+    max-height:85vh; overflow-y:auto; padding:28px;
+  }
+  .trat-modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+  .trat-modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:#6b7280; }
+  /* Histórico */
+  .trat-hist-item { border:1px solid var(--cor-borda); border-radius:10px; padding:14px 16px; margin-bottom:12px; }
+  .trat-hist-status-aceito { color:#1a7d3a; font-weight:700; }
+  .trat-hist-status-recusado { color:#b3261e; font-weight:700; }
+  .trat-hist-status-pendente { color:#c9701a; font-weight:700; }
+  /* PDF preview */
+  @media print {
+    body > * { display:none !important; }
+    #tratPdfArea { display:block !important; }
+  }
+  #tratPdfArea {
+    display:none; font-family:'Segoe UI',Arial,sans-serif; padding:32px;
+    max-width:700px; margin:0 auto; color:#1f2430;
+  }
+
   /* ===== IA & PROMOÇÕES ===== */
   .ia-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   @media(max-width:700px){ .ia-grid { grid-template-columns: 1fr; } }
@@ -490,16 +558,16 @@
       <button data-page="dashboard" class="admin-only"><span class="icon">📊</span><span class="menu-label">Dashboard</span></button>
       <button data-page="servicos" class="admin-only"><span class="icon">💆</span><span class="menu-label">Serviços</span></button>
       <button data-page="profissionais" class="admin-only"><span class="icon">🧑‍⚕️</span><span class="menu-label">Profissionais</span></button>
-      <button data-page="protocolos" class="admin-only"><span class="icon">📋</span><span class="menu-label">Protocolos</span></button>
       <button data-page="estoque" class="admin-only"><span class="icon">📦</span><span class="menu-label">Estoque</span></button>
       <button data-page="agendamentos"><span class="icon">📅</span><span class="menu-label">Agendamentos</span></button>
       <button data-page="clientes"><span class="icon">👥</span><span class="menu-label">Clientes</span></button>
+      <button data-page="tratamento" class="admin-only"><span class="icon">🩺</span><span class="menu-label">Tratamento</span></button>
       <button data-page="retencao" class="admin-only"><span class="icon">🔁</span><span class="menu-label">Retenção</span></button>
       <button data-page="resultados" class="admin-only"><span class="icon">📈</span><span class="menu-label">Resultados</span></button>
       <button data-page="galeria"><span class="icon">📸</span><span class="menu-label">Galeria Antes/Depois</span></button>
       <button data-page="personalizacao" class="admin-only"><span class="icon">🎨</span><span class="menu-label">Personalização</span></button>
       <button data-page="financeiro" class="admin-only"><span class="icon">💰</span><span class="menu-label">Financeiro</span></button>
-      <button data-page="ia" class="admin-only"><span class="icon">🤖</span><span class="menu-label">IA &amp; Promoções</span></button>
+      <button data-page="ia" class="admin-only ia-only" style="display:none"><span class="icon">🤖</span><span class="menu-label">IA &amp; Promoções</span></button>
     </nav>
     <div class="sidebar-footer" id="sidebarFooter"></div>
   </aside>
@@ -612,6 +680,173 @@
           </form>
         </div>
         <div class="items-grid" id="protocolosGrid"></div>
+      </section>
+
+      <!-- TRATAMENTO -->
+      <section class="page admin-only" id="page-tratamento">
+        <h2 class="page-title">Tratamento</h2>
+        <p class="page-sub">Monte orçamentos, protocolos e acompanhe os tratamentos das clientes</p>
+
+        <!-- Busca de cliente -->
+        <div class="card" id="trat-busca-card">
+          <h3>Buscar cliente</h3>
+          <div class="form-grid">
+            <div class="field">
+              <label>ID do cliente</label>
+              <input type="number" id="tratBuscaId" placeholder="Ex: 1, 2, 3..." min="1">
+            </div>
+            <div class="field">
+              <label>CPF</label>
+              <input type="text" id="tratBuscaCpf" placeholder="000.000.000-00" maxlength="14">
+            </div>
+            <div class="field">
+              <label>Nome</label>
+              <input type="text" id="tratBuscaNome" placeholder="Buscar por nome...">
+            </div>
+          </div>
+          <div id="tratResultadoBusca" style="margin-top:10px"></div>
+        </div>
+
+        <!-- Card da cliente selecionada -->
+        <div id="tratClienteCard" style="display:none">
+          <div class="card" style="margin-top:16px;border-left:4px solid var(--cor-secundaria)">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+              <div>
+                <div style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Cliente selecionada</div>
+                <div style="font-size:19px;font-weight:700;color:var(--cor-primaria);margin-top:3px" id="tratClienteNome"></div>
+                <div style="font-size:13px;color:#6b7280;margin-top:2px" id="tratClienteInfo"></div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <div id="tratAnamneseBadges"></div>
+                <button type="button" class="btn secondary small" id="btnTratLimpar">↩ Trocar cliente</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabs de ação -->
+          <div class="ficha-tabs" id="tratTabs" style="margin-top:16px">
+            <button type="button" class="ficha-tab-btn active" data-trat-aba="novo">+ Novo tratamento</button>
+            <button type="button" class="ficha-tab-btn" data-trat-aba="historico">Histórico</button>
+          </div>
+
+          <!-- ABA: Novo tratamento -->
+          <div class="trat-aba active" id="tratAba-novo">
+
+            <!-- Categoria -->
+            <div class="card" style="margin-top:14px">
+              <h3>Categoria do tratamento</h3>
+              <div class="trat-categorias" id="tratCategorias">
+                <button type="button" class="trat-cat-btn" data-cat="estetica">💆 Estética</button>
+                <button type="button" class="trat-cat-btn" data-cat="harmonizacao_facial">✨ Harmonização Facial</button>
+                <button type="button" class="trat-cat-btn" data-cat="harmonizacao_corporal">🏃 Harmonização Corporal</button>
+                <button type="button" class="trat-cat-btn" data-cat="sobrancelha">👁️ Sobrancelhas</button>
+                <button type="button" class="trat-cat-btn" data-cat="cilios">🌿 Cílios</button>
+                <button type="button" class="trat-cat-btn" data-cat="depilacao">🌊 Depilação</button>
+              </div>
+            </div>
+
+            <!-- Conteúdo que aparece após escolher categoria -->
+            <div id="tratConteudo" style="display:none">
+
+              <!-- Regiões do corpo (mapa visual) -->
+              <div class="card" style="margin-top:14px" id="tratMapaCard">
+                <h3 id="tratMapaTitulo">Regiões tratadas</h3>
+                <div id="tratMapaConteudo"></div>
+              </div>
+
+              <!-- Procedimentos / Serviços -->
+              <div class="card" style="margin-top:14px">
+                <h3>Procedimentos</h3>
+                <div id="tratProcedimentosList"></div>
+                <button type="button" class="btn secondary small" id="btnAddProcedimento" style="margin-top:10px">+ Adicionar procedimento</button>
+              </div>
+
+              <!-- Insumos do estoque -->
+              <div class="card" style="margin-top:14px">
+                <h3>Produtos que serão usados <span style="font-size:12px;color:#6b7280;font-weight:400">(visível só para você)</span></h3>
+                <div id="tratInsumosList"></div>
+                <button type="button" class="btn secondary small" id="btnAddInsumo" style="margin-top:10px">+ Adicionar produto do estoque</button>
+                <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--cor-borda);font-size:13px;color:#6b7280">
+                  Custo total dos insumos: <strong id="tratCustoInsumos">R$ 0,00</strong>
+                </div>
+              </div>
+
+              <!-- Protocolo de sessões -->
+              <div class="card" style="margin-top:14px">
+                <h3>Protocolo de sessões</h3>
+                <div class="form-grid">
+                  <div class="field">
+                    <label>Número de sessões</label>
+                    <input type="number" id="tratSessoes" min="1" step="1" placeholder="Ex: 10">
+                  </div>
+                  <div class="field">
+                    <label>Frequência</label>
+                    <select id="tratFrequencia">
+                      <option value="">Selecione</option>
+                      <option value="1x por semana">1x por semana</option>
+                      <option value="2x por semana">2x por semana</option>
+                      <option value="3x por semana">3x por semana</option>
+                      <option value="Quinzenal">Quinzenal</option>
+                      <option value="Mensal">Mensal</option>
+                      <option value="Sessão única">Sessão única</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>Profissional responsável</label>
+                    <select id="tratProfissional">
+                      <option value="">Qualquer disponível</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Objetivo / Observações</label>
+                  <textarea id="tratObjetivo" placeholder="Ex: Reduzir medidas no abdômen, melhorar flacidez..."></textarea>
+                </div>
+              </div>
+
+              <!-- Valor do orçamento -->
+              <div class="card" style="margin-top:14px">
+                <h3>Valor do tratamento</h3>
+                <div class="form-grid">
+                  <div class="field">
+                    <label>Valor total (R$) <span style="font-size:11px;color:#6b7280">— aparece no orçamento do cliente</span></label>
+                    <input type="number" id="tratValor" min="0" step="0.01" placeholder="0,00">
+                  </div>
+                  <div class="field">
+                    <label>Forma de pagamento</label>
+                    <select id="tratFormaPag">
+                      <option value="">A definir</option>
+                      <option value="dinheiro">Dinheiro</option>
+                      <option value="pix">PIX</option>
+                      <option value="debito">Débito</option>
+                      <option value="credito1x">Crédito 1x</option>
+                      <option value="credito2a6">Crédito 2 a 6x</option>
+                      <option value="credito7a12">Crédito 7 a 12x</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="tratMargemInfo" style="font-size:12.5px;color:#6b7280;margin-top:6px"></div>
+              </div>
+
+              <!-- Botões de ação -->
+              <div class="card" style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+                <button type="button" class="btn" id="btnTratGerarPdf">📄 Gerar orçamento PDF</button>
+                <button type="button" class="btn" style="background:#1a7d3a" id="btnTratAceito">✅ Cliente aceitou — lançar no financeiro</button>
+                <button type="button" class="btn danger" id="btnTratRecusado">❌ Cliente recusou</button>
+              </div>
+
+            </div><!-- /tratConteudo -->
+          </div><!-- /ABA novo -->
+
+          <!-- ABA: Histórico -->
+          <div class="trat-aba" id="tratAba-historico">
+            <div class="card" style="margin-top:14px">
+              <h3>Histórico de tratamentos</h3>
+              <div id="tratHistoricoLista"></div>
+            </div>
+          </div>
+
+        </div><!-- /tratClienteCard -->
       </section>
 
       <!-- ESTOQUE -->
@@ -1245,6 +1480,20 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- Modal visualizar anamnese -->
+<div class="trat-modal-overlay" id="tratAnamneseModal">
+  <div class="trat-modal">
+    <div class="trat-modal-header">
+      <strong id="tratAnamneseTitulo">Anamnese</strong>
+      <button class="trat-modal-close" id="btnFecharAnamneseModal">✕</button>
+    </div>
+    <div id="tratAnamneseConteudo"></div>
+  </div>
+</div>
+
+<!-- Área de impressão do orçamento -->
+<div id="tratPdfArea"></div>
+
 <script>
 (function () {
   "use strict";
@@ -1307,7 +1556,19 @@
     { nome: 'Limpeza de Pele', preco: 130, duracao: 60 },
     { nome: 'Peeling Químico', preco: 150, duracao: 45 },
     { nome: 'Massagem Modeladora', preco: 120, duracao: 60 },
-    { nome: 'Criolipólise', preco: 250, duracao: 120 }
+    { nome: 'Criolipólise', preco: 250, duracao: 120 },
+    { nome: 'Depilação a Cera', preco: 80, duracao: 45 },
+    { nome: 'Depilação a Laser', preco: 200, duracao: 60 },
+    { nome: 'Design de Sobrancelha', preco: 60, duracao: 30 },
+    { nome: 'Extensão de Cílios Fio a Fio', preco: 180, duracao: 120 },
+    { nome: 'Manutenção de Cílios', preco: 100, duracao: 60 },
+    { nome: 'Harmonização Corporal — Abdômen', preco: 350, duracao: 90 },
+    { nome: 'Harmonização Corporal — Glúteos', preco: 400, duracao: 90 },
+    { nome: 'Harmonização Corporal — Coxas', preco: 350, duracao: 90 },
+    { nome: 'Harmonização Corporal — Braços', preco: 300, duracao: 60 },
+    { nome: 'Harmonização Corporal — Flancos', preco: 300, duracao: 60 },
+    { nome: 'Harmonização Corporal — Papada', preco: 350, duracao: 45 },
+    { nome: 'Harmonização Corporal — Corpo Completo', preco: 900, duracao: 180 }
   ];
 
   const SEGMENTOS_PROTOCOLO = ['Corporal', 'Facial', 'Capilar'];
@@ -1355,7 +1616,7 @@
     { chave: 'peso', label: 'Peso (kg)' }
   ];
 
-  const ADMIN_ONLY_PAGES = ['dashboard', 'servicos', 'profissionais', 'protocolos', 'estoque', 'retencao', 'resultados', 'personalizacao', 'financeiro'];
+  const ADMIN_ONLY_PAGES = ['dashboard', 'servicos', 'profissionais', 'protocolos', 'estoque', 'retencao', 'resultados', 'personalizacao', 'financeiro', 'tratamento'];
   const TAXAS_PADRAO = { debito: 0, credito1x: 0, credito2a6: 0, credito7a12: 0, outros: [] };
 
   function load(key, fallback) {
@@ -1568,6 +1829,7 @@
     if (pageId === 'galeria') renderGaleria();
     if (pageId === 'profissionais') renderProfissionais();
     if (pageId === 'protocolos') renderProtocolos();
+    if (pageId === 'tratamento') initTratamento();
     if (pageId === 'estoque') renderEstoque();
     if (pageId === 'retencao') renderRetencao();
     if (pageId === 'resultados') renderPaginaResultados();
@@ -2200,7 +2462,7 @@
     { k: 'telefone', label: 'WhatsApp', t: 'tel', ph: '(11) 99999-9999' },
     { k: 'idade', label: 'Idade', t: 'number' },
     { k: 'nascimento', label: 'Data de nascimento', t: 'date' },
-    { k: 'cpf', label: 'CPF', t: 'text', ph: '000.000.000-00' },
+    { k: 'cpf', label: 'CPF', t: 'text', ph: '000.000.000-00', req: true },
     { k: 'profissao', label: 'Profissão', t: 'text' },
     { k: 'email', label: 'E-mail', t: 'email' },
     { k: 'genero', label: 'Gênero', t: 'select', op: ['Feminino', 'Masculino', 'Outro', 'Prefiro não informar'] },
@@ -2344,7 +2606,8 @@
     if (id) {
       Object.assign(state.clientes.find(c => c.id === id), dados);
     } else {
-      state.clientes.push(Object.assign({ id: uid(), criadoEm: todayISO(), dataAvaliacao: todayISO(), statusCliente: statusVazio() }, dados, fichaVaziaCliente()));
+      const proximoClienteId = state.clientes.length > 0 ? Math.max(...state.clientes.map(c => c.clienteId || 0)) + 1 : 1;
+      state.clientes.push(Object.assign({ id: uid(), clienteId: proximoClienteId, criadoEm: todayISO(), dataAvaliacao: todayISO(), statusCliente: statusVazio() }, dados, fichaVaziaCliente()));
     }
     save(STORAGE_KEYS.clientes, state.clientes);
     modalCliente.classList.remove('open');
@@ -2365,7 +2628,7 @@
     const filtrados = base.filter(c => c.nome.toLowerCase().includes(busca) && (!filtroStatus || c.statusCliente.valor === filtroStatus));
     lista.innerHTML = filtrados.length ? filtrados.map(c => `
       <div class="cliente-list-item ${c.id === clienteSelecionadoId ? 'selected' : ''}" data-cliente="${c.id}">
-        <span title="${STATUS_CLIENTE[c.statusCliente.valor].label}">${STATUS_CLIENTE[c.statusCliente.valor].emoji} ${c.nome}</span><span class="sub">${c.telefone || ''}</span>
+        <span title="${STATUS_CLIENTE[c.statusCliente.valor].label}">${STATUS_CLIENTE[c.statusCliente.valor].emoji} ${c.nome}${c.clienteId ? ` <span style="font-size:11px;opacity:.6">#${String(c.clienteId).padStart(3,'0')}</span>` : ''}</span><span class="sub">${c.telefone || ''}</span>
       </div>
     `).join('') : '<div class="empty-msg">Nenhuma cliente encontrada.</div>';
   }
@@ -2407,8 +2670,8 @@
     box.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:10px">
         <div>
-          <h3 style="margin-bottom:4px">${c.nome} ${c.idade ? `· ${c.idade} anos` : ''}</h3>
-          <div style="font-size:13px;color:#6b7280">${c.telefone || 'sem telefone'} ${c.email ? '· ' + c.email : ''}</div>
+          <h3 style="margin-bottom:4px">${c.nome} ${c.idade ? `· ${c.idade} anos` : ''} ${c.clienteId ? `<span style="font-size:13px;font-weight:400;color:var(--cor-secundaria)">#${String(c.clienteId).padStart(3,'0')}</span>` : ''}</h3>
+          <div style="font-size:13px;color:#6b7280">${c.cpf ? 'CPF: ' + c.cpf + ' · ' : ''}${c.telefone || 'sem telefone'} ${c.email ? '· ' + c.email : ''}</div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn small" id="btnVerEvolucao">📈 Ver evolução</button>
@@ -5408,6 +5671,584 @@
   }
 
   
+  // ===== TRATAMENTO =====
+  const TRAT_STORAGE = 'estetica_tratamentos';
+  let state_tratamentos = load(TRAT_STORAGE, []);
+
+  const TRAT_CATEGORIAS = {
+    estetica: {
+      label: 'Estética',
+      regioes: ['Rosto completo', 'Testa', 'Bochechas', 'Queixo', 'Pescoço', 'Abdômen', 'Flancos', 'Culote', 'Bumbum', 'Coxas', 'Braços', 'Costas', 'Corpo completo'],
+      mapa: 'corporal_facial'
+    },
+    harmonizacao_facial: {
+      label: 'Harmonização Facial',
+      regioes: ['Rosto completo', 'Testa', 'Olheiras', 'Bochechas', 'Lábios', 'Queixo', 'Papada', 'Pescoço', 'Sobrancelhas'],
+      mapa: 'facial'
+    },
+    harmonizacao_corporal: {
+      label: 'Harmonização Corporal',
+      regioes: ['Abdômen', 'Flancos', 'Culote', 'Bumbum', 'Coxas', 'Joelhos', 'Braços', 'Costas', 'Corpo completo'],
+      mapa: 'corporal'
+    },
+    sobrancelha: {
+      label: 'Sobrancelhas',
+      regioes: ['Sobrancelha direita', 'Sobrancelha esquerda', 'Ambas as sobrancelhas'],
+      mapa: 'facial'
+    },
+    cilios: {
+      label: 'Cílios',
+      regioes: ['Olho direito', 'Olho esquerdo', 'Ambos os olhos'],
+      mapa: 'facial'
+    },
+    depilacao: {
+      label: 'Depilação',
+      regioes: ['Buço', 'Axilas', 'Braços', 'Meia perna', 'Perna inteira', 'Virilha', 'Sobrancelha', 'Buço + Sobrancelha', 'Corpo completo'],
+      mapa: 'corporal'
+    }
+  };
+
+  let tratClienteId = null;
+  let tratCatAtiva = null;
+  let tratRegioesSelected = [];
+  let tratProcedimentos = [];
+  let tratInsumos = [];
+
+  // SVG boneco frontal simplificado
+  function svgCorpoFrontal(regioes) {
+    const marcado = (r) => tratRegioesSelected.includes(r) ? 'var(--cor-secundaria)' : '#dde1ea';
+    return `<svg viewBox="0 0 80 180" xmlns="http://www.w3.org/2000/svg">
+      <!-- cabeça -->
+      <ellipse cx="40" cy="18" rx="14" ry="16" fill="${marcado('Rosto completo')}" stroke="#aab" stroke-width="1"/>
+      <!-- pescoço -->
+      <rect x="34" y="33" width="12" height="10" rx="3" fill="${marcado('Pescoço')}" stroke="#aab" stroke-width="1"/>
+      <!-- tronco -->
+      <rect x="22" y="43" width="36" height="40" rx="5" fill="${marcado('Abdômen')}" stroke="#aab" stroke-width="1"/>
+      <!-- flancos esq -->
+      <rect x="14" y="45" width="10" height="35" rx="4" fill="${marcado('Flancos')}" stroke="#aab" stroke-width="1"/>
+      <!-- flancos dir -->
+      <rect x="56" y="45" width="10" height="35" rx="4" fill="${marcado('Flancos')}" stroke="#aab" stroke-width="1"/>
+      <!-- braço esq -->
+      <rect x="6" y="43" width="10" height="40" rx="5" fill="${marcado('Braços')}" stroke="#aab" stroke-width="1"/>
+      <!-- braço dir -->
+      <rect x="64" y="43" width="10" height="40" rx="5" fill="${marcado('Braços')}" stroke="#aab" stroke-width="1"/>
+      <!-- coxa esq -->
+      <rect x="22" y="84" width="16" height="42" rx="5" fill="${marcado('Coxas')}" stroke="#aab" stroke-width="1"/>
+      <!-- coxa dir -->
+      <rect x="42" y="84" width="16" height="42" rx="5" fill="${marcado('Coxas')}" stroke="#aab" stroke-width="1"/>
+      <!-- joelho esq -->
+      <ellipse cx="30" cy="130" rx="8" ry="6" fill="${marcado('Joelhos')}" stroke="#aab" stroke-width="1"/>
+      <!-- joelho dir -->
+      <ellipse cx="50" cy="130" rx="8" ry="6" fill="${marcado('Joelhos')}" stroke="#aab" stroke-width="1"/>
+      <!-- perna esq -->
+      <rect x="23" y="135" width="14" height="36" rx="5" fill="#dde1ea" stroke="#aab" stroke-width="1"/>
+      <!-- perna dir -->
+      <rect x="43" y="135" width="14" height="36" rx="5" fill="#dde1ea" stroke="#aab" stroke-width="1"/>
+    </svg>`;
+  }
+
+  function svgCorpoCostas(regioes) {
+    const marcado = (r) => tratRegioesSelected.includes(r) ? 'var(--cor-secundaria)' : '#dde1ea';
+    return `<svg viewBox="0 0 80 180" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="18" rx="14" ry="16" fill="#dde1ea" stroke="#aab" stroke-width="1"/>
+      <rect x="34" y="33" width="12" height="10" rx="3" fill="#dde1ea" stroke="#aab" stroke-width="1"/>
+      <rect x="22" y="43" width="36" height="40" rx="5" fill="${marcado('Costas')}" stroke="#aab" stroke-width="1"/>
+      <rect x="14" y="45" width="10" height="35" rx="4" fill="#dde1ea" stroke="#aab" stroke-width="1"/>
+      <rect x="56" y="45" width="10" height="35" rx="4" fill="#dde1ea" stroke="#aab" stroke-width="1"/>
+      <rect x="6" y="43" width="10" height="40" rx="5" fill="#dde1ea" stroke="#aab" stroke-width="1"/>
+      <rect x="64" y="43" width="10" height="40" rx="5" fill="#dde1ea" stroke="#aab" stroke-width="1"/>
+      <!-- bumbum esq -->
+      <ellipse cx="30" cy="87" rx="12" ry="10" fill="${marcado('Bumbum')}" stroke="#aab" stroke-width="1"/>
+      <!-- bumbum dir -->
+      <ellipse cx="50" cy="87" rx="12" ry="10" fill="${marcado('Bumbum')}" stroke="#aab" stroke-width="1"/>
+      <!-- culote esq -->
+      <ellipse cx="22" cy="97" rx="9" ry="7" fill="${marcado('Culote')}" stroke="#aab" stroke-width="1"/>
+      <!-- culote dir -->
+      <ellipse cx="58" cy="97" rx="9" ry="7" fill="${marcado('Culote')}" stroke="#aab" stroke-width="1"/>
+      <rect x="22" y="100" width="16" height="26" rx="5" fill="${marcado('Coxas')}" stroke="#aab" stroke-width="1"/>
+      <rect x="42" y="100" width="16" height="26" rx="5" fill="${marcado('Coxas')}" stroke="#aab" stroke-width="1"/>
+      <rect x="23" y="128" width="14" height="43" rx="5" fill="#dde1ea" stroke="#aab" stroke-width="1"/>
+      <rect x="43" y="128" width="14" height="43" rx="5" fill="#dde1ea" stroke="#aab" stroke-width="1"/>
+    </svg>`;
+  }
+
+  function svgFacial() {
+    const marcado = (r) => tratRegioesSelected.includes(r) ? 'var(--cor-secundaria)' : '#dde1ea';
+    return `<svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+      <!-- rosto -->
+      <ellipse cx="50" cy="55" rx="38" ry="48" fill="${marcado('Rosto completo')}" stroke="#aab" stroke-width="1.5"/>
+      <!-- testa -->
+      <ellipse cx="50" cy="22" rx="28" ry="16" fill="${marcado('Testa')}" stroke="#aab" stroke-width="1"/>
+      <!-- olho esq -->
+      <ellipse cx="33" cy="48" rx="9" ry="6" fill="${marcado('Olho esquerdo')}" stroke="#aab" stroke-width="1"/>
+      <!-- olho dir -->
+      <ellipse cx="67" cy="48" rx="9" ry="6" fill="${marcado('Olho direito')}" stroke="#aab" stroke-width="1"/>
+      <!-- sobrancelha esq -->
+      <path d="M24 39 Q33 35 42 39" stroke="${tratRegioesSelected.includes('Sobrancelha esquerda') || tratRegioesSelected.includes('Ambas as sobrancelhas') ? 'var(--cor-primaria)' : '#aab'}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <!-- sobrancelha dir -->
+      <path d="M58 39 Q67 35 76 39" stroke="${tratRegioesSelected.includes('Sobrancelha direita') || tratRegioesSelected.includes('Ambas as sobrancelhas') ? 'var(--cor-primaria)' : '#aab'}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <!-- olheiras -->
+      <ellipse cx="33" cy="56" rx="8" ry="4" fill="${marcado('Olheiras')}" stroke="#aab" stroke-width="1" opacity=".7"/>
+      <ellipse cx="67" cy="56" rx="8" ry="4" fill="${marcado('Olheiras')}" stroke="#aab" stroke-width="1" opacity=".7"/>
+      <!-- bochechas -->
+      <ellipse cx="24" cy="67" rx="10" ry="8" fill="${marcado('Bochechas')}" stroke="#aab" stroke-width="1" opacity=".8"/>
+      <ellipse cx="76" cy="67" rx="10" ry="8" fill="${marcado('Bochechas')}" stroke="#aab" stroke-width="1" opacity=".8"/>
+      <!-- nariz -->
+      <ellipse cx="50" cy="65" rx="5" ry="7" fill="#dde1ea" stroke="#aab" stroke-width="1"/>
+      <!-- lábios -->
+      <ellipse cx="50" cy="80" rx="12" ry="6" fill="${marcado('Lábios')}" stroke="#aab" stroke-width="1"/>
+      <!-- queixo -->
+      <ellipse cx="50" cy="96" rx="10" ry="7" fill="${marcado('Queixo')}" stroke="#aab" stroke-width="1"/>
+      <!-- papada -->
+      <ellipse cx="50" cy="108" rx="14" ry="7" fill="${marcado('Papada')}" stroke="#aab" stroke-width="1"/>
+    </svg>`;
+  }
+
+  function tratRenderMapa() {
+    const cat = TRAT_CATEGORIAS[tratCatAtiva];
+    if (!cat) return;
+    const card = document.getElementById('tratMapaCard');
+    document.getElementById('tratMapaTitulo').textContent = 'Regiões tratadas — ' + cat.label;
+
+    let svgHtml = '';
+    if (cat.mapa === 'corporal' || cat.mapa === 'corporal_facial') {
+      svgHtml = `<div class="trat-mapa-wrap">
+        <div class="trat-mapa-svg-area"><div style="font-size:11px;color:#6b7280;text-align:center;margin-bottom:4px">Frente</div>${svgCorpoFrontal()}</div>
+        <div class="trat-mapa-svg-area"><div style="font-size:11px;color:#6b7280;text-align:center;margin-bottom:4px">Costas</div>${svgCorpoCostas()}</div>
+      </div>`;
+    }
+    if (cat.mapa === 'facial' || cat.mapa === 'corporal_facial') {
+      svgHtml += `<div class="trat-mapa-svg-area" style="margin-top:${cat.mapa==='corporal_facial'?'14px':'0'}"><div style="font-size:11px;color:#6b7280;text-align:center;margin-bottom:4px">Facial</div>${svgFacial()}</div>`;
+    }
+
+    const botoesRegioes = cat.regioes.map(r =>
+      `<button type="button" class="trat-regiao-btn${tratRegioesSelected.includes(r)?' sel':''}" data-regiao="${esc(r)}">${esc(r)}</button>`
+    ).join('');
+
+    card.querySelector('#tratMapaConteudo').innerHTML = `
+      <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+        <div style="flex-shrink:0">${svgHtml}</div>
+        <div>
+          <div style="font-size:12.5px;color:#6b7280;margin-bottom:8px">Clique para selecionar as regiões:</div>
+          <div class="trat-mapa-regioes">${botoesRegioes}</div>
+        </div>
+      </div>`;
+
+    card.querySelectorAll('.trat-regiao-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const r = btn.dataset.regiao;
+        if (tratRegioesSelected.includes(r)) {
+          tratRegioesSelected = tratRegioesSelected.filter(x => x !== r);
+        } else {
+          tratRegioesSelected.push(r);
+        }
+        tratRenderMapa();
+      });
+    });
+  }
+
+  function tratRenderProcedimentos() {
+    const el = document.getElementById('tratProcedimentosList');
+    const opts = state.servicos.map(s => `<option value="${s.id}">${esc(s.nome)} — ${formatMoney(s.preco)}</option>`).join('');
+    el.innerHTML = tratProcedimentos.map((p, i) => `
+      <div class="trat-procedimento-row">
+        <select data-proc-idx="${i}" class="trat-proc-sel">
+          <option value="">Selecione o procedimento</option>${opts}
+        </select>
+        <input type="number" min="1" step="1" value="${p.qtd||1}" data-proc-qtd="${i}" style="width:60px" title="Sessões">
+        <span style="font-size:12px;color:#6b7280">sessões</span>
+        <button type="button" class="trat-remove-btn" data-proc-del="${i}">✕</button>
+      </div>`).join('') || '<div class="empty-msg" style="padding:8px 0">Nenhum procedimento adicionado.</div>';
+
+    el.querySelectorAll('.trat-proc-sel').forEach(sel => {
+      sel.value = tratProcedimentos[sel.dataset.procIdx]?.servicoId || '';
+      sel.addEventListener('change', e => {
+        tratProcedimentos[e.target.dataset.procIdx].servicoId = e.target.value;
+        tratAtualizarMargem();
+      });
+    });
+    el.querySelectorAll('[data-proc-qtd]').forEach(inp => {
+      inp.addEventListener('change', e => { tratProcedimentos[e.target.dataset.procQtd].qtd = parseInt(e.target.value)||1; });
+    });
+    el.querySelectorAll('[data-proc-del]').forEach(btn => {
+      btn.addEventListener('click', e => { tratProcedimentos.splice(parseInt(e.target.dataset.procDel),1); tratRenderProcedimentos(); });
+    });
+  }
+
+  function tratRenderInsumos() {
+    const el = document.getElementById('tratInsumosList');
+    const opts = state.produtos.map(p => `<option value="${p.id}">${esc(p.nome)} — ${formatMoney(custoPorUso(p))}/uso</option>`).join('');
+    el.innerHTML = tratInsumos.map((ins, i) => `
+      <div class="trat-insumo-row">
+        <select data-ins-idx="${i}" class="trat-ins-sel">
+          <option value="">Selecione o produto</option>${opts}
+        </select>
+        <input type="number" min="0.1" step="0.1" value="${ins.usos||1}" data-ins-usos="${i}" style="width:70px" title="Usos">
+        <span style="font-size:12px;color:#6b7280">usos</span>
+        <button type="button" class="trat-remove-btn" data-ins-del="${i}">✕</button>
+      </div>`).join('') || '<div class="empty-msg" style="padding:8px 0">Nenhum produto adicionado.</div>';
+
+    el.querySelectorAll('.trat-ins-sel').forEach(sel => {
+      sel.value = tratInsumos[sel.dataset.insIdx]?.produtoId || '';
+      sel.addEventListener('change', e => { tratInsumos[e.target.dataset.insIdx].produtoId = e.target.value; tratAtualizarMargem(); });
+    });
+    el.querySelectorAll('[data-ins-usos]').forEach(inp => {
+      inp.addEventListener('change', e => { tratInsumos[e.target.dataset.insUsos].usos = parseFloat(e.target.value)||1; tratAtualizarMargem(); });
+    });
+    el.querySelectorAll('[data-ins-del]').forEach(btn => {
+      btn.addEventListener('click', e => { tratInsumos.splice(parseInt(e.target.dataset.insDel),1); tratRenderInsumos(); tratAtualizarMargem(); });
+    });
+  }
+
+  function custoPorUso(p) {
+    if (!p || !p.usos || !p.valor) return 0;
+    return (p.valor / p.usos);
+  }
+
+  function tratAtualizarMargem() {
+    const custo = tratInsumos.reduce((acc, ins) => {
+      const p = state.produtos.find(x => x.id === ins.produtoId);
+      return acc + (p ? custoPorUso(p) * (ins.usos || 1) : 0);
+    }, 0);
+    document.getElementById('tratCustoInsumos').textContent = formatMoney(custo);
+    const valor = parseFloat(document.getElementById('tratValor')?.value || 0);
+    const info = document.getElementById('tratMargemInfo');
+    if (valor > 0 && custo > 0) {
+      const margem = valor - custo;
+      info.textContent = `Margem estimada: ${formatMoney(margem)} (${((margem/valor)*100).toFixed(0)}%)`;
+      info.style.color = margem > 0 ? '#1a7d3a' : '#b3261e';
+    } else {
+      info.textContent = '';
+    }
+  }
+
+  function tratBuscarCliente() {
+    const id = parseInt(document.getElementById('tratBuscaId').value) || 0;
+    const cpf = document.getElementById('tratBuscaCpf').value.replace(/\D/g,'');
+    const nome = document.getElementById('tratBuscaNome').value.toLowerCase().trim();
+    const res = document.getElementById('tratResultadoBusca');
+    if (!id && !cpf && !nome) { res.innerHTML = ''; return; }
+
+    const matches = state.clientes.filter(c => {
+      if (id && c.clienteId === id) return true;
+      if (cpf && (c.cpf||'').replace(/\D/g,'') === cpf) return true;
+      if (nome && (c.nome||'').toLowerCase().includes(nome)) return true;
+      return false;
+    }).slice(0, 8);
+
+    if (!matches.length) { res.innerHTML = '<div class="empty-msg">Nenhuma cliente encontrada.</div>'; return; }
+    res.innerHTML = matches.map(c => `
+      <div class="trat-busca-resultado" data-cid="${c.id}">
+        <span class="trat-busca-id">#${c.clienteId || '—'}</span>
+        <span style="font-weight:600">${esc(c.nome)}</span>
+        <span style="color:#6b7280;font-size:13px">${c.cpf ? ' · CPF: '+esc(c.cpf) : ''}${c.telefone ? ' · '+esc(c.telefone) : ''}</span>
+      </div>`).join('');
+
+    res.querySelectorAll('[data-cid]').forEach(el => {
+      el.addEventListener('click', () => tratSelecionarCliente(el.dataset.cid));
+    });
+  }
+
+  function tratSelecionarCliente(cid) {
+    const c = state.clientes.find(x => x.id === cid);
+    if (!c) return;
+    tratClienteId = cid;
+    document.getElementById('tratClienteNome').textContent = c.nome;
+    document.getElementById('tratClienteInfo').textContent =
+      [c.cpf ? 'CPF: '+c.cpf : '', c.telefone || '', '#'+(c.clienteId||'—')].filter(Boolean).join(' · ');
+
+    // badges das anamneses
+    const badges = [];
+    if (c.anamneseCorporal && Object.keys(c.anamneseCorporal).length) badges.push({ tipo: 'corporal', label: '💪 Corporal' });
+    if (c.anamneseFacial && Object.keys(c.anamneseFacial).length) badges.push({ tipo: 'facial', label: '✨ Facial' });
+    if (c.anamneseCapilar && Object.keys(c.anamneseCapilar).length) badges.push({ tipo: 'capilar', label: '💆 Capilar' });
+
+    document.getElementById('tratAnamneseBadges').innerHTML = badges.length
+      ? badges.map(b => `<button type="button" class="trat-anamnese-badge" data-anam="${b.tipo}">${b.label}</button>`).join('')
+      : '<span style="font-size:12px;color:#6b7280">Sem anamneses</span>';
+
+    document.querySelectorAll('[data-anam]').forEach(btn => {
+      btn.addEventListener('click', () => tratAbrirAnamnese(btn.dataset.anam));
+    });
+
+    document.getElementById('tratClienteCard').style.display = 'block';
+    document.getElementById('tratBuscaId').value = '';
+    document.getElementById('tratBuscaCpf').value = '';
+    document.getElementById('tratBuscaNome').value = '';
+    document.getElementById('tratResultadoBusca').innerHTML = '';
+
+    tratRenderHistorico();
+  }
+
+  function tratAbrirAnamnese(tipo) {
+    const c = state.clientes.find(x => x.id === tratClienteId);
+    if (!c) return;
+    const dados = tipo === 'corporal' ? c.anamneseCorporal : tipo === 'facial' ? c.anamneseFacial : c.anamneseCapilar;
+    const labels = { corporal: 'Anamnese Corporal', facial: 'Anamnese Facial', capilar: 'Anamnese Capilar' };
+    document.getElementById('tratAnamneseTitulo').textContent = labels[tipo] || 'Anamnese';
+    const conteudo = Object.entries(dados || {}).map(([k,v]) =>
+      `<div class="list-row"><span style="color:#4b5162;font-size:12.5px">${esc(k)}</span><span style="font-weight:600">${esc(String(v))}</span></div>`
+    ).join('') || '<div class="empty-msg">Anamnese vazia.</div>';
+    document.getElementById('tratAnamneseConteudo').innerHTML = conteudo;
+    document.getElementById('tratAnamneseModal').classList.add('open');
+  }
+
+  function tratRenderHistorico() {
+    const lista = (state_tratamentos || []).filter(t => t.clienteId === tratClienteId)
+      .sort((a,b) => b.data.localeCompare(a.data));
+    const el = document.getElementById('tratHistoricoLista');
+    if (!lista.length) { el.innerHTML = '<div class="empty-msg">Nenhum tratamento registrado.</div>'; return; }
+    el.innerHTML = lista.map(t => {
+      const cat = TRAT_CATEGORIAS[t.categoria];
+      const statusCls = t.status === 'aceito' ? 'trat-hist-status-aceito' : t.status === 'recusado' ? 'trat-hist-status-recusado' : 'trat-hist-status-pendente';
+      const statusLabel = t.status === 'aceito' ? '✅ Aceito' : t.status === 'recusado' ? '❌ Recusado' : '⏳ Pendente';
+      return `<div class="trat-hist-item">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+          <div>
+            <span style="font-weight:700">${esc(cat?.label || t.categoria)}</span>
+            <span style="color:#6b7280;font-size:13px"> · ${formatDateBR(t.data)}</span>
+          </div>
+          <span class="${statusCls}">${statusLabel}</span>
+        </div>
+        ${t.regioes?.length ? `<div style="font-size:12.5px;color:#4b5162;margin-bottom:4px">Regiões: ${t.regioes.join(', ')}</div>` : ''}
+        ${t.sessoes ? `<div style="font-size:12.5px;color:#4b5162;margin-bottom:4px">Sessões: ${t.sessoes} · ${esc(t.frequencia||'')}</div>` : ''}
+        ${t.objetivo ? `<div style="font-size:12.5px;color:#4b5162;margin-bottom:4px">${esc(t.objetivo)}</div>` : ''}
+        ${t.valor ? `<div style="font-size:13px;font-weight:600;color:var(--cor-primaria)">Valor: ${formatMoney(t.valor)}</div>` : ''}
+        ${t.status !== 'aceito' && t.status !== 'recusado' ? `
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+            <button type="button" class="btn small" style="background:#1a7d3a" data-trat-aceitar="${t.id}">✅ Aceitar</button>
+            <button type="button" class="btn danger small" data-trat-recusar="${t.id}">❌ Recusar</button>
+            <button type="button" class="btn secondary small" data-trat-pdf="${t.id}">📄 PDF</button>
+          </div>` : `<button type="button" class="btn secondary small" style="margin-top:8px" data-trat-pdf="${t.id}">📄 Ver orçamento</button>`}
+      </div>`;
+    }).join('');
+
+    el.querySelectorAll('[data-trat-aceitar]').forEach(btn => {
+      btn.addEventListener('click', () => tratConfirmarAceite(btn.dataset.tratAceitar));
+    });
+    el.querySelectorAll('[data-trat-recusar]').forEach(btn => {
+      btn.addEventListener('click', () => tratConfirmarRecusa(btn.dataset.tratRecusar));
+    });
+    el.querySelectorAll('[data-trat-pdf]').forEach(btn => {
+      btn.addEventListener('click', () => tratGerarPdf(btn.dataset.tratPdf));
+    });
+  }
+
+  function tratColetarDados() {
+    return {
+      id: uid(),
+      clienteId: tratClienteId,
+      categoria: tratCatAtiva,
+      regioes: [...tratRegioesSelected],
+      procedimentos: tratProcedimentos.filter(p => p.servicoId).map(p => ({ servicoId: p.servicoId, qtd: p.qtd || 1 })),
+      insumos: tratInsumos.filter(i => i.produtoId).map(i => ({ produtoId: i.produtoId, usos: i.usos || 1 })),
+      sessoes: parseInt(document.getElementById('tratSessoes')?.value) || null,
+      frequencia: document.getElementById('tratFrequencia')?.value || '',
+      profissionalId: document.getElementById('tratProfissional')?.value || '',
+      objetivo: document.getElementById('tratObjetivo')?.value.trim() || '',
+      valor: parseFloat(document.getElementById('tratValor')?.value) || 0,
+      formaPag: document.getElementById('tratFormaPag')?.value || '',
+      data: todayISO(),
+      status: 'pendente'
+    };
+  }
+
+  function tratSalvarNovo(status) {
+    if (!tratClienteId) { showToast('Selecione uma cliente primeiro.'); return null; }
+    if (!tratCatAtiva) { showToast('Selecione uma categoria.'); return null; }
+    const t = tratColetarDados();
+    t.status = status;
+    state_tratamentos.push(t);
+    save(TRAT_STORAGE, state_tratamentos);
+    return t;
+  }
+
+  function tratConfirmarAceite(tratId) {
+    const t = state_tratamentos.find(x => x.id === tratId);
+    if (!t) return;
+    t.status = 'aceito';
+    t.dataAceite = todayISO();
+    // Descontar insumos do estoque
+    t.insumos.forEach(ins => {
+      const p = state.produtos.find(x => x.id === ins.produtoId);
+      if (p && p.usos) { const consumo = ins.usos / p.usos; p.qtd = Math.max(0, (p.qtd || 0) - consumo); }
+    });
+    save(STORAGE_KEYS.produtos, state.produtos);
+    // Lançar no financeiro
+    if (t.valor > 0) {
+      const c = state.clientes.find(x => x.id === t.clienteId);
+      const cat = TRAT_CATEGORIAS[t.categoria];
+      const custo = t.insumos.reduce((acc, ins) => {
+        const p = state.produtos.find(x => x.id === ins.produtoId);
+        return acc + (p ? custoPorUso(p) * ins.usos : 0);
+      }, 0);
+      state.financeiro.push({
+        id: uid(), data: todayISO(), tipo: 'receita',
+        descricao: `${cat?.label || t.categoria}${t.regioes.length ? ' — '+t.regioes.slice(0,2).join(', ') : ''}`,
+        clienteId: t.clienteId, clienteNome: c?.nome || '',
+        valor: t.valor, custoInsumos: custo,
+        formaPagamento: t.formaPag || 'outros',
+        origem: 'tratamento', tratamentoId: t.id
+      });
+      save(STORAGE_KEYS.financeiro, state.financeiro);
+    }
+    save(TRAT_STORAGE, state_tratamentos);
+    showToast('Tratamento confirmado e lançado no financeiro!');
+    tratRenderHistorico();
+  }
+
+  function tratConfirmarRecusa(tratId) {
+    const t = state_tratamentos.find(x => x.id === tratId);
+    if (!t) { return; }
+    t.status = 'recusado';
+    save(TRAT_STORAGE, state_tratamentos);
+    showToast('Tratamento marcado como recusado.');
+    tratRenderHistorico();
+  }
+
+  function tratGerarPdf(tratId) {
+    const t = state_tratamentos.find(x => x.id === tratId) || tratColetarDados();
+    const c = state.clientes.find(x => x.id === (tratId ? t.clienteId : tratClienteId));
+    const cat = TRAT_CATEGORIAS[t.categoria || tratCatAtiva];
+    const procs = (t.procedimentos || []).map(p => { const s = state.servicos.find(x => x.id === p.servicoId); return s ? `${s.nome} (${p.qtd} sessão${p.qtd>1?'s':''})` : ''; }).filter(Boolean);
+    const area = document.getElementById('tratPdfArea');
+    const nomeClinica = state.config.nomeNegocio || 'Clínica de Estética';
+    area.innerHTML = `
+      <div style="border-bottom:3px solid #0d1b3e;padding-bottom:16px;margin-bottom:24px">
+        <h1 style="color:#0d1b3e;margin:0;font-size:22px">${esc(nomeClinica)}</h1>
+        <div style="color:#6b7280;font-size:13px;margin-top:4px">Orçamento de Tratamento · ${formatDateBR(todayISO())}</div>
+      </div>
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Cliente</div>
+        <div style="font-size:18px;font-weight:700;color:#0d1b3e">${esc(c?.nome || '—')}</div>
+        ${c?.cpf ? `<div style="font-size:13px;color:#6b7280">CPF: ${esc(c.cpf)}</div>` : ''}
+      </div>
+      <div style="background:#f4f5f8;border-radius:10px;padding:16px;margin-bottom:20px">
+        <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Categoria</div>
+        <div style="font-size:16px;font-weight:600;color:#0d1b3e">${esc(cat?.label || '')}</div>
+        ${t.regioes?.length ? `<div style="font-size:13px;color:#4b5162;margin-top:4px">Regiões: ${t.regioes.join(', ')}</div>` : ''}
+      </div>
+      ${procs.length ? `<div style="margin-bottom:20px">
+        <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Procedimentos</div>
+        ${procs.map(p => `<div style="padding:6px 0;border-bottom:1px solid #e3e5ec;font-size:14px">✓ ${esc(p)}</div>`).join('')}
+      </div>` : ''}
+      ${t.sessoes ? `<div style="margin-bottom:20px">
+        <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Protocolo</div>
+        <div style="font-size:14px">${t.sessoes} sessões · ${esc(t.frequencia||'')}</div>
+      </div>` : ''}
+      ${t.objetivo ? `<div style="margin-bottom:20px">
+        <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Objetivo</div>
+        <div style="font-size:14px">${esc(t.objetivo)}</div>
+      </div>` : ''}
+      <div style="background:#0d1b3e;color:#fff;border-radius:10px;padding:18px;display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+        <span style="font-size:15px">Valor total do tratamento</span>
+        <span style="font-size:22px;font-weight:700">${formatMoney(t.valor || 0)}</span>
+      </div>
+      <div style="font-size:11px;color:#9aa0ab;border-top:1px solid #e3e5ec;padding-top:12px">
+        Este orçamento é válido por 30 dias. Dúvidas? Entre em contato conosco.
+      </div>`;
+    area.style.display = 'block';
+    setTimeout(() => { window.print(); area.style.display = 'none'; }, 200);
+  }
+
+  // Inicializa listeners da página Tratamento
+  let tratamentoIniciado = false;
+  function initTratamento() {
+    tratRenderHistorico(); // sempre atualiza histórico ao entrar na página
+    if (tratamentoIniciado) return;
+    tratamentoIniciado = true;
+    // Busca em tempo real
+    ['tratBuscaId','tratBuscaCpf','tratBuscaNome'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', tratBuscarCliente);
+    });
+    // CPF mask
+    document.getElementById('tratBuscaCpf')?.addEventListener('input', e => {
+      let v = e.target.value.replace(/\D/g,'').slice(0,11);
+      if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4');
+      else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{0,3})/,'$1.$2.$3');
+      else if (v.length > 3) v = v.replace(/(\d{3})(\d{0,3})/,'$1.$2');
+      e.target.value = v;
+    });
+
+    // Trocar cliente
+    document.getElementById('btnTratLimpar')?.addEventListener('click', () => {
+      tratClienteId = null; tratCatAtiva = null;
+      tratRegioesSelected = []; tratProcedimentos = []; tratInsumos = [];
+      document.getElementById('tratClienteCard').style.display = 'none';
+      document.getElementById('tratConteudo').style.display = 'none';
+      document.querySelectorAll('.trat-cat-btn').forEach(b => b.classList.remove('ativa'));
+    });
+
+    // Tabs
+    document.getElementById('tratTabs')?.addEventListener('click', e => {
+      const aba = e.target.dataset.tratAba;
+      if (!aba) return;
+      document.querySelectorAll('.ficha-tab-btn[data-trat-aba]').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.trat-aba').forEach(a => a.classList.remove('active'));
+      e.target.classList.add('active');
+      document.getElementById('tratAba-'+aba)?.classList.add('active');
+      if (aba === 'historico') tratRenderHistorico();
+    });
+
+    // Categorias
+    document.getElementById('tratCategorias')?.addEventListener('click', e => {
+      const cat = e.target.dataset.cat;
+      if (!cat) return;
+      tratCatAtiva = cat;
+      tratRegioesSelected = [];
+      tratProcedimentos = [{ servicoId: '', qtd: 1 }];
+      tratInsumos = [];
+      document.querySelectorAll('.trat-cat-btn').forEach(b => b.classList.toggle('ativa', b.dataset.cat === cat));
+      document.getElementById('tratConteudo').style.display = 'block';
+      tratRenderMapa();
+      tratRenderProcedimentos();
+      tratRenderInsumos();
+      // Popular profissionais
+      const sel = document.getElementById('tratProfissional');
+      if (sel) sel.innerHTML = '<option value="">Qualquer disponível</option>' +
+        state.profissionais.map(p => `<option value="${p.id}">${esc(p.nome)}</option>`).join('');
+    });
+
+    // Add procedimento / insumo
+    document.getElementById('btnAddProcedimento')?.addEventListener('click', () => {
+      tratProcedimentos.push({ servicoId: '', qtd: 1 }); tratRenderProcedimentos();
+    });
+    document.getElementById('btnAddInsumo')?.addEventListener('click', () => {
+      tratInsumos.push({ produtoId: '', usos: 1 }); tratRenderInsumos();
+    });
+
+    // Valor → atualiza margem
+    document.getElementById('tratValor')?.addEventListener('input', tratAtualizarMargem);
+
+    // Gerar PDF
+    document.getElementById('btnTratGerarPdf')?.addEventListener('click', () => {
+      if (!tratClienteId) { showToast('Selecione uma cliente.'); return; }
+      if (!tratCatAtiva) { showToast('Selecione uma categoria.'); return; }
+      const t = tratSalvarNovo('pendente');
+      if (t) { tratGerarPdf(t.id); }
+    });
+
+    // Aceitar
+    document.getElementById('btnTratAceito')?.addEventListener('click', () => {
+      const t = tratSalvarNovo('pendente');
+      if (t) { tratConfirmarAceite(t.id); showToast('✅ Lançado no financeiro!'); }
+    });
+
+    // Recusar
+    document.getElementById('btnTratRecusado')?.addEventListener('click', () => {
+      const t = tratSalvarNovo('recusado');
+      if (t) showToast('Tratamento registrado como recusado.');
+    });
+
+    // Modal fechar
+    document.getElementById('btnFecharAnamneseModal')?.addEventListener('click', () => {
+      document.getElementById('tratAnamneseModal').classList.remove('open');
+    });
+    document.getElementById('tratAnamneseModal')?.addEventListener('click', e => {
+      if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+    });
+  }
+
   // ===== IA GEMINI =====
   const GEMINI_KEY = 'AIzaSyAQ.Ab8RN6LAHBV4lO2iXUrDGXXo2zpyFjiPfrh7WPQ1mJIU7UQuVg';
   const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_KEY;
