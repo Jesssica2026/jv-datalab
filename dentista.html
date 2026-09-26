@@ -5318,13 +5318,16 @@
     if (!resultado) return;
     if (!nome && !cpf && !idBusca) { resultado.innerHTML = ''; return; }
 
-    // Se state.clientes está vazio OU nunca foi sincronizado do Supabase, carrega agora
+    console.log('[DEBUG Trat] state.clientes:', state.clientes?.length, '| _supaCarregarClientes:', !!window._supaCarregarClientes, '| licenca:', localStorage.getItem('dentista_licenca'));
+
+    // Se state.clientes está vazio, carrega do Supabase agora
     if ((!state.clientes || state.clientes.length === 0) && !_tratBuscandoSupa) {
       _tratBuscandoSupa = true;
       resultado.innerHTML = '<div class="empty-msg" style="color:#6b7280">🔄 Carregando pacientes do servidor...</div>';
       if (window._supaCarregarClientes) {
         try {
           const dadosSupa = await window._supaCarregarClientes();
+          console.log('[DEBUG Trat] Supabase retornou:', dadosSupa?.length, 'pacientes');
           if (dadosSupa && dadosSupa.length > 0) {
             state.clientes = dadosSupa;
             save(STORAGE_KEYS.clientes, state.clientes);
