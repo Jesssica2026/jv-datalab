@@ -1248,7 +1248,16 @@
     { nome: 'Depilação a Cera (buço)', preco: 15, duracao: 15 },
     { nome: 'Depilação a Cera (sobrancelha)', preco: 20, duracao: 15 },
     { nome: 'Depilação a Cera (axilas)', preco: 25, duracao: 20 },
-    { nome: 'Design de Sobrancelha', preco: 30, duracao: 20 }
+    { nome: 'Design de Sobrancelha', preco: 30, duracao: 20 },
+    { nome: 'Extensão de Cílios (Clássico)', preco: 120, duracao: 90 },
+    { nome: 'Extensão de Cílios (Volume Brasileiro)', preco: 150, duracao: 120 },
+    { nome: 'Manutenção de Cílios', preco: 80, duracao: 60 },
+    { nome: 'Henna de Sobrancelha', preco: 40, duracao: 30 },
+    { nome: 'Micropigmentação de Sobrancelha', preco: 600, duracao: 120 },
+    { nome: 'Depilação Buço', preco: 15, duracao: 15 },
+    { nome: 'Depilação Axilas', preco: 25, duracao: 20 },
+    { nome: 'Depilação Perna Inteira', preco: 70, duracao: 45 },
+    { nome: 'Depilação Virilha Simples', preco: 45, duracao: 30 }
   ];
 
   function load(key, fallback) {
@@ -1261,6 +1270,28 @@
   }
   function save(key, data) {
     localStorage.setItem(key, JSON.stringify(data));
+    setTimeout(() => {
+      try {
+        if (key === STORAGE_KEYS.clientes && window._supaSalvarCliente) {
+          if (Array.isArray(data)) data.forEach(c => window._supaSalvarCliente(c));
+        } else if (key === STORAGE_KEYS.agendamentos && window._supaSalvarAgendamento) {
+          if (Array.isArray(data)) data.forEach(a => window._supaSalvarAgendamento(a));
+        } else if (key === STORAGE_KEYS.servicos && window._supaSalvarServicos) {
+          if (Array.isArray(data)) window._supaSalvarServicos(data);
+        } else if (key === STORAGE_KEYS.profissionais && window._supaSalvarProfissionais) {
+          if (Array.isArray(data)) window._supaSalvarProfissionais(data);
+        } else if (key === STORAGE_KEYS.produtos && window._supaSalvarProdutos) {
+          if (Array.isArray(data)) window._supaSalvarProdutos(data);
+        } else if (key === STORAGE_KEYS.financeiro && window._supaSalvarPagamento) {
+          if (Array.isArray(data)) data.forEach(f => window._supaSalvarPagamento(f));
+        } else if ((key === STORAGE_KEYS.config || key === STORAGE_KEYS.taxas || key === STORAGE_KEYS.regrasStatus) && window._supaSalvarConfig) {
+          const cfg = key === STORAGE_KEYS.config ? data : (state && state.config || {});
+          const tax = key === STORAGE_KEYS.taxas ? data : (state && state.taxas || {});
+          const reg = key === STORAGE_KEYS.regrasStatus ? data : (state && state.regrasStatus || {});
+          window._supaSalvarConfig(cfg, tax, reg);
+        }
+      } catch(e) { console.warn('[save→supa]', key, e); }
+    }, 80);
   }
   function uid() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -2041,7 +2072,7 @@
     if (id) {
       Object.assign(state.clientes.find(c => c.id === id), dados);
     } else {
-      state.clientes.push(Object.assign({ id: uid(), criadoEm: todayISO(), dataAvaliacao: todayISO(), statusCliente: statusVazio(), evolucoes: [] }, dados, { anamneseCapilar: {} }));
+      state.clientes.push(Object.assign({ id: uid(), criadoEm: todayISO(), dataAvaliacao: todayISO(), statusCliente: statusVazio(), evolucoes: [] }, dados, { anamneseCapilar: {}, anamneseManicure: {}, anamneseCilios: {}, anamneseSobrancelha: {}, anamneseDepilacao: {} }));
     }
     save(STORAGE_KEYS.clientes, state.clientes);
     modalCliente.classList.remove('open');
@@ -2088,6 +2119,10 @@
 
   const ABAS_CLIENTE = [
     { id: 'anamnese', label: 'Anamnese capilar' },
+    { id: 'manicure', label: 'Manicure/Pedicure' },
+    { id: 'cilios', label: 'Cílios' },
+    { id: 'sobrancelha', label: 'Sobrancelhas' },
+    { id: 'depilacao', label: 'Depilação' },
     { id: 'evolucao', label: 'Evolução e visitas' }
   ];
 
@@ -2135,6 +2170,10 @@
     });
     const el = document.getElementById('fichaAbaConteudo');
     if (abaAtivaCliente === 'evolucao') renderAbaEvolucao(el, c);
+    else if (abaAtivaCliente === 'manicure') renderAbaManicure(el, c);
+    else if (abaAtivaCliente === 'cilios') renderAbaCilios(el, c);
+    else if (abaAtivaCliente === 'sobrancelha') renderAbaSobrancelha(el, c);
+    else if (abaAtivaCliente === 'depilacao') renderAbaDepilacao(el, c);
     else renderAbaAnamnese(el, c);
   }
 
@@ -2469,6 +2508,10 @@
       if (!Array.isArray(c.evolucoes)) c.evolucoes = [];
       if (!c.statusCliente || !c.statusCliente.valor) { c.statusCliente = statusVazio(calcularStatusAutomatico(c).valor); criou = true; }
       if (!Array.isArray(c.statusCliente.historico)) c.statusCliente.historico = [];
+      if (!c.anamneseManicure) c.anamneseManicure = {};
+      if (!c.anamneseCilios) c.anamneseCilios = {};
+      if (!c.anamneseSobrancelha) c.anamneseSobrancelha = {};
+      if (!c.anamneseDepilacao) c.anamneseDepilacao = {};
     });
     if (criou) save(STORAGE_KEYS.clientes, state.clientes);
   }
@@ -2832,6 +2875,188 @@
     atualizarMensagemWhats();
     modalWhatsapp.classList.add('open');
     if (!c.telefone) showToast('Este cliente não tem telefone cadastrado. Informe antes de enviar.');
+  }
+
+  // ---------- Fichas especializadas ----------
+  function renderAbaManicure(el, c) {
+    const m = c.anamneseManicure || {};
+    el.innerHTML = `
+      <form id="formManicure">
+        <h3 style="color:var(--cor-primaria);margin-bottom:14px">Ficha de Manicure / Pedicure</h3>
+        <div class="form-grid" style="margin-bottom:14px">
+          ${[
+            ['gelosa','Usa esmalte em gel'],
+            ['acrilica','Unha acrílica'],
+            ['fibra','Fibra de vidro'],
+            ['alergiaEsmalte','Alergia a esmalte'],
+            ['diabetica','Diabética'],
+            ['micose','Histórico de micose nas unhas'],
+            ['unhaEncravada','Unha encravada recorrente']
+          ].map(([k,label])=>`<label class="checkbox-item"><input type="checkbox" name="${k}" ${m[k]?'checked':''}> ${label}</label>`).join('')}
+        </div>
+        <div class="field"><label>Cor/esmalte preferido</label><input type="text" name="corPreferida" value="${esc(m.corPreferida||'')}"></div>
+        <div class="field"><label>Formato de unha preferido</label>
+          <select name="formato">
+            <option value="">Selecione</option>
+            ${['Quadrada','Arredondada','Amendoada','Stiletto','Ballerina'].map(f=>`<option value="${f}" ${m.formato===f?'selected':''}>${f}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field"><label>Observações</label><textarea name="observacoes" rows="2">${esc(m.observacoes||'')}</textarea></div>
+        <div class="btn-row"><button type="submit" class="btn">Salvar ficha manicure</button></div>
+      </form>
+    `;
+    el.querySelector('#formManicure').addEventListener('submit', e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      c.anamneseManicure = {
+        gelosa: fd.get('gelosa')==='on', acrilica: fd.get('acrilica')==='on',
+        fibra: fd.get('fibra')==='on', alergiaEsmalte: fd.get('alergiaEsmalte')==='on',
+        diabetica: fd.get('diabetica')==='on', micose: fd.get('micose')==='on',
+        unhaEncravada: fd.get('unhaEncravada')==='on',
+        corPreferida: fd.get('corPreferida')||'', formato: fd.get('formato')||'',
+        observacoes: fd.get('observacoes')||''
+      };
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Ficha de manicure salva!');
+    });
+  }
+
+  function renderAbaCilios(el, c) {
+    const ci = c.anamneseCilios || {};
+    el.innerHTML = `
+      <form id="formCilios">
+        <h3 style="color:var(--cor-primaria);margin-bottom:14px">Ficha de Cílios</h3>
+        <div class="form-grid" style="margin-bottom:14px">
+          ${[
+            ['alergiaGlue','Alergia a cola de cílios'],
+            ['olhoSeco','Olho seco'],
+            ['conjuntivite','Histórico de conjuntivite'],
+            ['lentesContato','Usa lentes de contato'],
+            ['extensaoAnterior','Já fez extensão de cílios antes']
+          ].map(([k,label])=>`<label class="checkbox-item"><input type="checkbox" name="${k}" ${ci[k]?'checked':''}> ${label}</label>`).join('')}
+        </div>
+        <div class="field"><label>Tipo de fio preferido</label>
+          <select name="tipoFio">
+            <option value="">Selecione</option>
+            ${['Clássico','Volume Brasileiro','Volume Russo','Mega Volume','Fio a Fio'].map(f=>`<option value="${f}" ${ci.tipoFio===f?'selected':''}>${f}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field"><label>Curvatura preferida</label>
+          <select name="curvatura">
+            <option value="">Selecione</option>
+            ${['B','C','CC','D','L'].map(f=>`<option value="${f}" ${ci.curvatura===f?'selected':''}>${f}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field"><label>Espessura (mm)</label><input type="text" name="espessura" value="${esc(ci.espessura||'')}"></div>
+        <div class="field"><label>Comprimento</label><input type="text" name="comprimento" value="${esc(ci.comprimento||'')}"></div>
+        <div class="field"><label>Observações</label><textarea name="observacoes" rows="2">${esc(ci.observacoes||'')}</textarea></div>
+        <div class="btn-row"><button type="submit" class="btn">Salvar ficha de cílios</button></div>
+      </form>
+    `;
+    el.querySelector('#formCilios').addEventListener('submit', e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      c.anamneseCilios = {
+        alergiaGlue: fd.get('alergiaGlue')==='on', olhoSeco: fd.get('olhoSeco')==='on',
+        conjuntivite: fd.get('conjuntivite')==='on', lentesContato: fd.get('lentesContato')==='on',
+        extensaoAnterior: fd.get('extensaoAnterior')==='on',
+        tipoFio: fd.get('tipoFio')||'', curvatura: fd.get('curvatura')||'',
+        espessura: fd.get('espessura')||'', comprimento: fd.get('comprimento')||'',
+        observacoes: fd.get('observacoes')||''
+      };
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Ficha de cílios salva!');
+    });
+  }
+
+  function renderAbaSobrancelha(el, c) {
+    const s = c.anamneseSobrancelha || {};
+    el.innerHTML = `
+      <form id="formSobrancelha">
+        <h3 style="color:var(--cor-primaria);margin-bottom:14px">Ficha de Sobrancelhas</h3>
+        <div class="form-grid" style="margin-bottom:14px">
+          ${[
+            ['alergiaTinta','Alergia a tinta/henna'],
+            ['alergiaAnestesia','Alergia a anestésico tópico'],
+            ['queloides','Tendência a queloides'],
+            ['peleOleosa','Pele oleosa'],
+            ['tomouSol','Exposição solar recente (últimas 48h)'],
+            ['gravidez','Gestante ou amamentando'],
+            ['micropigmentacaoAnterior','Já fez micropigmentação antes']
+          ].map(([k,label])=>`<label class="checkbox-item"><input type="checkbox" name="${k}" ${s[k]?'checked':''}> ${label}</label>`).join('')}
+        </div>
+        <div class="field"><label>Técnica preferida</label>
+          <select name="tecnica">
+            <option value="">Selecione</option>
+            ${['Design','Henna','Micropigmentação','Nanopigmentação','Laminação'].map(f=>`<option value="${f}" ${s.tecnica===f?'selected':''}>${f}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field"><label>Formato desejado</label><input type="text" name="formato" value="${esc(s.formato||'')}"></div>
+        <div class="field"><label>Tom/cor preferido</label><input type="text" name="corPreferida" value="${esc(s.corPreferida||'')}"></div>
+        <div class="field"><label>Observações</label><textarea name="observacoes" rows="2">${esc(s.observacoes||'')}</textarea></div>
+        <div class="btn-row"><button type="submit" class="btn">Salvar ficha de sobrancelhas</button></div>
+      </form>
+    `;
+    el.querySelector('#formSobrancelha').addEventListener('submit', e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      c.anamneseSobrancelha = {
+        alergiaTinta: fd.get('alergiaTinta')==='on', alergiaAnestesia: fd.get('alergiaAnestesia')==='on',
+        queloides: fd.get('queloides')==='on', peleOleosa: fd.get('peleOleosa')==='on',
+        tomouSol: fd.get('tomouSol')==='on', gravidez: fd.get('gravidez')==='on',
+        micropigmentacaoAnterior: fd.get('micropigmentacaoAnterior')==='on',
+        tecnica: fd.get('tecnica')||'', formato: fd.get('formato')||'',
+        corPreferida: fd.get('corPreferida')||'', observacoes: fd.get('observacoes')||''
+      };
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Ficha de sobrancelhas salva!');
+    });
+  }
+
+  function renderAbaDepilacao(el, c) {
+    const d = c.anamneseDepilacao || {};
+    el.innerHTML = `
+      <form id="formDepilacao">
+        <h3 style="color:var(--cor-primaria);margin-bottom:14px">Ficha de Depilação</h3>
+        <div class="form-grid" style="margin-bottom:14px">
+          ${[
+            ['alergiaResina','Alergia a resina/cera'],
+            ['peleReativa','Pele muito reativa/sensível'],
+            ['varizes','Varizes na área a depilar'],
+            ['tomouSol','Exposição solar recente (últimas 48h)'],
+            ['gravidez','Gestante'],
+            ['diabetes','Diabética'],
+            ['queloides','Tendência a queloides'],
+            ['isotretinoina','Uso de isotretinoína (Roacutan)'],
+            ['hormonal','Tratamento hormonal em curso']
+          ].map(([k,label])=>`<label class="checkbox-item"><input type="checkbox" name="${k}" ${d[k]?'checked':''}> ${label}</label>`).join('')}
+        </div>
+        <div class="field"><label>Método preferido</label>
+          <select name="metodo">
+            <option value="">Selecione</option>
+            ${['Cera quente','Cera fria','Linha','Laser','Luz Pulsada (IPL)'].map(f=>`<option value="${f}" ${d.metodo===f?'selected':''}>${f}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field"><label>Áreas frequentes</label><input type="text" name="areas" value="${esc(d.areas||'')}" placeholder="Ex: pernas, buço, axilas"></div>
+        <div class="field"><label>Observações</label><textarea name="observacoes" rows="2">${esc(d.observacoes||'')}</textarea></div>
+        <div class="btn-row"><button type="submit" class="btn">Salvar ficha de depilação</button></div>
+      </form>
+    `;
+    el.querySelector('#formDepilacao').addEventListener('submit', e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      c.anamneseDepilacao = {
+        alergiaResina: fd.get('alergiaResina')==='on', peleReativa: fd.get('peleReativa')==='on',
+        varizes: fd.get('varizes')==='on', tomouSol: fd.get('tomouSol')==='on',
+        gravidez: fd.get('gravidez')==='on', diabetes: fd.get('diabetes')==='on',
+        queloides: fd.get('queloides')==='on', isotretinoina: fd.get('isotretinoina')==='on',
+        hormonal: fd.get('hormonal')==='on',
+        metodo: fd.get('metodo')||'', areas: fd.get('areas')||'',
+        observacoes: fd.get('observacoes')||''
+      };
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Ficha de depilação salva!');
+    });
   }
 
   // ---------- Ficha: aba "Evolução e visitas" ----------
@@ -4035,7 +4260,181 @@
     }
     goToPage(session.tipo === 'admin' ? 'dashboard' : 'agendamentos');
     setTimeout(bkVerificarDiario, 600);
+    if (window._supaCarregarTudo) window._supaCarregarTudo().catch(e => console.warn('[Supa]', e));
   }
+
+  function recarregarStateDoLocalStorage() {
+    state.clientes = load(STORAGE_KEYS.clientes, []);
+    state.agendamentos = load(STORAGE_KEYS.agendamentos, []);
+    state.servicos = load(STORAGE_KEYS.servicos, state.servicos);
+    state.profissionais = load(STORAGE_KEYS.profissionais, []);
+    state.produtos = load(STORAGE_KEYS.produtos, []);
+    state.financeiro = load(STORAGE_KEYS.financeiro, []);
+    normalizarClientes();
+    sincronizarStatusClientes();
+    renderClientes();
+    renderAgendamentos();
+    renderFinanceiro();
+    renderDashboard();
+  }
+  window.addEventListener('supa:carregado', recarregarStateDoLocalStorage);
+
+  // ---------- Camada Supabase (dados do salão) ----------
+  (function() {
+    const SUPA_URL = 'https://dhcbgwoqvemveltqlkyb.supabase.co';
+    const SUPA_KEY = 'sb_publishable_2NBJeTDfI7FRe3xGfo_QpQ_voN44OJm';
+    const LICENCA_PAINEL_KEY = 'salao_licenca';
+
+    function getLicId() {
+      try { const l = JSON.parse(localStorage.getItem(LICENCA_PAINEL_KEY) || 'null'); return l && l.id ? l.id : null; } catch(e) { return null; }
+    }
+    function supaHeaders() {
+      return { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates' };
+    }
+
+    function clienteParaSupa(c, licId) {
+      return {
+        id: c.id,
+        licenca_id: licId,
+        nome: c.nome || '',
+        telefone: c.telefone || '',
+        email: c.email || '',
+        criado_em: c.criadoEm || null,
+        data_avaliacao: c.dataAvaliacao || null,
+        status_cliente: c.statusCliente || {},
+        evolucoes: c.evolucoes || [],
+        anamneses: {
+          capilar: c.anamneseCapilar || {},
+          manicure: c.anamneseManicure || {},
+          cilios: c.anamneseCilios || {},
+          sobrancelha: c.anamneseSobrancelha || {},
+          depilacao: c.anamneseDepilacao || {}
+        },
+        foto: c.foto || '',
+        observacoes: c.observacoes || ''
+      };
+    }
+
+    function clienteDeSupaParaLocal(r) {
+      const an = r.anamneses || {};
+      return {
+        id: r.id,
+        nome: r.nome || '',
+        telefone: r.telefone || '',
+        email: r.email || '',
+        criadoEm: r.criado_em || '',
+        dataAvaliacao: r.data_avaliacao || '',
+        statusCliente: r.status_cliente || {},
+        evolucoes: r.evolucoes || [],
+        anamneseCapilar: an.capilar || {},
+        anamneseManicure: an.manicure || {},
+        anamneseCilios: an.cilios || {},
+        anamneseSobrancelha: an.sobrancelha || {},
+        anamneseDepilacao: an.depilacao || {},
+        foto: r.foto || '',
+        observacoes: r.observacoes || ''
+      };
+    }
+
+    async function supaUpsert(tabela, obj) {
+      const r = await fetch(`${SUPA_URL}/rest/v1/${tabela}`, {
+        method: 'POST',
+        headers: { ...supaHeaders(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify(obj)
+      });
+      if (!r.ok) { const t = await r.text(); console.warn('[Supa upsert]', tabela, r.status, t); }
+    }
+
+    async function supaCarregarTudo() {
+      const licId = getLicId();
+      if (!licId) return;
+      // Clientes
+      const rc = await fetch(`${SUPA_URL}/rest/v1/estetica_clientes?licenca_id=eq.${licId}&limit=2000`, { headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY } });
+      if (rc.ok) {
+        const rows = await rc.json();
+        if (Array.isArray(rows) && rows.length) {
+          const remotos = rows.map(clienteDeSupaParaLocal);
+          const locais = load('salao_clientes', []);
+          const mapa = {};
+          locais.forEach(c => { mapa[c.id] = c; });
+          remotos.forEach(r => { mapa[r.id] = Object.assign({}, mapa[r.id] || {}, r); });
+          localStorage.setItem('salao_clientes', JSON.stringify(Object.values(mapa)));
+        }
+      }
+      // Agendamentos
+      const ra = await fetch(`${SUPA_URL}/rest/v1/estetica_agendamentos?licenca_id=eq.${licId}&limit=5000`, { headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY } });
+      if (ra.ok) {
+        const rows = await ra.json();
+        if (Array.isArray(rows) && rows.length) {
+          const locais = load('salao_agendamentos', []);
+          const mapa = {};
+          locais.forEach(a => { mapa[a.id] = a; });
+          rows.forEach(r => {
+            mapa[r.id] = Object.assign({}, mapa[r.id] || {}, {
+              id: r.id, clienteId: r.cliente_id, profissionalId: r.profissional_id,
+              servicoId: r.servico_id, data: r.data, hora: r.hora,
+              duracao: r.duracao, status: r.status, obs: r.obs || '',
+              pagamento: r.pagamento || {}, licencaId: r.licenca_id
+            });
+          });
+          localStorage.setItem('salao_agendamentos', JSON.stringify(Object.values(mapa)));
+        }
+      }
+      window.dispatchEvent(new Event('supa:carregado'));
+    }
+
+    window._supaCarregarTudo = supaCarregarTudo;
+
+    window._supaSalvarCliente = function(c) {
+      const licId = getLicId();
+      if (!licId) return;
+      supaUpsert('estetica_clientes', clienteParaSupa(c, licId));
+    };
+
+    window._supaSalvarAgendamento = function(a) {
+      const licId = getLicId();
+      if (!licId) return;
+      supaUpsert('estetica_agendamentos', {
+        id: a.id, licenca_id: licId,
+        cliente_id: a.clienteId, profissional_id: a.profissionalId,
+        servico_id: a.servicoId, data: a.data, hora: a.hora,
+        duracao: a.duracao, status: a.status, obs: a.obs || '',
+        pagamento: a.pagamento || {}
+      });
+    };
+
+    window._supaSalvarServicos = function(arr) {
+      const licId = getLicId();
+      if (!licId) return;
+      supaUpsert('estetica_config', { licenca_id: licId, chave: 'servicos', valor: arr });
+    };
+
+    window._supaSalvarProfissionais = function(arr) {
+      const licId = getLicId();
+      if (!licId) return;
+      supaUpsert('estetica_config', { licenca_id: licId, chave: 'profissionais', valor: arr });
+    };
+
+    window._supaSalvarProdutos = function(arr) {
+      const licId = getLicId();
+      if (!licId) return;
+      supaUpsert('estetica_config', { licenca_id: licId, chave: 'produtos', valor: arr });
+    };
+
+    window._supaSalvarPagamento = function(f) {
+      const licId = getLicId();
+      if (!licId) return;
+      supaUpsert('estetica_financeiro', { id: f.id, licenca_id: licId, dados: f });
+    };
+
+    window._supaSalvarConfig = function(cfg, tax, reg) {
+      const licId = getLicId();
+      if (!licId) return;
+      supaUpsert('estetica_config', { licenca_id: licId, chave: 'config', valor: cfg });
+      supaUpsert('estetica_config', { licenca_id: licId, chave: 'taxas', valor: tax });
+      supaUpsert('estetica_config', { licenca_id: licId, chave: 'regrasStatus', valor: reg });
+    };
+  })();
 
   function iniciar() {
     applyLoginBranding();
