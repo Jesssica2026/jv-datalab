@@ -5394,7 +5394,7 @@
 
   function selecionarPacienteTrat(id) {
     tratClienteId = id;
-    const c = state.clientes.find(x => x.id === id);
+    const c = (window.state || state).clientes.find(x => x.id === id);
     if (!c) return;
     document.getElementById('trat-busca-card').style.display = 'none';
     document.getElementById('tratClienteCard').style.display = 'block';
@@ -5428,8 +5428,19 @@
 
   function renderTratConteudo() {
     const el = document.getElementById('tratAbaConteudo');
-    const c = state.clientes.find(x => x.id === tratClienteId);
-    if (!c || !el) return;
+    const c = (window.state || state).clientes.find(x => x.id === tratClienteId);
+    if (!el) return;
+    if (!c) { el.innerHTML = '<div class="empty-msg">Paciente não encontrado. Tente buscar novamente.</div>'; return; }
+    // garante campos obrigatórios vindos do Supabase
+    const vazia = fichaVaziaPaciente();
+    if (!c.odontogramaAtual) c.odontogramaAtual = vazia.odontogramaAtual;
+    if (!c.odontogramaHistorico) c.odontogramaHistorico = [];
+    if (!c.planoTratamento) c.planoTratamento = vazia.planoTratamento;
+    if (!c.consultas) c.consultas = [];
+    if (!c.receitas) c.receitas = [];
+    if (!c.tratamentos) c.tratamentos = [];
+    if (!c.anamnese) c.anamnese = vazia.anamnese;
+    if (!c.anamneseHarmonizacao) c.anamneseHarmonizacao = vazia.anamneseHarmonizacao;
     if (tratAbaAtiva === 'odontograma') return renderAbaOdontograma(el, c);
     if (tratAbaAtiva === 'plano') return renderAbaPlano(el, c);
     if (tratAbaAtiva === 'prontuario') return renderAbaProntuario(el, c);
