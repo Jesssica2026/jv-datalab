@@ -1312,6 +1312,8 @@
     produtos: load(STORAGE_KEYS.produtos, null),
     taxas: load(STORAGE_KEYS.taxas, null)
   };
+  window.state = state;
+  window._STORAGE_KEYS = STORAGE_KEYS;
   state.config = Object.assign({}, DEFAULT_CONFIG, state.config);
   state.regrasStatus = Object.assign({ diasInativo: 30, diasAbandono: 90, diasRevisao: 180, diasAparelho: 45 }, load(STORAGE_KEYS.regrasStatus, null) || {});
   state.taxas = Object.assign({}, TAXAS_PADRAO, state.taxas || {});
@@ -5311,45 +5313,47 @@
 
   let _tratBuscandoSupa = false;
   async function buscarPacientesTrat() {
+    // usa window.state para garantir acesso mesmo sendo chamada de fora do escopo
+    const _state = window.state;
+    const _sk = window._STORAGE_KEYS;
     const nome = (document.getElementById('tratBuscaNome')?.value || '').toLowerCase().trim();
     const cpf = (document.getElementById('tratBuscaCpf')?.value || '').replace(/\D/g,'').trim();
     const idBusca = (document.getElementById('tratBuscaId')?.value || '').trim();
     const resultado = document.getElementById('tratResultadoBusca');
     if (!resultado) return;
     if (!nome && !cpf && !idBusca) { resultado.innerHTML = ''; return; }
-
-    console.log('[DEBUG Trat] state.clientes:', state.clientes?.length, '| _supaCarregarClientes:', !!window._supaCarregarClientes, '| licenca:', localStorage.getItem('dentista_licenca'));
+    if (!_state) { resultado.innerHTML = '<div class="empty-msg" style="color:#e74c3c">Erro: app não inicializado. Recarregue a página.</div>'; return; }
 
     // Se state.clientes está vazio, carrega do Supabase agora
-    if ((!state.clientes || state.clientes.length === 0) && !_tratBuscandoSupa) {
+    if ((!_state.clientes || _state.clientes.length === 0) && !_tratBuscandoSupa) {
       _tratBuscandoSupa = true;
       resultado.innerHTML = '<div class="empty-msg" style="color:#6b7280">🔄 Carregando pacientes do servidor...</div>';
       if (window._supaCarregarClientes) {
         try {
           const dadosSupa = await window._supaCarregarClientes();
-          console.log('[DEBUG Trat] Supabase retornou:', dadosSupa?.length, 'pacientes');
           if (dadosSupa && dadosSupa.length > 0) {
-            state.clientes = dadosSupa;
-            save(STORAGE_KEYS.clientes, state.clientes);
+            _state.clientes = dadosSupa;
+            if (_sk) localStorage.setItem(_sk.clientes, JSON.stringify(dadosSupa));
           }
         } catch(e) { console.warn('[Trat] recarregar clientes:', e); }
       }
       _tratBuscandoSupa = false;
     }
 
-    const lista = state.clientes.filter((c, idx) =>
+    const lista = (_state.clientes || []).filter((c, idx) =>
       (nome && c.nome?.toLowerCase().includes(nome)) ||
       (cpf && (c.cpf || '').replace(/\D/g,'').includes(cpf)) ||
       (idBusca && (String(idx+1) === idBusca || c.id === idBusca))
     ).slice(0, 10);
     if (!lista.length) { resultado.innerHTML = '<div class="empty-msg">Nenhum paciente encontrado.</div>'; return; }
     resultado.innerHTML = lista.map((c) => {
-      const i = state.clientes.indexOf(c) + 1;
+      const i = (_state.clientes || []).indexOf(c) + 1;
+      const nm = c.nome ? c.nome.replace(/'/g,"&#39;") : '';
       return `<div class="list-row" style="cursor:pointer;padding:10px;border-radius:8px;background:#f8f9fc;margin-bottom:6px;border:1px solid var(--cor-borda)">
         <div>
           <span style="font-size:11px;color:#9ca3af;font-weight:600">#${String(i).padStart(3,'0')}</span>
-          <strong style="margin-left:6px">${esc(c.nome)}</strong>
-          <span style="font-size:12.5px;color:#6b7280;margin-left:8px">${c.telefone ? esc(c.telefone) : ''} ${c.cpf ? '· '+esc(c.cpf) : ''}</span>
+          <strong style="margin-left:6px">${nm}</strong>
+          <span style="font-size:12.5px;color:#6b7280;margin-left:8px">${c.telefone||''} ${c.cpf ? '· '+c.cpf : ''}</span>
         </div>
         <button class="btn small" onclick="selecionarPacienteTrat('${c.id.replace(/'/g,"\\'")}')">Selecionar →</button>
       </div>`;
