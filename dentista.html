@@ -1316,6 +1316,7 @@
   window._STORAGE_KEYS = STORAGE_KEYS;
   // expõe funções de tratamento para blocos externos
   window.fichaVaziaPaciente      = fichaVaziaPaciente;
+  window.renderAbaRetornos       = (...a) => renderAbaRetornos(...a);
   window._renderAbaOdontograma   = (...a) => renderAbaOdontograma(...a);
   window._renderAbaPlano         = (...a) => renderAbaPlano(...a);
   window._renderAbaProntuario    = (...a) => renderAbaProntuario(...a);
@@ -1751,10 +1752,12 @@
       </tr>`).join('') : '<tr><td colspan="10" class="empty-msg">Nenhum material cadastrado ainda.</td></tr>';
     // Listeners para custo por uso editável
     document.querySelectorAll('[data-custo-uso-id]').forEach(input => {
-      input.onchange = function() {
+      const salvar = function() {
         const prod = state.produtos.find(x => x.id === this.dataset.custoUsoId);
         if (prod) { prod.custoUsoOverride = parseFloat(this.value) || 0; save(STORAGE_KEYS.produtos, state.produtos); showToast('Custo por uso salvo!'); }
       };
+      input.onchange = salvar;
+      input.oninput = salvar;
     });
     const comAlerta = lista.filter(p => alertasProduto(p).length);
     document.getElementById('estoqueAlertas').innerHTML = comAlerta.length ? `
@@ -2688,8 +2691,54 @@
     });
   }
 
+  function _gerarPdfOrcamento(o, c) {
+    const clinica = (state.personalizacao && state.personalizacao.nomeClinica) || state.config.nomeNegocio || 'Clínica Odontológica';
+    const endereco = (state.personalizacao && state.personalizacao.endereco) || '';
+    const tel = (state.personalizacao && state.personalizacao.telefone) || '';
+    const itensHtml = (o.itens && o.itens.length) ? `
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:12px">
+        <thead><tr style="background:#f5f5f5">
+          <th style="text-align:left;padding:6px 8px;border:1px solid #ddd">Procedimento</th>
+          <th style="text-align:left;padding:6px 8px;border:1px solid #ddd">Região</th>
+          <th style="text-align:right;padding:6px 8px;border:1px solid #ddd">Valor</th>
+        </tr></thead>
+        <tbody>${o.itens.map(i=>`<tr>
+          <td style="padding:6px 8px;border:1px solid #ddd">${esc(i.nome||'')}</td>
+          <td style="padding:6px 8px;border:1px solid #ddd">${esc(i.regiao||'')}</td>
+          <td style="padding:6px 8px;border:1px solid #ddd;text-align:right">${formatMoney(i.valor||0)}</td>
+        </tr>`).join('')}</tbody>
+        <tfoot><tr style="font-weight:700;background:#f5f5f5">
+          <td colspan="2" style="padding:7px 8px;border:1px solid #ddd">TOTAL</td>
+          <td style="padding:7px 8px;border:1px solid #ddd;text-align:right">${formatMoney(o.valor)}</td>
+        </tr></tfoot>
+      </table>` : `<p style="margin-top:12px;font-size:13px">${esc(o.descricao||'')}</p><p style="font-size:16px;font-weight:700;margin-top:8px">Total: ${formatMoney(o.valor)}</p>`;
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Orçamento</title>
+    <style>body{font-family:Arial,sans-serif;color:#1f2430;padding:30px;max-width:740px;margin:0 auto}h2{margin:0 0 4px}@media print{.no-print{display:none}}</style></head><body>
+    <div class="no-print" style="margin-bottom:20px"><button onclick="window.print()">🖨️ Imprimir / Salvar PDF</button></div>
+    <div style="border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:18px">
+      <h2>${clinica}</h2>
+      ${endereco ? `<div style="font-size:12px;color:#555">${endereco}${tel?' · '+tel:''}</div>` : ''}
+    </div>
+    <div style="text-align:center;font-weight:bold;font-size:17px;letter-spacing:.06em;margin-bottom:18px;text-transform:uppercase">Orçamento Odontológico</div>
+    <div style="display:flex;gap:20px;font-size:13px;margin-bottom:10px;flex-wrap:wrap">
+      <div><strong>Paciente:</strong> ${esc(c.nome)}</div>
+      <div><strong>Data:</strong> ${formatDateBR(o.data)}</div>
+      ${o.validade ? `<div><strong>Válido até:</strong> ${formatDateBR(o.validade)}</div>` : ''}
+    </div>
+    ${itensHtml}
+    ${o.obs ? `<div style="margin-top:14px;font-size:12px;color:#555"><strong>Observações:</strong> ${esc(o.obs)}</div>` : ''}
+    <div style="margin-top:40px;display:flex;justify-content:space-between;font-size:12px">
+      <div>___________________________________<br>Assinatura do paciente</div>
+      <div style="text-align:right">___________________________________<br>Dr(a). responsável</div>
+    </div>
+    </body></html>`;
+    const win = window.open('','_blank');
+    if (win) { win.document.write(html); win.document.close(); }
+  }
+
   function renderAbaOrcamento(el, c) {
     const orcamentos = c.orcamentos || [];
+    const servOpts = (state.servicos||[]).map(s=>`<option value="${s.id}" data-preco="${s.preco||0}">${esc(s.nome)}${s.preco?' — '+formatMoney(s.preco):''}</option>`).join('');
     el.innerHTML = `
       <div style="margin-top:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
@@ -2701,11 +2750,15 @@
           <form id="formOrcDados">
             <div class="form-grid">
               <div class="field"><label>Data</label><input type="date" id="orcData" value="${todayISO()}"></div>
-              <div class="field"><label>Validade</label><input type="date" id="orcValidade"></div>
+              <div class="field"><label>Válido até</label><input type="date" id="orcValidade"></div>
             </div>
-            <div class="field"><label>Descrição / Procedimentos</label><textarea id="orcDescricao" rows="3" placeholder="Ex: Extração dente 36, Restauração dente 21..."></textarea></div>
-            <div class="field"><label>Valor total (R$)</label><input type="number" id="orcValor" min="0" step="0.01" placeholder="0,00"></div>
-            <div class="field"><label>Observações</label><textarea id="orcObs" rows="2"></textarea></div>
+            <div class="field" style="margin-top:4px">
+              <label style="font-weight:600">Procedimentos</label>
+              <div id="orcItensLista" style="margin-top:8px"></div>
+              <button type="button" class="btn secondary small" id="btnAddItemOrc" style="margin-top:6px">+ Adicionar procedimento</button>
+            </div>
+            <div class="field"><label>Valor total (R$) <span style="font-size:11px;color:#6b7280">(calculado ou ajustável)</span></label><input type="number" id="orcValor" min="0" step="0.01" placeholder="0,00"></div>
+            <div class="field"><label>Observações</label><textarea id="orcObs" rows="2" placeholder="Condições de pagamento, materiais, etc."></textarea></div>
             <div class="btn-row">
               <button type="submit" class="btn">Salvar orçamento</button>
               <button type="button" class="btn secondary" id="btnCancelarOrc">Cancelar</button>
@@ -2719,55 +2772,132 @@
                 <div>
                   <strong style="color:var(--cor-primaria)">${formatDateBR(o.data)}</strong>
                   ${o.validade ? `<span style="font-size:12px;color:#6b7280;margin-left:8px">Válido até ${formatDateBR(o.validade)}</span>` : ''}
-                  <br><span style="font-size:13px;font-weight:600;color:var(--cor-secundaria)">${formatMoney(o.valor)}</span>
+                  <br><span style="font-size:15px;font-weight:700;color:var(--cor-secundaria)">${formatMoney(o.valor)}</span>
                 </div>
                 <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
                   ${o.status === 'aceito' ? '<span style="background:#e8f5e9;color:#1a7d3a;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Aceito</span>' :
                     o.status === 'recusado' ? '<span style="background:#fdecea;color:#b3261e;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">❌ Recusado</span>' :
                     '<span style="background:#fff3e0;color:#e65100;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">⏳ Aguardando</span>'}
                   ${!o.status || o.status === 'aguardando' ? `
-                    <button class="btn small" style="background:#1a7d3a;color:#fff" data-orc-aceitar="${o.id}">✅ Aceito</button>
-                    <button class="btn small danger" data-orc-recusar="${o.id}">❌ Recusado</button>
+                    <button class="btn small" style="background:#1a7d3a;color:#fff" data-orc-aceitar="${o.id}">✅ Cliente aceitou</button>
+                    <button class="btn small danger" data-orc-recusar="${o.id}">❌ Cliente recusou</button>
+                  ` : o.status === 'aceito' && !o.financeiroPago ? `
+                    <button class="btn small gold" data-orc-financeiro="${o.id}">💰 Lançar no financeiro</button>
                   ` : ''}
+                  <button class="btn secondary small" data-orc-pdf="${o.id}">🖨️ PDF</button>
                   <button class="btn danger small" data-orc-del="${o.id}">🗑️</button>
                 </div>
               </div>
-              ${o.descricao ? `<div style="font-size:13px;margin-bottom:4px">${esc(o.descricao)}</div>` : ''}
-              ${o.obs ? `<div style="font-size:12px;color:#6b7280">${esc(o.obs)}</div>` : ''}
+              ${o.itens && o.itens.length ? `<div style="font-size:13px">${o.itens.map(i=>`<span style="margin-right:10px">${esc(i.nome)}${i.regiao?' ('+esc(i.regiao)+')':''} — ${formatMoney(i.valor||0)}</span>`).join('')}</div>` : o.descricao ? `<div style="font-size:13px;margin-bottom:4px">${esc(o.descricao)}</div>` : ''}
+              ${o.obs ? `<div style="font-size:12px;color:#6b7280;margin-top:4px">${esc(o.obs)}</div>` : ''}
+              ${o.financeiroPago ? `<div style="font-size:11px;color:#1a7d3a;margin-top:4px">✅ Lançado no financeiro em ${formatDateBR(o.financeiroPago)}</div>` : ''}
             </div>
           `).join('')}
         </div>
       </div>
     `;
+    // form itens dinâmicos
+    let _orcItens = [];
+    function _recalcOrcTotal() {
+      const t = _orcItens.reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+      const inp = el.querySelector('#orcValor');
+      if (inp) inp.value = t > 0 ? t.toFixed(2) : '';
+    }
+    function _renderOrcItens() {
+      const div = el.querySelector('#orcItensLista');
+      if (!div) return;
+      div.innerHTML = _orcItens.map((item, idx) => `
+        <div style="display:grid;grid-template-columns:1fr 140px 80px 28px;gap:6px;align-items:center;margin-bottom:6px">
+          <select data-orc-serv="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 6px;font-size:13px">
+            <option value="">Procedimento</option>${servOpts}
+          </select>
+          <input type="text" value="${esc(item.regiao||'')}" placeholder="Dente/região" data-orc-reg="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 6px;font-size:13px">
+          <input type="number" min="0" step="0.01" value="${item.valor||''}" placeholder="Valor" data-orc-val="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 6px;font-size:13px;width:100%">
+          <button type="button" data-orc-del-item="${idx}" style="background:#fee2e2;color:#b3261e;border:none;border-radius:5px;cursor:pointer;font-size:16px;line-height:1;padding:4px 6px">×</button>
+        </div>`).join('');
+      // restaurar seleções
+      _orcItens.forEach((item, idx) => {
+        const sel = div.querySelector(`[data-orc-serv="${idx}"]`);
+        if (sel && item.servicoId) sel.value = item.servicoId;
+        sel && (sel.onchange = () => {
+          const opt = sel.options[sel.selectedIndex];
+          _orcItens[idx].servicoId = sel.value;
+          _orcItens[idx].nome = opt.text.split(' — ')[0];
+          const preco = parseFloat(opt.dataset.preco)||0;
+          if (preco) { _orcItens[idx].valor = preco; _renderOrcItens(); }
+          _recalcOrcTotal();
+        });
+        const regInp = div.querySelector(`[data-orc-reg="${idx}"]`);
+        regInp && (regInp.oninput = () => { _orcItens[idx].regiao = regInp.value; });
+        const valInp = div.querySelector(`[data-orc-val="${idx}"]`);
+        valInp && (valInp.oninput = () => { _orcItens[idx].valor = parseFloat(valInp.value)||0; _recalcOrcTotal(); });
+        const delBtn = div.querySelector(`[data-orc-del-item="${idx}"]`);
+        delBtn && (delBtn.onclick = () => { _orcItens.splice(idx,1); _renderOrcItens(); _recalcOrcTotal(); });
+      });
+    }
+    el.querySelector('#btnAddItemOrc').addEventListener('click', () => {
+      _orcItens.push({servicoId:'',nome:'',regiao:'',valor:0}); _renderOrcItens();
+    });
     el.querySelector('#btnNovoOrcamento').addEventListener('click', () => {
       el.querySelector('#formNovoOrcamento').style.display = 'block';
     });
     el.querySelector('#btnCancelarOrc').addEventListener('click', () => {
-      el.querySelector('#formNovoOrcamento').style.display = 'none';
+      el.querySelector('#formNovoOrcamento').style.display = 'none'; _orcItens = [];
     });
     el.querySelector('#formOrcDados').addEventListener('submit', e => {
       e.preventDefault();
       if (!c.orcamentos) c.orcamentos = [];
+      const itens = _orcItens.filter(i=>i.nome||i.servicoId);
+      const valor = num(el.querySelector('#orcValor').value) || itens.reduce((s,i)=>s+(i.valor||0),0);
       c.orcamentos.push({
-        id: uid(), data: document.getElementById('orcData').value,
-        validade: document.getElementById('orcValidade').value,
-        descricao: document.getElementById('orcDescricao').value.trim(),
-        valor: num(document.getElementById('orcValor').value),
-        obs: document.getElementById('orcObs').value.trim(),
+        id: uid(), data: el.querySelector('#orcData').value,
+        validade: el.querySelector('#orcValidade').value,
+        itens, descricao: itens.map(i=>i.nome).join(', '),
+        valor, obs: el.querySelector('#orcObs').value.trim(),
         status: 'aguardando'
       });
       save(STORAGE_KEYS.clientes, state.clientes);
-      showToast('Orçamento salvo!');
+      showToast('Orçamento salvo!'); _orcItens = [];
       renderAbaOrcamento(el, c);
     });
+    // aceitar → muda status
     el.querySelectorAll('[data-orc-aceitar]').forEach(btn => btn.addEventListener('click', () => {
       const o = c.orcamentos.find(x => x.id === btn.dataset.orcAceitar);
-      if (o) { o.status = 'aceito'; o.statusEm = new Date().toISOString(); save(STORAGE_KEYS.clientes, state.clientes); showToast('Orçamento aceito!'); renderAbaOrcamento(el, c); }
+      if (o) { o.status = 'aceito'; o.statusEm = new Date().toISOString(); save(STORAGE_KEYS.clientes, state.clientes); showToast('✅ Orçamento aceito!'); renderAbaOrcamento(el, c); }
     }));
+    // recusar
     el.querySelectorAll('[data-orc-recusar]').forEach(btn => btn.addEventListener('click', () => {
       const o = c.orcamentos.find(x => x.id === btn.dataset.orcRecusar);
-      if (o) { o.status = 'recusado'; o.statusEm = new Date().toISOString(); save(STORAGE_KEYS.clientes, state.clientes); showToast('Orçamento recusado.'); renderAbaOrcamento(el, c); }
+      if (o) { o.status = 'recusado'; o.statusEm = new Date().toISOString(); save(STORAGE_KEYS.clientes, state.clientes); showToast('❌ Orçamento recusado.'); renderAbaOrcamento(el, c); }
     }));
+    // lançar no financeiro
+    el.querySelectorAll('[data-orc-financeiro]').forEach(btn => btn.addEventListener('click', () => {
+      const o = c.orcamentos.find(x => x.id === btn.dataset.orcFinanceiro);
+      if (!o) return;
+      const hoje = todayISO();
+      const descricao = `Orçamento aceito — ${o.itens && o.itens.length ? o.itens.map(i=>i.nome).join(', ') : (o.descricao||'Procedimento')}`;
+      state.financeiro.push({
+        id: uid(), tipo: 'receita', atendimento: false, origem: 'particular',
+        descricao, valor: o.valor, data: hoje,
+        clienteId: c.id, clienteNome: c.nome,
+        profissionalId: '', profissionalNome: '',
+        procedimentoNome: descricao, orcamentoId: o.id,
+        formaPagamento: 'A definir', taxaPercentual: 0, taxaValor: 0,
+        custoInsumos: 0, valorLiquido: o.valor, lucro: o.valor, baixas: []
+      });
+      o.financeiroPago = hoje;
+      save(STORAGE_KEYS.financeiro, state.financeiro);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderFinanceiro && renderFinanceiro();
+      showToast('💰 Lançado no financeiro!');
+      renderAbaOrcamento(el, c);
+    }));
+    // PDF
+    el.querySelectorAll('[data-orc-pdf]').forEach(btn => btn.addEventListener('click', () => {
+      const o = c.orcamentos.find(x => x.id === btn.dataset.orcPdf);
+      if (o) _gerarPdfOrcamento(o, c);
+    }));
+    // excluir
     el.querySelectorAll('[data-orc-del]').forEach(btn => btn.addEventListener('click', () => {
       if (!confirm('Excluir orçamento?')) return;
       c.orcamentos = c.orcamentos.filter(x => x.id !== btn.dataset.orcDel);
@@ -2779,31 +2909,57 @@
   function renderAbaTratamentos(el, c) {
     const tratamentos = c.tratamentos || [];
     const hoje = todayISO();
+    const produtosOpts = (state.produtos || []).map(p => `<option value="${p.id}">${esc(p.nome)} — ${formatMoney(custoPorUso(p))}/uso</option>`).join('');
+    // ticket médio
+    const comValor = tratamentos.filter(t => t.valor > 0);
+    const ticketMedio = comValor.length ? comValor.reduce((s,t)=>s+t.valor,0)/comValor.length : 0;
+    const custoTotal = tratamentos.reduce((s,t)=>s+(t.custoMateriais||0),0);
     el.innerHTML = `
       <div style="margin-top:10px">
+        ${tratamentos.length > 0 ? `
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+          <div class="card" style="flex:1;min-width:140px;text-align:center;padding:12px 16px">
+            <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em">Ticket médio</div>
+            <div style="font-size:20px;font-weight:700;color:var(--cor-secundaria)">${formatMoney(ticketMedio)}</div>
+          </div>
+          <div class="card" style="flex:1;min-width:140px;text-align:center;padding:12px 16px">
+            <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em">Custo materiais</div>
+            <div style="font-size:20px;font-weight:700;color:#e65100">${formatMoney(custoTotal)}</div>
+          </div>
+          <div class="card" style="flex:1;min-width:140px;text-align:center;padding:12px 16px">
+            <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em">Atendimentos</div>
+            <div style="font-size:20px;font-weight:700;color:var(--cor-primaria)">${tratamentos.length}</div>
+          </div>
+        </div>` : ''}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-          <h4 style="color:var(--cor-primaria)">Histórico de tratamentos</h4>
-          <button type="button" class="btn small" id="btnNovoTrat">+ Registrar tratamento</button>
+          <h4 style="color:var(--cor-primaria)">Histórico de atendimentos</h4>
+          <button type="button" class="btn small" id="btnNovoTrat">+ Registrar atendimento</button>
         </div>
         <div id="formNovoTrat" style="display:none" class="card" style="margin-bottom:14px">
-          <h4 style="color:var(--cor-primaria);margin-bottom:12px">Novo tratamento</h4>
+          <h4 style="color:var(--cor-primaria);margin-bottom:12px">Novo atendimento</h4>
           <form id="formTratDados">
             <div class="form-grid">
               <div class="field"><label>Data</label><input type="date" id="tratData" value="${hoje}" required></div>
               <div class="field"><label>Dentista</label><select id="tratProf"><option value="">Selecione</option>${state.profissionais.map(p=>`<option value="${p.id}" ${p.id===(session.tipo==='profissional'?session.profissionalId:'') ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select></div>
-              <div class="field"><label>Procedimento</label><select id="tratServico"><option value="">Selecione</option>${state.servicos.map(s=>`<option value="${s.id}">${esc(s.nome)}</option>`).join('')}</select></div>
+              <div class="field"><label>Procedimento</label><select id="tratServico"><option value="">Selecione</option>${(state.servicos||[]).map(s=>`<option value="${s.id}">${esc(s.nome)}${s.preco ? ' — ' + formatMoney(s.preco) : ''}</option>`).join('')}</select></div>
               <div class="field"><label>Dente(s) / Região</label><input type="text" id="tratRegiao" placeholder="Ex: 36, 21, Superior esquerdo"></div>
               <div class="field"><label>Valor cobrado (R$)</label><input type="number" id="tratValor" min="0" step="0.01"></div>
             </div>
+            <div class="field" style="margin-top:8px">
+              <label style="font-weight:600">Materiais utilizados</label>
+              <div id="tratMateriaisLista" style="margin-top:8px"></div>
+              ${produtosOpts ? `<button type="button" class="btn secondary small" id="btnAddMaterial" style="margin-top:6px">+ Adicionar material</button>` : '<span style="font-size:12px;color:#6b7280">Cadastre produtos no Estoque para vincular materiais.</span>'}
+            </div>
+            <div class="field" style="margin-top:4px"><label>Custo materiais (R$) <span style="font-size:11px;color:#6b7280">(calculado automaticamente)</span></label><input type="text" id="tratCustoMat" readonly style="background:var(--cor-fundo);font-weight:600" value="R$ 0,00"></div>
             <div class="field"><label>Observações clínicas</label><textarea id="tratObs" rows="3"></textarea></div>
             <div class="btn-row">
-              <button type="submit" class="btn">Salvar tratamento</button>
+              <button type="submit" class="btn">Salvar atendimento</button>
               <button type="button" class="btn secondary" id="btnCancelarTrat">Cancelar</button>
             </div>
           </form>
         </div>
         <div id="listaTratamentos">
-          ${!tratamentos.length ? '<div class="empty-msg">Nenhum tratamento registrado ainda.</div>' : tratamentos.slice().sort((a,b)=>b.data.localeCompare(a.data)).map(t => `
+          ${!tratamentos.length ? '<div class="empty-msg">Nenhum atendimento registrado ainda.</div>' : tratamentos.slice().sort((a,b)=>b.data.localeCompare(a.data)).map(t => `
             <div class="card" style="margin-bottom:10px">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
                 <div>
@@ -2811,40 +2967,95 @@
                   ${t.regiao ? `<span style="font-size:12px;color:#6b7280;margin-left:6px">${esc(t.regiao)}</span>` : ''}
                   <br><span style="font-size:13px">${esc(nomeServicoPorId(t.servicoId)) || esc(t.procedimento) || '—'}</span>
                   ${t.profissionalId ? `<span style="font-size:12px;color:#6b7280"> · ${esc(nomeProfissionalPorId(t.profissionalId))}</span>` : ''}
-                  ${t.valor ? `<br><span style="font-size:13px;font-weight:600;color:var(--cor-secundaria)">${formatMoney(t.valor)}</span>` : ''}
+                  <span style="font-size:13px;font-weight:600;color:var(--cor-secundaria)">${t.valor ? ' · ' + formatMoney(t.valor) : ''}</span>
+                  ${t.custoMateriais > 0 ? `<span style="font-size:12px;color:#e65100"> · Materiais: ${formatMoney(t.custoMateriais)}</span>` : ''}
                 </div>
-                <button class="btn danger small" data-del-trat="${t.id}">🗑️ Excluir</button>
+                <button class="btn danger small" data-del-trat="${t.id}">🗑️</button>
               </div>
+              ${t.materiais && t.materiais.length ? `<div style="font-size:12px;color:#6b7280;margin-top:6px">${t.materiais.map(m=>`${esc(m.nome)} ×${m.qtd}`).join(', ')}</div>` : ''}
               ${t.observacoes ? `<div style="font-size:13px;color:#4b5162;margin-top:8px;padding-top:8px;border-top:1px solid var(--cor-borda)">${esc(t.observacoes)}</div>` : ''}
             </div>
           `).join('')}
         </div>
       </div>
     `;
+    // materiais dinâmicos
+    let _matItens = [];
+    function _recalcCusto() {
+      const total = _matItens.reduce((s,m) => {
+        const prod = (state.produtos||[]).find(p=>p.id===m.prodId);
+        return s + (prod ? custoPorUso(prod) * (m.qtd||1) : 0);
+      }, 0);
+      const inp = el.querySelector('#tratCustoMat');
+      if (inp) inp.value = formatMoney(total);
+    }
+    function _renderMatLista() {
+      const div = el.querySelector('#tratMateriaisLista');
+      if (!div) return;
+      div.innerHTML = _matItens.map((m, idx) => `
+        <div style="display:grid;grid-template-columns:1fr 70px 28px;gap:6px;align-items:center;margin-bottom:6px">
+          <select data-mat-prod="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 6px;font-size:13px">
+            <option value="">Selecione</option>${(state.produtos||[]).map(p=>`<option value="${p.id}" ${p.id===m.prodId ? 'selected' : ''}>${esc(p.nome)} — ${formatMoney(custoPorUso(p))}/uso</option>`).join('')}
+          </select>
+          <input type="number" min="1" step="1" value="${m.qtd||1}" data-mat-qtd="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 6px;font-size:13px;width:100%">
+          <button type="button" data-mat-del="${idx}" style="background:#fee2e2;color:#b3261e;border:none;border-radius:5px;cursor:pointer;font-size:16px;line-height:1;padding:4px 6px">×</button>
+        </div>`).join('');
+      div.querySelectorAll('[data-mat-prod]').forEach(sel => {
+        sel.onchange = () => { _matItens[+sel.dataset.matProd].prodId = sel.value; _renderMatLista(); _recalcCusto(); };
+      });
+      div.querySelectorAll('[data-mat-qtd]').forEach(inp => {
+        inp.oninput = () => { _matItens[+inp.dataset.matQtd].qtd = parseFloat(inp.value)||1; _recalcCusto(); };
+      });
+      div.querySelectorAll('[data-mat-del]').forEach(btn => {
+        btn.onclick = () => { _matItens.splice(+btn.dataset.matDel, 1); _renderMatLista(); _recalcCusto(); };
+      });
+    }
+    el.querySelector('#btnAddMaterial')?.addEventListener('click', () => {
+      _matItens.push({prodId:'', qtd:1}); _renderMatLista(); _recalcCusto();
+    });
     el.querySelector('#btnNovoTrat').addEventListener('click', () => {
       el.querySelector('#formNovoTrat').style.display = 'block';
     });
     el.querySelector('#btnCancelarTrat').addEventListener('click', () => {
-      el.querySelector('#formNovoTrat').style.display = 'none';
+      el.querySelector('#formNovoTrat').style.display = 'none'; _matItens = [];
+    });
+    // ao selecionar serviço, pré-preenche valor e materiais
+    el.querySelector('#tratServico')?.addEventListener('change', function() {
+      const serv = (state.servicos||[]).find(s=>s.id===this.value);
+      if (!serv) return;
+      const valInp = el.querySelector('#tratValor');
+      if (valInp && !valInp.value && serv.preco) valInp.value = serv.preco;
+      // pré-carrega materiais do serviço se tiver ficha de custo
+      if (serv.insumos && serv.insumos.length && _matItens.length === 0) {
+        _matItens = serv.insumos.map(i=>({prodId:i.produtoId||i.id||'', qtd:i.usos||i.qtd||1}));
+        _renderMatLista(); _recalcCusto();
+      }
     });
     el.querySelector('#formTratDados').addEventListener('submit', e => {
       e.preventDefault();
       if (!c.tratamentos) c.tratamentos = [];
+      const servId = el.querySelector('#tratServico').value;
+      const materiais = _matItens.filter(m=>m.prodId).map(m=>{
+        const prod = (state.produtos||[]).find(p=>p.id===m.prodId);
+        return { prodId:m.prodId, nome:prod?prod.nome:'', qtd:m.qtd||1, custoUnit: prod?custoPorUso(prod):0 };
+      });
+      const custoMateriais = materiais.reduce((s,m)=>s+m.custoUnit*(m.qtd||1),0);
       c.tratamentos.push({
-        id: uid(), data: document.getElementById('tratData').value,
-        profissionalId: document.getElementById('tratProf').value,
-        servicoId: document.getElementById('tratServico').value,
-        procedimento: nomeServicoPorId(document.getElementById('tratServico').value) || '',
-        regiao: document.getElementById('tratRegiao').value.trim(),
-        valor: num(document.getElementById('tratValor').value),
-        observacoes: document.getElementById('tratObs').value.trim()
+        id: uid(), data: el.querySelector('#tratData').value,
+        profissionalId: el.querySelector('#tratProf').value,
+        servicoId: servId,
+        procedimento: nomeServicoPorId(servId) || '',
+        regiao: el.querySelector('#tratRegiao').value.trim(),
+        valor: num(el.querySelector('#tratValor').value),
+        materiais, custoMateriais,
+        observacoes: el.querySelector('#tratObs').value.trim()
       });
       save(STORAGE_KEYS.clientes, state.clientes);
-      showToast('Tratamento registrado!');
+      showToast('Atendimento registrado!');
       renderAbaTratamentos(el, c);
     });
     el.querySelectorAll('[data-del-trat]').forEach(btn => btn.addEventListener('click', () => {
-      if (!confirm('Excluir este tratamento?')) return;
+      if (!confirm('Excluir este atendimento?')) return;
       c.tratamentos = c.tratamentos.filter(x => x.id !== btn.dataset.delTrat);
       save(STORAGE_KEYS.clientes, state.clientes);
       renderAbaTratamentos(el, c);
@@ -5314,13 +5525,15 @@
     { id: 'prontuario', label: 'Prontuário' },
     { id: 'orcamento', label: '💰 Orçamento' },
     { id: 'receituario', label: 'Receituário' },
-    { id: 'tratamentos', label: '📋 Histórico' }
+    { id: 'tratamentos', label: '📋 Histórico' },
+    { id: 'retornos', label: '🔄 Retornos' }
   ];
 
   const TRAT_ABAS_HARMONIZACAO = [
     { id: 'harmonizacao_ficha', label: 'Ficha Clínica' },
     { id: 'orcamento', label: '💰 Orçamento' },
-    { id: 'tratamentos', label: '📋 Histórico' }
+    { id: 'tratamentos', label: '📋 Histórico' },
+    { id: 'retornos', label: '🔄 Retornos' }
   ];
 
   let _tratBuscandoSupa = false;
@@ -5445,6 +5658,7 @@
     if (!c.receitas) c.receitas = [];
     if (!c.tratamentos) c.tratamentos = [];
     if (!c.orcamentos) c.orcamentos = [];
+    if (!c.retornos) c.retornos = [];
     if (!c.anamnese) c.anamnese = vazia.anamnese;
     if (!c.anamneseHarmonizacao) c.anamneseHarmonizacao = vazia.anamneseHarmonizacao;
     try {
@@ -5462,11 +5676,128 @@
       if (tratAbaAtiva === 'receituario'        && _rec)  return _rec(el, c);
       if (tratAbaAtiva === 'tratamentos'        && _trat) return _trat(el, c);
       if (tratAbaAtiva === 'harmonizacao_ficha' && _harm) return _harm(el, c);
+      if (tratAbaAtiva === 'retornos') return renderAbaRetornos(el, c);
       el.innerHTML = '<div class="empty-msg">Selecione uma aba.</div>';
     } catch(err) {
       console.error('[renderTratConteudo] erro na aba "' + tratAbaAtiva + '":', err);
       el.innerHTML = '<div class="empty-msg" style="color:#e74c3c">⚠️ Erro ao carregar aba: ' + (err && err.message ? err.message : String(err)) + '</div>';
     }
+  }
+
+  function renderAbaRetornos(el, c) {
+    if (!c.retornos) c.retornos = [];
+    const hoje = todayISO();
+    const proximos = c.retornos.filter(r => r.data >= hoje && r.status !== 'realizado').sort((a,b)=>a.data.localeCompare(b.data));
+    const passados = c.retornos.filter(r => r.data < hoje || r.status === 'realizado').sort((a,b)=>b.data.localeCompare(a.data));
+    const motivosOpts = ['Revisão / Profilaxia', 'Avaliação pós-procedimento', 'Continuação do tratamento', 'Manutenção de aparelho', 'Clareamento - retoque', 'Extração - retorno', 'Controle de dor', 'Outro'].map(m=>`<option value="${m}">${m}</option>`).join('');
+    el.innerHTML = `
+      <div style="margin-top:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <h4 style="color:var(--cor-primaria)">Retornos do paciente</h4>
+          <button type="button" class="btn small" id="btnNovoRetorno">+ Agendar retorno</button>
+        </div>
+
+        <div id="formNovoRetorno" style="display:none" class="card" style="margin-bottom:16px">
+          <h4 style="color:var(--cor-primaria);margin-bottom:12px">Agendar retorno</h4>
+          <form id="formRetornoDados">
+            <div class="form-grid">
+              <div class="field"><label>Data prevista</label><input type="date" id="retData" required></div>
+              <div class="field"><label>Dentista</label><select id="retProf"><option value="">Selecione</option>${(state.profissionais||[]).map(p=>`<option value="${p.id}">${esc(p.nome)}</option>`).join('')}</select></div>
+            </div>
+            <div class="field"><label>Motivo do retorno</label>
+              <select id="retMotivo"><option value="">Selecione ou escreva abaixo</option>${motivosOpts}</select>
+            </div>
+            <div class="field"><label>Detalhes / o que fazer neste retorno</label>
+              <textarea id="retObs" rows="3" placeholder="Ex: Controle do canal do dente 36, avaliar sensibilidade, iniciar faceta do dente 11..."></textarea>
+            </div>
+            <div class="field"><label>Urgência</label>
+              <select id="retUrgencia">
+                <option value="normal">Normal</option>
+                <option value="atencao">⚠️ Atenção</option>
+                <option value="urgente">🔴 Urgente</option>
+              </select>
+            </div>
+            <div class="btn-row">
+              <button type="submit" class="btn">Salvar retorno</button>
+              <button type="button" class="btn secondary" id="btnCancelarRetorno">Cancelar</button>
+            </div>
+          </form>
+        </div>
+
+        ${proximos.length ? `
+        <h5 style="color:var(--cor-primaria);margin-bottom:10px;font-size:13px;text-transform:uppercase;letter-spacing:.04em">📅 Próximos retornos (${proximos.length})</h5>
+        ${proximos.map(r => {
+          const diasStr = (() => { const d = Math.round((new Date(r.data+'T00:00:00') - new Date(hoje+'T00:00:00'))/(1000*60*60*24)); return d===0?'Hoje':d===1?'Amanhã':`Em ${d} dias`; })();
+          const urgColor = r.urgencia==='urgente'?'#b3261e':r.urgencia==='atencao'?'#e65100':'#1a7d3a';
+          return `<div class="card" style="margin-bottom:10px;border-left:4px solid ${urgColor}">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+              <div>
+                <strong style="color:${urgColor}">${formatDateBR(r.data)}</strong>
+                <span style="font-size:12px;color:${urgColor};font-weight:600;margin-left:8px">${diasStr}</span>
+                ${r.profissionalId ? `<span style="font-size:12px;color:#6b7280"> · ${esc(nomeProfissionalPorId(r.profissionalId))}</span>` : ''}
+                ${r.motivo ? `<br><span style="font-size:13px;font-weight:600">${esc(r.motivo)}</span>` : ''}
+                ${r.obs ? `<br><span style="font-size:13px;color:#4b5162">${esc(r.obs)}</span>` : ''}
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button class="btn small" style="background:#1a7d3a;color:#fff" data-ret-realizado="${r.id}">✅ Realizado</button>
+                <button class="btn danger small" data-ret-del="${r.id}">🗑️</button>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}` : `<div class="card" style="border-left:4px solid #6b7280;margin-bottom:16px;padding:14px">
+          <span style="color:#6b7280;font-size:13px">Nenhum retorno agendado. Clique em "+ Agendar retorno" para programar.</span>
+        </div>`}
+
+        ${passados.length ? `
+        <h5 style="color:#6b7280;margin:16px 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.04em">Histórico de retornos</h5>
+        ${passados.map(r => `<div class="card" style="margin-bottom:8px;opacity:0.75">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+            <div>
+              <strong style="color:var(--cor-primaria)">${formatDateBR(r.data)}</strong>
+              ${r.status==='realizado'?'<span style="font-size:12px;color:#1a7d3a;margin-left:6px;font-weight:600">✅ Realizado</span>':'<span style="font-size:12px;color:#b3261e;margin-left:6px">⏰ Não compareceu</span>'}
+              ${r.motivo?`<span style="font-size:12px;color:#6b7280"> · ${esc(r.motivo)}</span>`:''}
+              ${r.obs?`<br><span style="font-size:12px;color:#6b7280">${esc(r.obs)}</span>`:''}
+            </div>
+            <button class="btn danger small" data-ret-del="${r.id}">🗑️</button>
+          </div>
+        </div>`).join('')}` : ''}
+      </div>
+    `;
+    el.querySelector('#btnNovoRetorno').addEventListener('click', () => {
+      el.querySelector('#formNovoRetorno').style.display = 'block';
+    });
+    el.querySelector('#btnCancelarRetorno').addEventListener('click', () => {
+      el.querySelector('#formNovoRetorno').style.display = 'none';
+    });
+    el.querySelector('#formRetornoDados').addEventListener('submit', e => {
+      e.preventDefault();
+      if (!c.retornos) c.retornos = [];
+      const motSel = el.querySelector('#retMotivo').value;
+      const obs = el.querySelector('#retObs').value.trim();
+      c.retornos.push({
+        id: uid(),
+        data: el.querySelector('#retData').value,
+        profissionalId: el.querySelector('#retProf').value,
+        motivo: motSel || '',
+        obs,
+        urgencia: el.querySelector('#retUrgencia').value,
+        status: 'pendente',
+        criadoEm: new Date().toISOString()
+      });
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('🔄 Retorno agendado!');
+      renderAbaRetornos(el, c);
+    });
+    el.querySelectorAll('[data-ret-realizado]').forEach(btn => btn.addEventListener('click', () => {
+      const r = c.retornos.find(x => x.id === btn.dataset.retRealizado);
+      if (r) { r.status = 'realizado'; r.realizadoEm = new Date().toISOString(); save(STORAGE_KEYS.clientes, state.clientes); showToast('✅ Retorno marcado como realizado!'); renderAbaRetornos(el, c); }
+    }));
+    el.querySelectorAll('[data-ret-del]').forEach(btn => btn.addEventListener('click', () => {
+      if (!confirm('Excluir este retorno?')) return;
+      c.retornos = c.retornos.filter(x => x.id !== btn.dataset.retDel);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderAbaRetornos(el, c);
+    }));
   }
 
   function renderAbaHarmonizacaoFicha(el, c) {
@@ -5512,7 +5843,7 @@
       objetivos:{ odontograma:c.odontogramaAtual||{}, historico:c.odontogramaHistorico||[] },
       mapacorporal:c.planoTratamento||{},
       medidas:c.consultas||[],
-      protocolo:{ receitas:c.receitas||[], tratamentos:c.tratamentos||[], orcamentos:c.orcamentos||[], aparelho:c.aparelho||{} },
+      protocolo:{ receitas:c.receitas||[], tratamentos:c.tratamentos||[], orcamentos:c.orcamentos||[], retornos:c.retornos||[], aparelho:c.aparelho||{} },
       pacotes:[],
       historicostatus:c.historicoStatus||[]
     };
@@ -5535,6 +5866,7 @@
       receitas:proto.receitas||[],
       tratamentos:proto.tratamentos||[],
       orcamentos:proto.orcamentos||[],
+      retornos:proto.retornos||[],
       aparelho:proto.aparelho||{modo:'auto',ultimaManutencao:''},
       historicoStatus:parseJsonb(r.historicostatus,[])
     };
