@@ -459,6 +459,9 @@
   .ia-btn-wpp:hover { opacity:.88; }
   .ia-btn-copy { background:#e8eaf0; color:#333; }
   .ia-loading { display:none; font-size:13px; color:#888; margin-top:6px; }
+  .trat-cat-btn { padding: 10px 18px; border: 2px solid var(--cor-borda); border-radius: 10px; background: #fff; color: var(--cor-texto); font-size: 13.5px; font-weight: 600; cursor: pointer; transition: all .15s; }
+  .trat-cat-btn:hover { border-color: var(--cor-secundaria); color: var(--cor-primaria); }
+  .trat-cat-btn.active { background: var(--cor-primaria); color: #fff; border-color: var(--cor-primaria); }
 </style>
 </head>
 <body>
@@ -489,6 +492,7 @@
       <button data-page="estoque" class="admin-only"><span class="icon">📦</span><span class="menu-label">Estoque</span></button>
       <button data-page="agendamentos"><span class="icon">📅</span><span class="menu-label">Agendamentos</span></button>
       <button data-page="clientes"><span class="icon">👥</span><span class="menu-label">Clientes</span></button>
+      <button data-page="tratamento" class="admin-only"><span class="icon">💆</span><span class="menu-label">Tratamento</span></button>
       <button data-page="retencao" class="admin-only"><span class="icon">🔁</span><span class="menu-label">Retenção</span></button>
       <button data-page="galeria"><span class="icon">📸</span><span class="menu-label">Galeria de Evolução</span></button>
       <button data-page="personalizacao" class="admin-only"><span class="icon">🎨</span><span class="menu-label">Personalização</span></button>
@@ -1067,6 +1071,63 @@
           </div>
         </div>
       </section>
+
+      <!-- TRATAMENTO -->
+      <section class="page admin-only" id="page-tratamento">
+        <h2 class="page-title">Tratamento</h2>
+        <p class="page-sub">Orçamentos, evolução e histórico de atendimentos por cliente</p>
+
+        <!-- Busca de cliente -->
+        <div class="card" id="trat-busca-card">
+          <h3>Buscar cliente</h3>
+          <div class="form-grid">
+            <div class="field">
+              <label>Nome</label>
+              <input type="text" id="tratBuscaNome" placeholder="Buscar por nome...">
+            </div>
+            <div class="field">
+              <label>Telefone</label>
+              <input type="text" id="tratBuscaTel" placeholder="(00) 00000-0000">
+            </div>
+          </div>
+          <div id="tratResultadoBusca" style="margin-top:10px"></div>
+        </div>
+
+        <!-- Cliente selecionado -->
+        <div id="tratClienteCard" style="display:none">
+          <div class="card" style="margin-top:16px;border-left:4px solid var(--cor-secundaria)">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+              <div>
+                <div style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Cliente selecionada</div>
+                <div style="font-size:19px;font-weight:700;color:var(--cor-primaria);margin-top:3px" id="tratClienteNome"></div>
+                <div style="font-size:13px;color:#6b7280;margin-top:2px" id="tratClienteInfo"></div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <div id="tratAnamneseBadges"></div>
+                <button type="button" class="btn secondary small" id="btnTratLimpar">↩ Trocar cliente</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seletor de tipo de serviço -->
+          <div class="card" style="margin-top:14px">
+            <h3>Tipo de serviço</h3>
+            <div style="display:flex;gap:10px;flex-wrap:wrap" id="tratTiposDiv">
+              <button type="button" class="trat-cat-btn" data-tipo="capilar">💇 Capilar</button>
+              <button type="button" class="trat-cat-btn" data-tipo="estetica">💆 Estética/Facial</button>
+              <button type="button" class="trat-cat-btn" data-tipo="unhas">💅 Manicure/Pedicure</button>
+              <button type="button" class="trat-cat-btn" data-tipo="cilios">👁️ Cílios &amp; Sobrancelhas</button>
+              <button type="button" class="trat-cat-btn" data-tipo="depilacao">🌊 Depilação</button>
+            </div>
+          </div>
+
+          <!-- Abas do tratamento -->
+          <div id="tratAbasDiv" style="display:none">
+            <div class="ficha-tabs" id="tratTabs" style="margin-top:16px"></div>
+            <div id="tratAbaConteudo" style="margin-top:16px"></div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </div>
@@ -1229,7 +1290,7 @@
     intervaloGrade: 30
   };
 
-  const ADMIN_ONLY_PAGES = ['dashboard', 'servicos', 'profissionais', 'personalizacao', 'financeiro', 'estoque', 'retencao'];
+  const ADMIN_ONLY_PAGES = ['dashboard', 'servicos', 'profissionais', 'personalizacao', 'financeiro', 'estoque', 'retencao', 'tratamento'];
   const TAXAS_PADRAO = { debito: 0, credito1x: 0, credito2a6: 0, credito7a12: 0, outros: [] };
 
   const SERVICOS_PADRAO = [
@@ -1377,6 +1438,7 @@
     if (pageId === 'estoque') renderEstoque();
     if (pageId === 'retencao') renderRetencao();
     if (pageId === 'financeiro') renderFinanceiro();
+    if (pageId === 'tratamento') initTratamento();
   }
 
   document.getElementById('toggleSidebar').addEventListener('click', () => {
@@ -2072,7 +2134,7 @@
     if (id) {
       Object.assign(state.clientes.find(c => c.id === id), dados);
     } else {
-      state.clientes.push(Object.assign({ id: uid(), criadoEm: todayISO(), dataAvaliacao: todayISO(), statusCliente: statusVazio(), evolucoes: [] }, dados, { anamneseCapilar: {}, anamneseManicure: {}, anamneseCilios: {}, anamneseSobrancelha: {}, anamneseDepilacao: {} }));
+      state.clientes.push(Object.assign({ id: uid(), criadoEm: todayISO(), dataAvaliacao: todayISO(), statusCliente: statusVazio(), evolucoes: [], orcamentos: [], tratamentos: [] }, dados, { anamneseCapilar: {}, anamneseManicure: {}, anamneseCilios: {}, anamneseSobrancelha: {}, anamneseDepilacao: {} }));
     }
     save(STORAGE_KEYS.clientes, state.clientes);
     modalCliente.classList.remove('open');
@@ -2118,12 +2180,11 @@
   });
 
   const ABAS_CLIENTE = [
-    { id: 'anamnese', label: 'Anamnese capilar' },
-    { id: 'manicure', label: 'Manicure/Pedicure' },
-    { id: 'cilios', label: 'Cílios' },
-    { id: 'sobrancelha', label: 'Sobrancelhas' },
-    { id: 'depilacao', label: 'Depilação' },
-    { id: 'evolucao', label: 'Evolução e visitas' }
+    { id: 'anamnese', label: '💇 Anamnese Capilar' },
+    { id: 'manicure', label: '💅 Manicure/Pedicure' },
+    { id: 'cilios', label: '👁️ Cílios' },
+    { id: 'sobrancelha', label: '✏️ Sobrancelhas' },
+    { id: 'depilacao', label: '🌊 Depilação' }
   ];
 
   function renderClienteDetalhe() {
@@ -2169,32 +2230,77 @@
       btn.addEventListener('click', () => { abaAtivaCliente = btn.dataset.aba; renderClienteDetalhe(); });
     });
     const el = document.getElementById('fichaAbaConteudo');
-    if (abaAtivaCliente === 'evolucao') renderAbaEvolucao(el, c);
-    else if (abaAtivaCliente === 'manicure') renderAbaManicure(el, c);
-    else if (abaAtivaCliente === 'cilios') renderAbaCilios(el, c);
-    else if (abaAtivaCliente === 'sobrancelha') renderAbaSobrancelha(el, c);
-    else if (abaAtivaCliente === 'depilacao') renderAbaDepilacao(el, c);
-    else renderAbaAnamnese(el, c);
+    if (!abaAtivaCliente || abaAtivaCliente === 'anamnese') return renderAbaAnamnese(el, c);
+    if (abaAtivaCliente === 'manicure') return renderAbaManicure(el, c);
+    if (abaAtivaCliente === 'cilios') return renderAbaCilios(el, c);
+    if (abaAtivaCliente === 'sobrancelha') return renderAbaSobrancelha(el, c);
+    if (abaAtivaCliente === 'depilacao') return renderAbaDepilacao(el, c);
+    renderAbaAnamnese(el, c);
   }
 
   function renderAbaAnamnese(el, c) {
+    const a = c.anamneseCapilar || {};
+    const jaSalva = !!(a._salvoEm && Object.keys(a).filter(k => !k.startsWith('_')).some(k => a[k] !== undefined && a[k] !== '' && a[k] !== false));
+    const dataExib = a._salvoEm ? formatDateBR(a._salvoEm.slice(0, 10)) : null;
+
+    if (jaSalva && !a._editando) {
+      el.innerHTML = `
+        <div style="margin-top:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+            <div>${dataExib ? `<span style="background:#e8f5e9;color:#1a7d3a;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Salva em ${dataExib}</span>` : `<span style="background:#e3f0fd;color:#1565c0;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Ficha registrada</span>`}</div>
+            <div style="display:flex;gap:8px">
+              <button type="button" class="btn secondary small" id="btnEditarAnamnese">✏️ Editar</button>
+              <button type="button" class="btn danger small" id="btnExcluirAnamnese">🗑️ Excluir</button>
+            </div>
+          </div>
+          <div class="card" style="padding:16px">
+            ${ANAMNESE_CAPILAR.map(sec => {
+              const camposPreenchidos = sec.campos.filter(campo => {
+                if (campo.tipo === 'checkbox') return a[campo.chave];
+                return a[campo.chave] !== undefined && a[campo.chave] !== '';
+              });
+              if (!camposPreenchidos.length) return '';
+              return `<div style="margin-bottom:10px"><div style="font-size:12px;font-weight:700;color:var(--cor-primaria);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em">${esc(sec.titulo)}</div>${camposPreenchidos.map(campo => {
+                if (campo.tipo === 'checkbox') return `<div style="font-size:13px;color:#1a7d3a;font-weight:500">✓ ${esc(campo.label)}</div>`;
+                return `<div class="list-row"><span style="font-size:12px;color:#6b7280">${esc(campo.label)}</span><span>${esc(String(a[campo.chave]))}</span></div>`;
+              }).join('')}</div>`;
+            }).join('')}
+          </div>
+        </div>
+      `;
+      el.querySelector('#btnEditarAnamnese').addEventListener('click', () => { c.anamneseCapilar._editando = true; renderAbaAnamnese(el, c); });
+      el.querySelector('#btnExcluirAnamnese').addEventListener('click', () => {
+        if (!confirm('Excluir ficha de anamnese capilar? Essa ação não pode ser desfeita.')) return;
+        c.anamneseCapilar = {};
+        save(STORAGE_KEYS.clientes, state.clientes);
+        showToast('Ficha excluída.');
+        renderAbaAnamnese(el, c);
+      });
+      return;
+    }
+
     el.innerHTML = `
       <form id="formAnamnese">
         <h4 class="ficha-secao">Dados</h4>
         ${htmlDadosPessoais(c, 'dp_')}
         ${htmlSecoesAnamnese(ANAMNESE_CAPILAR, c.anamneseCapilar || {})}
-        <div class="btn-row"><button type="submit" class="btn">Salvar anamnese capilar</button></div>
+        <div class="btn-row">
+          <button type="submit" class="btn">Salvar anamnese capilar</button>
+          ${a._editando ? `<button type="button" class="btn secondary" id="btnCancelarAnamnese">Cancelar</button>` : ''}
+        </div>
       </form>
     `;
     const form = document.getElementById('formAnamnese');
     ligarDadosPessoais(form, 'dp_');
     ligarAnamnese(form);
+    form.querySelector('#btnCancelarAnamnese')?.addEventListener('click', () => { delete c.anamneseCapilar._editando; renderAbaAnamnese(el, c); });
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const dados = lerDadosPessoais(form, 'dp_');
       if (!dados.nome) { showToast('Informe o nome.'); return; }
       Object.assign(c, dados);
-      c.anamneseCapilar = Object.assign({}, c.anamneseCapilar, lerAnamnese(form, ANAMNESE_CAPILAR));
+      c.anamneseCapilar = Object.assign({}, c.anamneseCapilar, lerAnamnese(form, ANAMNESE_CAPILAR), { _salvoEm: new Date().toISOString() });
+      delete c.anamneseCapilar._editando;
       save(STORAGE_KEYS.clientes, state.clientes);
       renderClientes();
       populateTodosSelects();
@@ -2512,6 +2618,8 @@
       if (!c.anamneseCilios) c.anamneseCilios = {};
       if (!c.anamneseSobrancelha) c.anamneseSobrancelha = {};
       if (!c.anamneseDepilacao) c.anamneseDepilacao = {};
+      if (!c.orcamentos) c.orcamentos = [];
+      if (!c.tratamentos) c.tratamentos = [];
     });
     if (criou) save(STORAGE_KEYS.clientes, state.clientes);
   }
@@ -2880,183 +2988,448 @@
   // ---------- Fichas especializadas ----------
   function renderAbaManicure(el, c) {
     const m = c.anamneseManicure || {};
+    const jaSalva = !!(m._salvoEm && Object.keys(m).filter(k => !k.startsWith('_')).some(k => m[k]));
+    const dataExib = m._salvoEm ? formatDateBR(m._salvoEm.slice(0, 10)) : null;
+
+    if (jaSalva && !m._editando) {
+      el.innerHTML = `
+        <div style="margin-top:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+            <div>${dataExib ? `<span style="background:#e8f5e9;color:#1a7d3a;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Salva em ${dataExib}</span>` : `<span style="background:#e3f0fd;color:#1565c0;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Ficha registrada</span>`}</div>
+            <div style="display:flex;gap:8px">
+              <button type="button" class="btn secondary small" id="btnEditarManicure">✏️ Editar</button>
+              <button type="button" class="btn danger small" id="btnExcluirManicure">🗑️ Excluir</button>
+            </div>
+          </div>
+          <div class="card" style="padding:16px">
+            ${[['gelosa','Usa esmalte em gel'],['acrilica','Unha acrílica'],['fibra','Fibra de vidro'],['alergiaEsmalte','Alergia a esmalte'],['diabetica','Diabética'],['micose','Histórico de micose'],['unhaEncravada','Unha encravada recorrente']].map(([k,l])=>m[k]?`<div style="font-size:13px;color:#1a7d3a;font-weight:500">✓ ${l}</div>`:'').join('')}
+            ${m.corPreferida ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Cor preferida</span><span>${esc(m.corPreferida)}</span></div>` : ''}
+            ${m.formato ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Formato</span><span>${esc(m.formato)}</span></div>` : ''}
+            ${m.observacoes ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Observações</span><span>${esc(m.observacoes)}</span></div>` : ''}
+          </div>
+        </div>
+      `;
+      el.querySelector('#btnEditarManicure').addEventListener('click', () => { c.anamneseManicure._editando = true; renderAbaManicure(el, c); });
+      el.querySelector('#btnExcluirManicure').addEventListener('click', () => {
+        if (!confirm('Excluir ficha de manicure? Essa ação não pode ser desfeita.')) return;
+        c.anamneseManicure = {};
+        save(STORAGE_KEYS.clientes, state.clientes);
+        showToast('Ficha excluída.');
+        renderAbaManicure(el, c);
+      });
+      return;
+    }
+
     el.innerHTML = `
       <form id="formManicure">
         <h3 style="color:var(--cor-primaria);margin-bottom:14px">Ficha de Manicure / Pedicure</h3>
         <div class="form-grid" style="margin-bottom:14px">
-          ${[
-            ['gelosa','Usa esmalte em gel'],
-            ['acrilica','Unha acrílica'],
-            ['fibra','Fibra de vidro'],
-            ['alergiaEsmalte','Alergia a esmalte'],
-            ['diabetica','Diabética'],
-            ['micose','Histórico de micose nas unhas'],
-            ['unhaEncravada','Unha encravada recorrente']
-          ].map(([k,label])=>`<label class="checkbox-item"><input type="checkbox" name="${k}" ${m[k]?'checked':''}> ${label}</label>`).join('')}
+          ${[['gelosa','Usa esmalte em gel'],['acrilica','Unha acrílica'],['fibra','Fibra de vidro'],['alergiaEsmalte','Alergia a esmalte'],['diabetica','Diabética'],['micose','Histórico de micose nas unhas'],['unhaEncravada','Unha encravada recorrente']].map(([k,label])=>`<label class="checkbox-item"><input type="checkbox" name="${k}" ${m[k]?'checked':''}> ${label}</label>`).join('')}
         </div>
         <div class="field"><label>Cor/esmalte preferido</label><input type="text" name="corPreferida" value="${esc(m.corPreferida||'')}"></div>
         <div class="field"><label>Formato de unha preferido</label>
-          <select name="formato">
-            <option value="">Selecione</option>
-            ${['Quadrada','Arredondada','Amendoada','Stiletto','Ballerina'].map(f=>`<option value="${f}" ${m.formato===f?'selected':''}>${f}</option>`).join('')}
-          </select>
+          <select name="formato"><option value="">Selecione</option>${['Quadrada','Arredondada','Amendoada','Stiletto','Ballerina'].map(f=>`<option value="${f}" ${m.formato===f?'selected':''}>${f}</option>`).join('')}</select>
         </div>
         <div class="field"><label>Observações</label><textarea name="observacoes" rows="2">${esc(m.observacoes||'')}</textarea></div>
-        <div class="btn-row"><button type="submit" class="btn">Salvar ficha manicure</button></div>
+        <div class="btn-row">
+          <button type="submit" class="btn">Salvar ficha manicure</button>
+          ${m._editando ? `<button type="button" class="btn secondary" id="btnCancelarManicure">Cancelar</button>` : ''}
+        </div>
       </form>
     `;
+    el.querySelector('#btnCancelarManicure')?.addEventListener('click', () => { delete c.anamneseManicure._editando; renderAbaManicure(el, c); });
     el.querySelector('#formManicure').addEventListener('submit', e => {
       e.preventDefault();
       const fd = new FormData(e.target);
-      c.anamneseManicure = {
+      c.anamneseManicure = Object.assign({}, c.anamneseManicure, {
         gelosa: fd.get('gelosa')==='on', acrilica: fd.get('acrilica')==='on',
         fibra: fd.get('fibra')==='on', alergiaEsmalte: fd.get('alergiaEsmalte')==='on',
         diabetica: fd.get('diabetica')==='on', micose: fd.get('micose')==='on',
         unhaEncravada: fd.get('unhaEncravada')==='on',
         corPreferida: fd.get('corPreferida')||'', formato: fd.get('formato')||'',
-        observacoes: fd.get('observacoes')||''
-      };
+        observacoes: fd.get('observacoes')||'',
+        _salvoEm: new Date().toISOString()
+      });
+      delete c.anamneseManicure._editando;
       save(STORAGE_KEYS.clientes, state.clientes);
       showToast('Ficha de manicure salva!');
+      renderAbaManicure(el, c);
     });
   }
 
   function renderAbaCilios(el, c) {
     const ci = c.anamneseCilios || {};
+    const jaSalva = !!(ci._salvoEm && Object.keys(ci).filter(k => !k.startsWith('_')).some(k => ci[k]));
+    const dataExib = ci._salvoEm ? formatDateBR(ci._salvoEm.slice(0, 10)) : null;
+
+    if (jaSalva && !ci._editando) {
+      el.innerHTML = `
+        <div style="margin-top:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+            <div>${dataExib ? `<span style="background:#e8f5e9;color:#1a7d3a;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Salva em ${dataExib}</span>` : `<span style="background:#e3f0fd;color:#1565c0;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Ficha registrada</span>`}</div>
+            <div style="display:flex;gap:8px">
+              <button type="button" class="btn secondary small" id="btnEditarCilios">✏️ Editar</button>
+              <button type="button" class="btn danger small" id="btnExcluirCilios">🗑️ Excluir</button>
+            </div>
+          </div>
+          <div class="card" style="padding:16px">
+            ${[['alergiaGlue','Alergia a cola de cílios'],['olhoSeco','Olho seco'],['conjuntivite','Histórico de conjuntivite'],['lentesContato','Usa lentes de contato'],['extensaoAnterior','Já fez extensão de cílios antes']].map(([k,l])=>ci[k]?`<div style="font-size:13px;color:#1a7d3a;font-weight:500">✓ ${l}</div>`:'').join('')}
+            ${ci.tipoFio ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Tipo de fio</span><span>${esc(ci.tipoFio)}</span></div>` : ''}
+            ${ci.curvatura ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Curvatura</span><span>${esc(ci.curvatura)}</span></div>` : ''}
+            ${ci.espessura ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Espessura</span><span>${esc(ci.espessura)}</span></div>` : ''}
+            ${ci.comprimento ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Comprimento</span><span>${esc(ci.comprimento)}</span></div>` : ''}
+            ${ci.observacoes ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Observações</span><span>${esc(ci.observacoes)}</span></div>` : ''}
+          </div>
+        </div>
+      `;
+      el.querySelector('#btnEditarCilios').addEventListener('click', () => { c.anamneseCilios._editando = true; renderAbaCilios(el, c); });
+      el.querySelector('#btnExcluirCilios').addEventListener('click', () => {
+        if (!confirm('Excluir ficha de cílios? Essa ação não pode ser desfeita.')) return;
+        c.anamneseCilios = {};
+        save(STORAGE_KEYS.clientes, state.clientes);
+        showToast('Ficha excluída.');
+        renderAbaCilios(el, c);
+      });
+      return;
+    }
+
     el.innerHTML = `
       <form id="formCilios">
         <h3 style="color:var(--cor-primaria);margin-bottom:14px">Ficha de Cílios</h3>
         <div class="form-grid" style="margin-bottom:14px">
-          ${[
-            ['alergiaGlue','Alergia a cola de cílios'],
-            ['olhoSeco','Olho seco'],
-            ['conjuntivite','Histórico de conjuntivite'],
-            ['lentesContato','Usa lentes de contato'],
-            ['extensaoAnterior','Já fez extensão de cílios antes']
-          ].map(([k,label])=>`<label class="checkbox-item"><input type="checkbox" name="${k}" ${ci[k]?'checked':''}> ${label}</label>`).join('')}
+          ${[['alergiaGlue','Alergia a cola de cílios'],['olhoSeco','Olho seco'],['conjuntivite','Histórico de conjuntivite'],['lentesContato','Usa lentes de contato'],['extensaoAnterior','Já fez extensão de cílios antes']].map(([k,label])=>`<label class="checkbox-item"><input type="checkbox" name="${k}" ${ci[k]?'checked':''}> ${label}</label>`).join('')}
         </div>
         <div class="field"><label>Tipo de fio preferido</label>
-          <select name="tipoFio">
-            <option value="">Selecione</option>
-            ${['Clássico','Volume Brasileiro','Volume Russo','Mega Volume','Fio a Fio'].map(f=>`<option value="${f}" ${ci.tipoFio===f?'selected':''}>${f}</option>`).join('')}
-          </select>
+          <select name="tipoFio"><option value="">Selecione</option>${['Clássico','Volume Brasileiro','Volume Russo','Mega Volume','Fio a Fio'].map(f=>`<option value="${f}" ${ci.tipoFio===f?'selected':''}>${f}</option>`).join('')}</select>
         </div>
         <div class="field"><label>Curvatura preferida</label>
-          <select name="curvatura">
-            <option value="">Selecione</option>
-            ${['B','C','CC','D','L'].map(f=>`<option value="${f}" ${ci.curvatura===f?'selected':''}>${f}</option>`).join('')}
-          </select>
+          <select name="curvatura"><option value="">Selecione</option>${['B','C','CC','D','L'].map(f=>`<option value="${f}" ${ci.curvatura===f?'selected':''}>${f}</option>`).join('')}</select>
         </div>
         <div class="field"><label>Espessura (mm)</label><input type="text" name="espessura" value="${esc(ci.espessura||'')}"></div>
         <div class="field"><label>Comprimento</label><input type="text" name="comprimento" value="${esc(ci.comprimento||'')}"></div>
         <div class="field"><label>Observações</label><textarea name="observacoes" rows="2">${esc(ci.observacoes||'')}</textarea></div>
-        <div class="btn-row"><button type="submit" class="btn">Salvar ficha de cílios</button></div>
+        <div class="btn-row">
+          <button type="submit" class="btn">Salvar ficha de cílios</button>
+          ${ci._editando ? `<button type="button" class="btn secondary" id="btnCancelarCilios">Cancelar</button>` : ''}
+        </div>
       </form>
     `;
+    el.querySelector('#btnCancelarCilios')?.addEventListener('click', () => { delete c.anamneseCilios._editando; renderAbaCilios(el, c); });
     el.querySelector('#formCilios').addEventListener('submit', e => {
       e.preventDefault();
       const fd = new FormData(e.target);
-      c.anamneseCilios = {
+      c.anamneseCilios = Object.assign({}, c.anamneseCilios, {
         alergiaGlue: fd.get('alergiaGlue')==='on', olhoSeco: fd.get('olhoSeco')==='on',
         conjuntivite: fd.get('conjuntivite')==='on', lentesContato: fd.get('lentesContato')==='on',
         extensaoAnterior: fd.get('extensaoAnterior')==='on',
         tipoFio: fd.get('tipoFio')||'', curvatura: fd.get('curvatura')||'',
         espessura: fd.get('espessura')||'', comprimento: fd.get('comprimento')||'',
-        observacoes: fd.get('observacoes')||''
-      };
+        observacoes: fd.get('observacoes')||'',
+        _salvoEm: new Date().toISOString()
+      });
+      delete c.anamneseCilios._editando;
       save(STORAGE_KEYS.clientes, state.clientes);
       showToast('Ficha de cílios salva!');
+      renderAbaCilios(el, c);
     });
   }
 
   function renderAbaSobrancelha(el, c) {
     const s = c.anamneseSobrancelha || {};
+    const jaSalva = !!(s._salvoEm && Object.keys(s).filter(k => !k.startsWith('_')).some(k => s[k]));
+    const dataExib = s._salvoEm ? formatDateBR(s._salvoEm.slice(0, 10)) : null;
+
+    if (jaSalva && !s._editando) {
+      el.innerHTML = `
+        <div style="margin-top:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+            <div>${dataExib ? `<span style="background:#e8f5e9;color:#1a7d3a;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Salva em ${dataExib}</span>` : `<span style="background:#e3f0fd;color:#1565c0;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Ficha registrada</span>`}</div>
+            <div style="display:flex;gap:8px">
+              <button type="button" class="btn secondary small" id="btnEditarSobrancelha">✏️ Editar</button>
+              <button type="button" class="btn danger small" id="btnExcluirSobrancelha">🗑️ Excluir</button>
+            </div>
+          </div>
+          <div class="card" style="padding:16px">
+            ${[['alergiaTinta','Alergia a tinta/henna'],['alergiaAnestesia','Alergia a anestésico tópico'],['queloides','Tendência a queloides'],['peleOleosa','Pele oleosa'],['tomouSol','Exposição solar recente (últimas 48h)'],['gravidez','Gestante ou amamentando'],['micropigmentacaoAnterior','Já fez micropigmentação antes']].map(([k,l])=>s[k]?`<div style="font-size:13px;color:#1a7d3a;font-weight:500">✓ ${l}</div>`:'').join('')}
+            ${s.tecnica ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Técnica</span><span>${esc(s.tecnica)}</span></div>` : ''}
+            ${s.formato ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Formato</span><span>${esc(s.formato)}</span></div>` : ''}
+            ${s.corPreferida ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Tom/cor</span><span>${esc(s.corPreferida)}</span></div>` : ''}
+            ${s.observacoes ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Observações</span><span>${esc(s.observacoes)}</span></div>` : ''}
+          </div>
+        </div>
+      `;
+      el.querySelector('#btnEditarSobrancelha').addEventListener('click', () => { c.anamneseSobrancelha._editando = true; renderAbaSobrancelha(el, c); });
+      el.querySelector('#btnExcluirSobrancelha').addEventListener('click', () => {
+        if (!confirm('Excluir ficha de sobrancelhas? Essa ação não pode ser desfeita.')) return;
+        c.anamneseSobrancelha = {};
+        save(STORAGE_KEYS.clientes, state.clientes);
+        showToast('Ficha excluída.');
+        renderAbaSobrancelha(el, c);
+      });
+      return;
+    }
+
     el.innerHTML = `
       <form id="formSobrancelha">
         <h3 style="color:var(--cor-primaria);margin-bottom:14px">Ficha de Sobrancelhas</h3>
         <div class="form-grid" style="margin-bottom:14px">
-          ${[
-            ['alergiaTinta','Alergia a tinta/henna'],
-            ['alergiaAnestesia','Alergia a anestésico tópico'],
-            ['queloides','Tendência a queloides'],
-            ['peleOleosa','Pele oleosa'],
-            ['tomouSol','Exposição solar recente (últimas 48h)'],
-            ['gravidez','Gestante ou amamentando'],
-            ['micropigmentacaoAnterior','Já fez micropigmentação antes']
-          ].map(([k,label])=>`<label class="checkbox-item"><input type="checkbox" name="${k}" ${s[k]?'checked':''}> ${label}</label>`).join('')}
+          ${[['alergiaTinta','Alergia a tinta/henna'],['alergiaAnestesia','Alergia a anestésico tópico'],['queloides','Tendência a queloides'],['peleOleosa','Pele oleosa'],['tomouSol','Exposição solar recente (últimas 48h)'],['gravidez','Gestante ou amamentando'],['micropigmentacaoAnterior','Já fez micropigmentação antes']].map(([k,label])=>`<label class="checkbox-item"><input type="checkbox" name="${k}" ${s[k]?'checked':''}> ${label}</label>`).join('')}
         </div>
         <div class="field"><label>Técnica preferida</label>
-          <select name="tecnica">
-            <option value="">Selecione</option>
-            ${['Design','Henna','Micropigmentação','Nanopigmentação','Laminação'].map(f=>`<option value="${f}" ${s.tecnica===f?'selected':''}>${f}</option>`).join('')}
-          </select>
+          <select name="tecnica"><option value="">Selecione</option>${['Design','Henna','Micropigmentação','Nanopigmentação','Laminação'].map(f=>`<option value="${f}" ${s.tecnica===f?'selected':''}>${f}</option>`).join('')}</select>
         </div>
         <div class="field"><label>Formato desejado</label><input type="text" name="formato" value="${esc(s.formato||'')}"></div>
         <div class="field"><label>Tom/cor preferido</label><input type="text" name="corPreferida" value="${esc(s.corPreferida||'')}"></div>
         <div class="field"><label>Observações</label><textarea name="observacoes" rows="2">${esc(s.observacoes||'')}</textarea></div>
-        <div class="btn-row"><button type="submit" class="btn">Salvar ficha de sobrancelhas</button></div>
+        <div class="btn-row">
+          <button type="submit" class="btn">Salvar ficha de sobrancelhas</button>
+          ${s._editando ? `<button type="button" class="btn secondary" id="btnCancelarSobrancelha">Cancelar</button>` : ''}
+        </div>
       </form>
     `;
+    el.querySelector('#btnCancelarSobrancelha')?.addEventListener('click', () => { delete c.anamneseSobrancelha._editando; renderAbaSobrancelha(el, c); });
     el.querySelector('#formSobrancelha').addEventListener('submit', e => {
       e.preventDefault();
       const fd = new FormData(e.target);
-      c.anamneseSobrancelha = {
+      c.anamneseSobrancelha = Object.assign({}, c.anamneseSobrancelha, {
         alergiaTinta: fd.get('alergiaTinta')==='on', alergiaAnestesia: fd.get('alergiaAnestesia')==='on',
         queloides: fd.get('queloides')==='on', peleOleosa: fd.get('peleOleosa')==='on',
         tomouSol: fd.get('tomouSol')==='on', gravidez: fd.get('gravidez')==='on',
         micropigmentacaoAnterior: fd.get('micropigmentacaoAnterior')==='on',
         tecnica: fd.get('tecnica')||'', formato: fd.get('formato')||'',
-        corPreferida: fd.get('corPreferida')||'', observacoes: fd.get('observacoes')||''
-      };
+        corPreferida: fd.get('corPreferida')||'', observacoes: fd.get('observacoes')||'',
+        _salvoEm: new Date().toISOString()
+      });
+      delete c.anamneseSobrancelha._editando;
       save(STORAGE_KEYS.clientes, state.clientes);
       showToast('Ficha de sobrancelhas salva!');
+      renderAbaSobrancelha(el, c);
     });
   }
 
   function renderAbaDepilacao(el, c) {
     const d = c.anamneseDepilacao || {};
+    const jaSalva = !!(d._salvoEm && Object.keys(d).filter(k => !k.startsWith('_')).some(k => d[k]));
+    const dataExib = d._salvoEm ? formatDateBR(d._salvoEm.slice(0, 10)) : null;
+
+    if (jaSalva && !d._editando) {
+      el.innerHTML = `
+        <div style="margin-top:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+            <div>${dataExib ? `<span style="background:#e8f5e9;color:#1a7d3a;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Salva em ${dataExib}</span>` : `<span style="background:#e3f0fd;color:#1565c0;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Ficha registrada</span>`}</div>
+            <div style="display:flex;gap:8px">
+              <button type="button" class="btn secondary small" id="btnEditarDepilacao">✏️ Editar</button>
+              <button type="button" class="btn danger small" id="btnExcluirDepilacao">🗑️ Excluir</button>
+            </div>
+          </div>
+          <div class="card" style="padding:16px">
+            ${[['alergiaResina','Alergia a resina/cera'],['peleReativa','Pele muito reativa/sensível'],['varizes','Varizes na área a depilar'],['tomouSol','Exposição solar recente (últimas 48h)'],['gravidez','Gestante'],['diabetes','Diabética'],['queloides','Tendência a queloides'],['isotretinoina','Uso de isotretinoína (Roacutan)'],['hormonal','Tratamento hormonal em curso']].map(([k,l])=>d[k]?`<div style="font-size:13px;color:#1a7d3a;font-weight:500">✓ ${l}</div>`:'').join('')}
+            ${d.metodo ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Método</span><span>${esc(d.metodo)}</span></div>` : ''}
+            ${d.areas ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Áreas</span><span>${esc(d.areas)}</span></div>` : ''}
+            ${d.observacoes ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Observações</span><span>${esc(d.observacoes)}</span></div>` : ''}
+          </div>
+        </div>
+      `;
+      el.querySelector('#btnEditarDepilacao').addEventListener('click', () => { c.anamneseDepilacao._editando = true; renderAbaDepilacao(el, c); });
+      el.querySelector('#btnExcluirDepilacao').addEventListener('click', () => {
+        if (!confirm('Excluir ficha de depilação? Essa ação não pode ser desfeita.')) return;
+        c.anamneseDepilacao = {};
+        save(STORAGE_KEYS.clientes, state.clientes);
+        showToast('Ficha excluída.');
+        renderAbaDepilacao(el, c);
+      });
+      return;
+    }
+
     el.innerHTML = `
       <form id="formDepilacao">
         <h3 style="color:var(--cor-primaria);margin-bottom:14px">Ficha de Depilação</h3>
         <div class="form-grid" style="margin-bottom:14px">
-          ${[
-            ['alergiaResina','Alergia a resina/cera'],
-            ['peleReativa','Pele muito reativa/sensível'],
-            ['varizes','Varizes na área a depilar'],
-            ['tomouSol','Exposição solar recente (últimas 48h)'],
-            ['gravidez','Gestante'],
-            ['diabetes','Diabética'],
-            ['queloides','Tendência a queloides'],
-            ['isotretinoina','Uso de isotretinoína (Roacutan)'],
-            ['hormonal','Tratamento hormonal em curso']
-          ].map(([k,label])=>`<label class="checkbox-item"><input type="checkbox" name="${k}" ${d[k]?'checked':''}> ${label}</label>`).join('')}
+          ${[['alergiaResina','Alergia a resina/cera'],['peleReativa','Pele muito reativa/sensível'],['varizes','Varizes na área a depilar'],['tomouSol','Exposição solar recente (últimas 48h)'],['gravidez','Gestante'],['diabetes','Diabética'],['queloides','Tendência a queloides'],['isotretinoina','Uso de isotretinoína (Roacutan)'],['hormonal','Tratamento hormonal em curso']].map(([k,label])=>`<label class="checkbox-item"><input type="checkbox" name="${k}" ${d[k]?'checked':''}> ${label}</label>`).join('')}
         </div>
         <div class="field"><label>Método preferido</label>
-          <select name="metodo">
-            <option value="">Selecione</option>
-            ${['Cera quente','Cera fria','Linha','Laser','Luz Pulsada (IPL)'].map(f=>`<option value="${f}" ${d.metodo===f?'selected':''}>${f}</option>`).join('')}
-          </select>
+          <select name="metodo"><option value="">Selecione</option>${['Cera quente','Cera fria','Linha','Laser','Luz Pulsada (IPL)'].map(f=>`<option value="${f}" ${d.metodo===f?'selected':''}>${f}</option>`).join('')}</select>
         </div>
         <div class="field"><label>Áreas frequentes</label><input type="text" name="areas" value="${esc(d.areas||'')}" placeholder="Ex: pernas, buço, axilas"></div>
         <div class="field"><label>Observações</label><textarea name="observacoes" rows="2">${esc(d.observacoes||'')}</textarea></div>
-        <div class="btn-row"><button type="submit" class="btn">Salvar ficha de depilação</button></div>
+        <div class="btn-row">
+          <button type="submit" class="btn">Salvar ficha de depilação</button>
+          ${d._editando ? `<button type="button" class="btn secondary" id="btnCancelarDepilacao">Cancelar</button>` : ''}
+        </div>
       </form>
     `;
+    el.querySelector('#btnCancelarDepilacao')?.addEventListener('click', () => { delete c.anamneseDepilacao._editando; renderAbaDepilacao(el, c); });
     el.querySelector('#formDepilacao').addEventListener('submit', e => {
       e.preventDefault();
       const fd = new FormData(e.target);
-      c.anamneseDepilacao = {
+      c.anamneseDepilacao = Object.assign({}, c.anamneseDepilacao, {
         alergiaResina: fd.get('alergiaResina')==='on', peleReativa: fd.get('peleReativa')==='on',
         varizes: fd.get('varizes')==='on', tomouSol: fd.get('tomouSol')==='on',
         gravidez: fd.get('gravidez')==='on', diabetes: fd.get('diabetes')==='on',
         queloides: fd.get('queloides')==='on', isotretinoina: fd.get('isotretinoina')==='on',
         hormonal: fd.get('hormonal')==='on',
         metodo: fd.get('metodo')||'', areas: fd.get('areas')||'',
-        observacoes: fd.get('observacoes')||''
-      };
+        observacoes: fd.get('observacoes')||'',
+        _salvoEm: new Date().toISOString()
+      });
+      delete c.anamneseDepilacao._editando;
       save(STORAGE_KEYS.clientes, state.clientes);
       showToast('Ficha de depilação salva!');
+      renderAbaDepilacao(el, c);
     });
+  }
+
+  // ---------- Ficha: aba "Orçamento" ----------
+  function renderAbaOrcamento(el, c) {
+    const orcamentos = c.orcamentos || [];
+    el.innerHTML = `
+      <div style="margin-top:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <h4 style="color:var(--cor-primaria)">Orçamentos</h4>
+          <button type="button" class="btn small" id="btnNovoOrcamento">+ Novo orçamento</button>
+        </div>
+        <div id="formNovoOrcamento" style="display:none;margin-bottom:14px" class="card">
+          <h4 style="color:var(--cor-primaria);margin-bottom:12px">Novo orçamento</h4>
+          <form id="formOrcDados">
+            <div class="form-grid">
+              <div class="field"><label>Data</label><input type="date" id="orcData" value="${todayISO()}"></div>
+              <div class="field"><label>Validade</label><input type="date" id="orcValidade"></div>
+            </div>
+            <div class="field"><label>Descrição / Serviços</label><textarea id="orcDescricao" rows="3" placeholder="Ex: Coloração, Corte, Extensão de cílios..."></textarea></div>
+            <div class="field"><label>Valor total (R$)</label><input type="number" id="orcValor" min="0" step="0.01" placeholder="0,00"></div>
+            <div class="field"><label>Observações</label><textarea id="orcObs" rows="2"></textarea></div>
+            <div class="btn-row">
+              <button type="submit" class="btn">Salvar orçamento</button>
+              <button type="button" class="btn secondary" id="btnCancelarOrc">Cancelar</button>
+            </div>
+          </form>
+        </div>
+        <div id="listaOrcamentos">
+          ${!orcamentos.length ? '<div class="empty-msg">Nenhum orçamento cadastrado.</div>' : orcamentos.slice().reverse().map(o => `
+            <div class="card" style="margin-bottom:12px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+                <div>
+                  <strong style="color:var(--cor-primaria)">${formatDateBR(o.data)}</strong>
+                  ${o.validade ? `<span style="font-size:12px;color:#6b7280;margin-left:8px">Válido até ${formatDateBR(o.validade)}</span>` : ''}
+                  <br><span style="font-size:13px;font-weight:600;color:var(--cor-secundaria)">${formatMoney(o.valor)}</span>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                  ${o.status === 'aceito' ? '<span style="background:#e8f5e9;color:#1a7d3a;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Aceito</span>' :
+                    o.status === 'recusado' ? '<span style="background:#fdecea;color:#b3261e;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">❌ Recusado</span>' :
+                    '<span style="background:#fff3e0;color:#e65100;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">⏳ Aguardando</span>'}
+                  ${!o.status || o.status === 'aguardando' ? `
+                    <button class="btn small" style="background:#1a7d3a;color:#fff" data-orc-aceitar="${o.id}">✅ Aceito</button>
+                    <button class="btn small danger" data-orc-recusar="${o.id}">❌ Recusado</button>
+                  ` : ''}
+                  <button class="btn danger small" data-orc-del="${o.id}">🗑️</button>
+                </div>
+              </div>
+              ${o.descricao ? `<div style="font-size:13px;margin-bottom:4px">${esc(o.descricao)}</div>` : ''}
+              ${o.obs ? `<div style="font-size:12px;color:#6b7280">${esc(o.obs)}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    el.querySelector('#btnNovoOrcamento').addEventListener('click', () => { el.querySelector('#formNovoOrcamento').style.display = 'block'; });
+    el.querySelector('#btnCancelarOrc').addEventListener('click', () => { el.querySelector('#formNovoOrcamento').style.display = 'none'; });
+    el.querySelector('#formOrcDados').addEventListener('submit', e => {
+      e.preventDefault();
+      if (!c.orcamentos) c.orcamentos = [];
+      c.orcamentos.push({
+        id: uid(), data: document.getElementById('orcData').value,
+        validade: document.getElementById('orcValidade').value,
+        descricao: document.getElementById('orcDescricao').value.trim(),
+        valor: num(document.getElementById('orcValor').value),
+        obs: document.getElementById('orcObs').value.trim(),
+        status: 'aguardando'
+      });
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Orçamento salvo!');
+      renderAbaOrcamento(el, c);
+    });
+    el.querySelectorAll('[data-orc-aceitar]').forEach(btn => btn.addEventListener('click', () => {
+      const o = c.orcamentos.find(x => x.id === btn.dataset.orcAceitar);
+      if (o) { o.status = 'aceito'; o.statusEm = new Date().toISOString(); save(STORAGE_KEYS.clientes, state.clientes); showToast('Orçamento aceito!'); renderAbaOrcamento(el, c); }
+    }));
+    el.querySelectorAll('[data-orc-recusar]').forEach(btn => btn.addEventListener('click', () => {
+      const o = c.orcamentos.find(x => x.id === btn.dataset.orcRecusar);
+      if (o) { o.status = 'recusado'; o.statusEm = new Date().toISOString(); save(STORAGE_KEYS.clientes, state.clientes); showToast('Orçamento recusado.'); renderAbaOrcamento(el, c); }
+    }));
+    el.querySelectorAll('[data-orc-del]').forEach(btn => btn.addEventListener('click', () => {
+      if (!confirm('Excluir orçamento?')) return;
+      c.orcamentos = c.orcamentos.filter(x => x.id !== btn.dataset.orcDel);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderAbaOrcamento(el, c);
+    }));
+  }
+
+  // ---------- Ficha: aba "Tratamentos" ----------
+  function renderAbaTratamentos(el, c) {
+    const tratamentos = c.tratamentos || [];
+    const hoje = todayISO();
+    el.innerHTML = `
+      <div style="margin-top:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <h4 style="color:var(--cor-primaria)">Histórico de tratamentos</h4>
+          <button type="button" class="btn small" id="btnNovoTrat">+ Registrar</button>
+        </div>
+        <div id="formNovoTrat" style="display:none;margin-bottom:14px" class="card">
+          <h4 style="color:var(--cor-primaria);margin-bottom:12px">Novo tratamento</h4>
+          <form id="formTratDados">
+            <div class="form-grid">
+              <div class="field"><label>Data</label><input type="date" id="tratData" value="${hoje}" required></div>
+              <div class="field"><label>Profissional</label><select id="tratProf"><option value="">Selecione</option>${state.profissionais.map(p=>`<option value="${p.id}" ${p.id===(session.tipo==='profissional'?session.profissionalId:'') ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select></div>
+              <div class="field"><label>Serviço realizado</label><select id="tratServico"><option value="">Selecione</option>${state.servicos.map(s=>`<option value="${s.id}">${esc(s.nome)}</option>`).join('')}</select></div>
+              <div class="field"><label>Valor cobrado (R$)</label><input type="number" id="tratValor" min="0" step="0.01"></div>
+            </div>
+            <div class="field"><label>Observações</label><textarea id="tratObs" rows="3"></textarea></div>
+            <div class="btn-row">
+              <button type="submit" class="btn">Registrar tratamento</button>
+              <button type="button" class="btn secondary" id="btnCancelarTrat">Cancelar</button>
+            </div>
+          </form>
+        </div>
+        <div id="listaTratamentos">
+          ${!tratamentos.length ? '<div class="empty-msg">Nenhum tratamento registrado ainda.</div>' : tratamentos.slice().sort((a,b)=>b.data.localeCompare(a.data)).map(t => `
+            <div class="card" style="margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+                <div>
+                  <strong style="color:var(--cor-primaria)">${formatDateBR(t.data)}</strong>
+                  <br><span style="font-size:13px">${esc(nomeServicoPorId(t.servicoId)) || '—'}</span>
+                  ${t.profissionalId ? `<span style="font-size:12px;color:#6b7280"> · ${esc(nomeProfissionalPorId(t.profissionalId))}</span>` : ''}
+                  ${t.valor ? `<br><span style="font-size:13px;font-weight:600;color:var(--cor-secundaria)">${formatMoney(t.valor)}</span>` : ''}
+                </div>
+                <button class="btn danger small" data-del-trat="${t.id}">🗑️ Excluir</button>
+              </div>
+              ${t.observacoes ? `<div style="font-size:13px;color:#4b5162;margin-top:8px;padding-top:8px;border-top:1px solid var(--cor-borda)">${esc(t.observacoes)}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    el.querySelector('#btnNovoTrat').addEventListener('click', () => { el.querySelector('#formNovoTrat').style.display = 'block'; });
+    el.querySelector('#btnCancelarTrat').addEventListener('click', () => { el.querySelector('#formNovoTrat').style.display = 'none'; });
+    el.querySelector('#formTratDados').addEventListener('submit', e => {
+      e.preventDefault();
+      if (!c.tratamentos) c.tratamentos = [];
+      c.tratamentos.push({
+        id: uid(), data: document.getElementById('tratData').value,
+        profissionalId: document.getElementById('tratProf').value,
+        servicoId: document.getElementById('tratServico').value,
+        valor: num(document.getElementById('tratValor').value),
+        observacoes: document.getElementById('tratObs').value.trim()
+      });
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Tratamento registrado!');
+      renderAbaTratamentos(el, c);
+    });
+    el.querySelectorAll('[data-del-trat]').forEach(btn => btn.addEventListener('click', () => {
+      if (!confirm('Excluir este tratamento?')) return;
+      c.tratamentos = c.tratamentos.filter(x => x.id !== btn.dataset.delTrat);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderAbaTratamentos(el, c);
+    }));
   }
 
   // ---------- Ficha: aba "Evolução e visitas" ----------
@@ -4709,6 +5082,130 @@
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-page="ia"]').forEach(btn => btn.addEventListener('click', iaCarregarInativos));
   });
+
+  // ===== PÁGINA TRATAMENTO =====
+  let tratClienteId = null;
+  let tratTipoAtivo = null;
+  let tratAbaAtiva = null;
+
+  const TRAT_ABAS_POR_TIPO = {
+    capilar: [
+      { id: 'orcamento', label: '💰 Orçamento' },
+      { id: 'evolucao', label: '📈 Evolução e visitas' },
+      { id: 'tratamentos', label: '📋 Histórico' }
+    ],
+    estetica: [
+      { id: 'orcamento', label: '💰 Orçamento' },
+      { id: 'tratamentos', label: '📋 Histórico' }
+    ],
+    unhas: [
+      { id: 'orcamento', label: '💰 Orçamento' },
+      { id: 'tratamentos', label: '📋 Histórico' }
+    ],
+    cilios: [
+      { id: 'orcamento', label: '💰 Orçamento' },
+      { id: 'tratamentos', label: '📋 Histórico' }
+    ],
+    depilacao: [
+      { id: 'orcamento', label: '💰 Orçamento' },
+      { id: 'tratamentos', label: '📋 Histórico' }
+    ]
+  };
+
+  function initTratamento() {
+    const buscaNome = document.getElementById('tratBuscaNome');
+    const buscaTel = document.getElementById('tratBuscaTel');
+    const resultado = document.getElementById('tratResultadoBusca');
+
+    function buscarClientes() {
+      const nome = (buscaNome?.value || '').toLowerCase().trim();
+      const tel = (buscaTel?.value || '').replace(/\D/g,'').trim();
+      if (!nome && !tel) { resultado.innerHTML = ''; return; }
+      const lista = state.clientes.filter(c =>
+        (nome && c.nome?.toLowerCase().includes(nome)) ||
+        (tel && (c.telefone || '').replace(/\D/g,'').includes(tel))
+      ).slice(0, 8);
+      if (!lista.length) { resultado.innerHTML = '<div class="empty-msg">Nenhuma cliente encontrada.</div>'; return; }
+      resultado.innerHTML = lista.map(c => `
+        <div class="list-row" style="cursor:pointer;padding:10px;border-radius:8px;background:#f8f9fc;margin-bottom:6px;border:1px solid var(--cor-borda)" data-sel-trat="${c.id}">
+          <div>
+            <strong>${esc(c.nome)}</strong>
+            <span style="font-size:12.5px;color:#6b7280;margin-left:8px">${c.telefone ? esc(c.telefone) : ''}</span>
+          </div>
+          <button class="btn small" data-sel-trat="${c.id}">Selecionar →</button>
+        </div>`).join('');
+      resultado.querySelectorAll('[data-sel-trat]').forEach(el => {
+        el.addEventListener('click', () => selecionarClienteTrat(el.dataset.selTrat));
+      });
+    }
+
+    buscaNome?.addEventListener('input', buscarClientes);
+    buscaTel?.addEventListener('input', buscarClientes);
+
+    document.getElementById('btnTratLimpar')?.addEventListener('click', () => {
+      tratClienteId = null; tratTipoAtivo = null; tratAbaAtiva = null;
+      document.getElementById('tratClienteCard').style.display = 'none';
+      document.getElementById('trat-busca-card').style.display = 'block';
+      document.getElementById('tratAbasDiv').style.display = 'none';
+      if (buscaNome) buscaNome.value = '';
+      if (buscaTel) buscaTel.value = '';
+      resultado.innerHTML = '';
+    });
+
+    document.getElementById('tratTiposDiv')?.querySelectorAll('[data-tipo]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#tratTiposDiv [data-tipo]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        tratTipoAtivo = btn.dataset.tipo;
+        const abas = TRAT_ABAS_POR_TIPO[tratTipoAtivo] || [];
+        tratAbaAtiva = abas[0]?.id || null;
+        renderTratAbas();
+        renderTratConteudo();
+      });
+    });
+  }
+
+  function selecionarClienteTrat(id) {
+    tratClienteId = id;
+    const c = state.clientes.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('trat-busca-card').style.display = 'none';
+    document.getElementById('tratClienteCard').style.display = 'block';
+    document.getElementById('tratClienteNome').textContent = c.nome;
+    document.getElementById('tratClienteInfo').textContent = [c.telefone, c.email].filter(Boolean).join(' · ');
+    const badges = document.getElementById('tratAnamneseBadges');
+    const temCapilar = !!(c.anamneseCapilar?._salvoEm);
+    badges.innerHTML = temCapilar
+      ? '<span style="background:#e6f4ea;color:#1a7d3a;border-radius:6px;padding:3px 9px;font-size:12px;font-weight:600">✅ Anamnese capilar</span>'
+      : '<span style="background:#fef3c7;color:#92400e;border-radius:6px;padding:3px 9px;font-size:12px;font-weight:600">⚠️ Sem anamnese</span>';
+    tratTipoAtivo = null; tratAbaAtiva = null;
+    document.getElementById('tratAbasDiv').style.display = 'none';
+    document.querySelectorAll('#tratTiposDiv [data-tipo]').forEach(b => b.classList.remove('active'));
+  }
+
+  function renderTratAbas() {
+    const abas = TRAT_ABAS_POR_TIPO[tratTipoAtivo] || [];
+    const tabs = document.getElementById('tratTabs');
+    tabs.innerHTML = abas.map(a => `<button type="button" class="ficha-tab-btn ${tratAbaAtiva === a.id ? 'active' : ''}" data-trat-aba="${a.id}">${a.label}</button>`).join('');
+    tabs.querySelectorAll('[data-trat-aba]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        tratAbaAtiva = btn.dataset.tratAba;
+        renderTratAbas();
+        renderTratConteudo();
+      });
+    });
+    document.getElementById('tratAbasDiv').style.display = 'block';
+  }
+
+  function renderTratConteudo() {
+    const el = document.getElementById('tratAbaConteudo');
+    const c = state.clientes.find(x => x.id === tratClienteId);
+    if (!c || !el) return;
+    if (tratAbaAtiva === 'orcamento') return renderAbaOrcamento(el, c);
+    if (tratAbaAtiva === 'tratamentos') return renderAbaTratamentos(el, c);
+    if (tratAbaAtiva === 'evolucao') return renderAbaEvolucao(el, c);
+    el.innerHTML = '<div class="empty-msg">Selecione uma aba.</div>';
+  }
 </script>
 </body>
 </html>
