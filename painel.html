@@ -3347,8 +3347,17 @@
               <div class="field"><label>Data</label><input type="date" id="orcData" value="${todayISO()}"></div>
               <div class="field"><label>Validade</label><input type="date" id="orcValidade"></div>
             </div>
-            <div class="field"><label>Descrição / Serviços</label><textarea id="orcDescricao" rows="3" placeholder="Ex: Coloração, Corte, Extensão de cílios..."></textarea></div>
-            <div class="field"><label>Valor total (R$)</label><input type="number" id="orcValor" min="0" step="0.01" placeholder="0,00"></div>
+            <div class="field">
+              <label>Serviços incluídos <span style="font-size:11px;color:#6b7280">(selecione um ou mais)</span></label>
+              <div id="orcServicosLista" style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1px solid var(--cor-borda);border-radius:8px;min-height:42px;background:#f9fafb">
+                ${state.servicos.length ? state.servicos.map(s => `
+                  <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;padding:4px 8px;border:1px solid var(--cor-borda);border-radius:6px;background:#fff">
+                    <input type="checkbox" class="orc-serv-cb" data-serv-id="${s.id}" data-serv-val="${s.preco||0}" data-serv-nome="${esc(s.nome)}">
+                    ${esc(s.nome)}${s.preco ? ` <span style="color:var(--cor-secundaria);font-size:11px">(${formatMoney(s.preco)})</span>` : ''}
+                  </label>`).join('') : '<span style="font-size:13px;color:#9ca3af">Nenhum serviço cadastrado</span>'}
+              </div>
+            </div>
+            <div class="field"><label>Valor total (R$) <span style="font-size:11px;color:#6b7280">— calculado ou edite manualmente</span></label><input type="number" id="orcValor" min="0" step="0.01" placeholder="0,00"></div>
             <div class="field"><label>Observações</label><textarea id="orcObs" rows="2"></textarea></div>
             <div class="btn-row">
               <button type="submit" class="btn">Salvar orçamento</button>
@@ -3385,13 +3394,23 @@
     `;
     el.querySelector('#btnNovoOrcamento').addEventListener('click', () => { el.querySelector('#formNovoOrcamento').style.display = 'block'; });
     el.querySelector('#btnCancelarOrc').addEventListener('click', () => { el.querySelector('#formNovoOrcamento').style.display = 'none'; });
+    // Auto-soma valor ao marcar serviços
+    el.querySelectorAll('.orc-serv-cb').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const total = Array.from(el.querySelectorAll('.orc-serv-cb:checked')).reduce((s, x) => s + parseFloat(x.dataset.servVal || 0), 0);
+        if (total > 0) document.getElementById('orcValor').value = total.toFixed(2);
+      });
+    });
     el.querySelector('#formOrcDados').addEventListener('submit', e => {
       e.preventDefault();
       if (!c.orcamentos) c.orcamentos = [];
+      const servicosSel = Array.from(el.querySelectorAll('.orc-serv-cb:checked')).map(cb => ({ id: cb.dataset.servId, nome: cb.dataset.servNome }));
+      const descAuto = servicosSel.map(s => s.nome).join(', ');
       c.orcamentos.push({
         id: uid(), data: document.getElementById('orcData').value,
         validade: document.getElementById('orcValidade').value,
-        descricao: document.getElementById('orcDescricao').value.trim(),
+        descricao: descAuto,
+        servicosIds: servicosSel.map(s => s.id),
         valor: num(document.getElementById('orcValor').value),
         obs: document.getElementById('orcObs').value.trim(),
         status: 'aguardando'
@@ -3435,6 +3454,16 @@
               <div class="field"><label>Serviço realizado</label><select id="tratServico"><option value="">Selecione</option>${state.servicos.map(s=>`<option value="${s.id}">${esc(s.nome)}</option>`).join('')}</select></div>
               <div class="field"><label>Valor cobrado (R$)</label><input type="number" id="tratValor" min="0" step="0.01"></div>
             </div>
+            <div class="field">
+              <label>Produtos utilizados <span style="font-size:11px;color:#6b7280">(marque os que foram usados)</span></label>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1px solid var(--cor-borda);border-radius:8px;min-height:42px;background:#f9fafb">
+                ${state.produtos && state.produtos.length ? state.produtos.map(p => `
+                  <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;padding:4px 8px;border:1px solid var(--cor-borda);border-radius:6px;background:#fff">
+                    <input type="checkbox" class="trat-prod-cb" data-prod-id="${p.id}" data-prod-nome="${esc(p.nome)}">
+                    ${esc(p.nome)}<span style="font-size:11px;color:#9ca3af;margin-left:2px">${p.unidade||''}</span>
+                  </label>`).join('') : '<span style="font-size:13px;color:#9ca3af">Nenhum produto no estoque</span>'}
+              </div>
+            </div>
             <div class="field"><label>Observações</label><textarea id="tratObs" rows="3"></textarea></div>
             <div class="btn-row">
               <button type="submit" class="btn">Registrar tratamento</button>
@@ -3454,6 +3483,7 @@
                 </div>
                 <button class="btn danger small" data-del-trat="${t.id}">🗑️ Excluir</button>
               </div>
+              ${t.produtosUsados && t.produtosUsados.length ? `<div style="font-size:12px;color:#6b7280;margin-top:6px">🧴 <strong>Produtos:</strong> ${t.produtosUsados.map(p=>esc(p.nome)).join(', ')}</div>` : ''}
               ${t.observacoes ? `<div style="font-size:13px;color:#4b5162;margin-top:8px;padding-top:8px;border-top:1px solid var(--cor-borda)">${esc(t.observacoes)}</div>` : ''}
             </div>
           `).join('')}
@@ -3465,11 +3495,13 @@
     el.querySelector('#formTratDados').addEventListener('submit', e => {
       e.preventDefault();
       if (!c.tratamentos) c.tratamentos = [];
+      const produtosUsados = Array.from(el.querySelectorAll('.trat-prod-cb:checked')).map(cb => ({ id: cb.dataset.prodId, nome: cb.dataset.prodNome }));
       c.tratamentos.push({
         id: uid(), data: document.getElementById('tratData').value,
         profissionalId: document.getElementById('tratProf').value,
         servicoId: document.getElementById('tratServico').value,
         valor: num(document.getElementById('tratValor').value),
+        produtosUsados: produtosUsados,
         observacoes: document.getElementById('tratObs').value.trim()
       });
       save(STORAGE_KEYS.clientes, state.clientes);
