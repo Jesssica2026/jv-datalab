@@ -3545,8 +3545,7 @@
             </div>
             <div class="field">
               <label>Produtos utilizados <span style="font-size:11px;color:#6b7280">(custo descontado do lucro)</span></label>
-              <div style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1px solid var(--cor-borda);border-radius:8px;min-height:42px;background:#f9fafb">
-                ${(() => { let prods = (state.produtos && state.produtos.length) ? state.produtos : null; if (!prods) { try { prods = JSON.parse(localStorage.getItem('salao_produtos') || '[]'); } catch(e) { prods = []; } } return prods && prods.length ? prods.map(p => { const custo = custoPorUso(p); return `<label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;padding:4px 8px;border:1px solid var(--cor-borda);border-radius:6px;background:#fff"><input type="checkbox" class="trat-prod-cb" data-prod-id="${p.id}" data-prod-nome="${esc(p.nome)}" data-prod-custo="${custo.toFixed(2)}">${esc(p.nome)} <span style="font-size:11px;color:var(--cor-secundaria)">${custo > 0 ? '−R$'+custo.toFixed(2)+'/uso' : ''}</span></label>`; }).join('') : '<span style="font-size:13px;color:#9ca3af">Nenhum produto cadastrado no estoque ainda</span>'; })()
+              <div id="tratProdutosLista" style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1px solid var(--cor-borda);border-radius:8px;min-height:42px;background:#f9fafb">
               </div>
               <div id="tratCustoProdResume" style="font-size:12px;color:#e65100;margin-top:6px;display:none">🧴 Custo dos produtos: <strong id="tratCustoProdTotal">R$ 0,00</strong> · Lucro estimado: <strong id="tratLucroEstimado">—</strong></div>
             </div>
@@ -3576,7 +3575,27 @@
         </div>
       </div>
     `;
-    el.querySelector('#btnNovoTrat').addEventListener('click', () => { el.querySelector('#formNovoTrat').style.display = 'block'; });
+    el.querySelector('#btnNovoTrat').addEventListener('click', () => {
+      el.querySelector('#formNovoTrat').style.display = 'block';
+      // Preenche lista de produtos do estoque
+      let prods = (state.produtos && state.produtos.length) ? state.produtos : null;
+      if (!prods) { try { prods = JSON.parse(localStorage.getItem('salao_produtos') || '[]'); } catch(e) { prods = []; } }
+      const divProds = el.querySelector('#tratProdutosLista');
+      if (divProds) {
+        if (prods && prods.length) {
+          divProds.innerHTML = prods.map(p => {
+            const custo = custoPorUso(p);
+            return '<label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;padding:4px 8px;border:1px solid var(--cor-borda);border-radius:6px;background:#fff">' +
+              '<input type="checkbox" class="trat-prod-cb" data-prod-id="' + p.id + '" data-prod-nome="' + esc(p.nome) + '" data-prod-custo="' + custo.toFixed(2) + '">' +
+              esc(p.nome) + (custo > 0 ? ' <span style="font-size:11px;color:var(--cor-secundaria)">−R$' + custo.toFixed(2) + '/uso</span>' : '') +
+              '</label>';
+          }).join('');
+          divProds.querySelectorAll('.trat-prod-cb').forEach(cb => cb.addEventListener('change', atualizarCustoTrat));
+        } else {
+          divProds.innerHTML = '<span style="font-size:13px;color:#9ca3af">Nenhum produto cadastrado no estoque ainda</span>';
+        }
+      }
+    });
     el.querySelector('#btnCancelarTrat').addEventListener('click', () => { el.querySelector('#formNovoTrat').style.display = 'none'; });
     // Atualiza custo/lucro ao marcar produtos ou mudar valor
     function atualizarCustoTrat() {
