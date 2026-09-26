@@ -606,7 +606,7 @@
           <form id="formProduto">
             <input type="hidden" id="prodId">
             <div class="form-grid">
-              <div class="field"><label>Nome do produto</label><input type="text" id="prodNome" required placeholder="Ex: Toxina Botulínica, Ácido Hialurônico"></div>
+              <div class="field"><label>Nome do produto</label><input type="text" id="prodNome" required placeholder="Ex: Tintura, Shampoo, Máscara capilar"></div>
               <div class="field"><label>Unidade</label>
                 <select id="prodUnidade" required><option value="ml">ml</option><option value="un">un</option><option value="g">g</option><option value="frasco">frasco</option></select>
               </div>
@@ -2317,7 +2317,8 @@
             linhas.push('');
           });
           const msg = linhas.join('\n');
-          window.open('https://wa.me/' + full + '?text=' + encodeURIComponent(msg), '_blank');
+          const waUrl = 'https://wa.me/' + full + '?text=' + encodeURIComponent(msg);
+          const a = document.createElement('a'); a.href = waUrl; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
         });
       }
       el.querySelector('#btnEditarAnamnese').addEventListener('click', () => { c.anamneseCapilar._editando = true; renderAbaAnamnese(el, c); });
@@ -2354,7 +2355,8 @@
       const tel = c.telefone.replace(/\D/g,'');
       const full = tel.startsWith('55') ? tel : '55' + tel;
       const saudacao = `Olá ${c.nome}! 😊 Aqui é do salão. Para que possamos personalizar ainda melhor o seu atendimento, precisamos que você responda nossa ficha de anamnese capilar. Na sua próxima visita a profissional vai registrar as informações junto com você. Qualquer dúvida é só chamar! 💆‍♀️`;
-      window.open('https://wa.me/' + full + '?text=' + encodeURIComponent(saudacao), '_blank');
+      const waUrl2 = 'https://wa.me/' + full + '?text=' + encodeURIComponent(saudacao);
+      const a2 = document.createElement('a'); a2.href = waUrl2; a2.target = '_blank'; a2.rel = 'noopener'; document.body.appendChild(a2); a2.click(); document.body.removeChild(a2);
     });
     form.querySelector('#btnCancelarAnamnese')?.addEventListener('click', () => { delete c.anamneseCapilar._editando; renderAbaAnamnese(el, c); });
     form.addEventListener('submit', (e) => {
@@ -3059,7 +3061,8 @@
         <div style="margin-top:12px">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
             <div>${dataExib ? `<span style="background:#e8f5e9;color:#1a7d3a;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Salva em ${dataExib}</span>` : `<span style="background:#e3f0fd;color:#1565c0;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Ficha registrada</span>`}</div>
-            <div style="display:flex;gap:8px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              ${c.telefone ? `<button type="button" class="btn small" id="btnWhatsManicure" style="background:#25d366;color:#fff;border-color:#25d366">📲 WhatsApp</button>` : ''}
               <button type="button" class="btn secondary small" id="btnEditarManicure">✏️ Editar</button>
               <button type="button" class="btn danger small" id="btnExcluirManicure">🗑️ Excluir</button>
             </div>
@@ -3072,6 +3075,18 @@
           </div>
         </div>
       `;
+      if (c.telefone) {
+        el.querySelector('#btnWhatsManicure')?.addEventListener('click', () => {
+          const tel = c.telefone.replace(/\D/g,'');
+          const full = tel.startsWith('55') ? tel : '55' + tel;
+          const linhas = [`*Ficha de Manicure/Pedicure — ${c.nome}*\n`];
+          [['gelosa','Usa esmalte em gel'],['acrilica','Unha acrílica'],['fibra','Fibra de vidro'],['alergiaEsmalte','Alergia a esmalte'],['diabetica','Diabética'],['micose','Histórico de micose'],['unhaEncravada','Unha encravada recorrente']].forEach(([k,l])=>{ if(m[k]) linhas.push(`✓ ${l}`); });
+          if(m.corPreferida) linhas.push(`Cor preferida: ${m.corPreferida}`);
+          if(m.formato) linhas.push(`Formato: ${m.formato}`);
+          if(m.observacoes) linhas.push(`Obs: ${m.observacoes}`);
+          const waM = document.createElement('a'); waM.href='https://wa.me/'+full+'?text='+encodeURIComponent(linhas.join('\n')); waM.target='_blank'; waM.rel='noopener'; document.body.appendChild(waM); waM.click(); document.body.removeChild(waM);
+        });
+      }
       el.querySelector('#btnEditarManicure').addEventListener('click', () => { c.anamneseManicure._editando = true; renderAbaManicure(el, c); });
       el.querySelector('#btnExcluirManicure').addEventListener('click', () => {
         if (!confirm('Excluir ficha de manicure? Essa ação não pode ser desfeita.')) return;
@@ -3130,7 +3145,8 @@
         <div style="margin-top:12px">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
             <div>${dataExib ? `<span style="background:#e8f5e9;color:#1a7d3a;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Salva em ${dataExib}</span>` : `<span style="background:#e3f0fd;color:#1565c0;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Ficha registrada</span>`}</div>
-            <div style="display:flex;gap:8px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              ${c.telefone ? `<button type="button" class="btn small" id="btnWhatsCilios" style="background:#25d366;color:#fff;border-color:#25d366">📲 WhatsApp</button>` : ''}
               <button type="button" class="btn secondary small" id="btnEditarCilios">✏️ Editar</button>
               <button type="button" class="btn danger small" id="btnExcluirCilios">🗑️ Excluir</button>
             </div>
@@ -3145,6 +3161,20 @@
           </div>
         </div>
       `;
+      if (c.telefone) {
+        el.querySelector('#btnWhatsCilios')?.addEventListener('click', () => {
+          const tel = c.telefone.replace(/\D/g,'');
+          const full = tel.startsWith('55') ? tel : '55' + tel;
+          const linhas = [`*Ficha de Cílios — ${c.nome}*\n`];
+          [['alergiaGlue','Alergia a cola de cílios'],['olhoSeco','Olho seco'],['conjuntivite','Histórico de conjuntivite'],['lentesContato','Usa lentes de contato'],['extensaoAnterior','Já fez extensão antes']].forEach(([k,l])=>{ if(ci[k]) linhas.push(`✓ ${l}`); });
+          if(ci.tipoFio) linhas.push(`Tipo de fio: ${ci.tipoFio}`);
+          if(ci.curvatura) linhas.push(`Curvatura: ${ci.curvatura}`);
+          if(ci.espessura) linhas.push(`Espessura: ${ci.espessura}`);
+          if(ci.comprimento) linhas.push(`Comprimento: ${ci.comprimento}`);
+          if(ci.observacoes) linhas.push(`Obs: ${ci.observacoes}`);
+          const waC = document.createElement('a'); waC.href='https://wa.me/'+full+'?text='+encodeURIComponent(linhas.join('\n')); waC.target='_blank'; waC.rel='noopener'; document.body.appendChild(waC); waC.click(); document.body.removeChild(waC);
+        });
+      }
       el.querySelector('#btnEditarCilios').addEventListener('click', () => { c.anamneseCilios._editando = true; renderAbaCilios(el, c); });
       el.querySelector('#btnExcluirCilios').addEventListener('click', () => {
         if (!confirm('Excluir ficha de cílios? Essa ação não pode ser desfeita.')) return;
@@ -3207,7 +3237,8 @@
         <div style="margin-top:12px">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
             <div>${dataExib ? `<span style="background:#e8f5e9;color:#1a7d3a;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Salva em ${dataExib}</span>` : `<span style="background:#e3f0fd;color:#1565c0;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Ficha registrada</span>`}</div>
-            <div style="display:flex;gap:8px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              ${c.telefone ? `<button type="button" class="btn small" id="btnWhatsSobrancelha" style="background:#25d366;color:#fff;border-color:#25d366">📲 WhatsApp</button>` : ''}
               <button type="button" class="btn secondary small" id="btnEditarSobrancelha">✏️ Editar</button>
               <button type="button" class="btn danger small" id="btnExcluirSobrancelha">🗑️ Excluir</button>
             </div>
@@ -3221,6 +3252,19 @@
           </div>
         </div>
       `;
+      if (c.telefone) {
+        el.querySelector('#btnWhatsSobrancelha')?.addEventListener('click', () => {
+          const tel = c.telefone.replace(/\D/g,'');
+          const full = tel.startsWith('55') ? tel : '55' + tel;
+          const linhas = [`*Ficha de Sobrancelhas — ${c.nome}*\n`];
+          [['alergiaTinta','Alergia a tinta/henna'],['alergiaAnestesia','Alergia a anestésico'],['queloides','Tendência a queloides'],['peleOleosa','Pele oleosa'],['tomouSol','Exposição solar recente'],['gravidez','Gestante ou amamentando'],['micropigmentacaoAnterior','Já fez micropigmentação']].forEach(([k,l])=>{ if(s[k]) linhas.push(`✓ ${l}`); });
+          if(s.tecnica) linhas.push(`Técnica: ${s.tecnica}`);
+          if(s.formato) linhas.push(`Formato: ${s.formato}`);
+          if(s.corPreferida) linhas.push(`Tom/cor: ${s.corPreferida}`);
+          if(s.observacoes) linhas.push(`Obs: ${s.observacoes}`);
+          const waS = document.createElement('a'); waS.href='https://wa.me/'+full+'?text='+encodeURIComponent(linhas.join('\n')); waS.target='_blank'; waS.rel='noopener'; document.body.appendChild(waS); waS.click(); document.body.removeChild(waS);
+        });
+      }
       el.querySelector('#btnEditarSobrancelha').addEventListener('click', () => { c.anamneseSobrancelha._editando = true; renderAbaSobrancelha(el, c); });
       el.querySelector('#btnExcluirSobrancelha').addEventListener('click', () => {
         if (!confirm('Excluir ficha de sobrancelhas? Essa ação não pode ser desfeita.')) return;
@@ -3280,7 +3324,8 @@
         <div style="margin-top:12px">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
             <div>${dataExib ? `<span style="background:#e8f5e9;color:#1a7d3a;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Salva em ${dataExib}</span>` : `<span style="background:#e3f0fd;color:#1565c0;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Ficha registrada</span>`}</div>
-            <div style="display:flex;gap:8px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              ${c.telefone ? `<button type="button" class="btn small" id="btnWhatsDepilacao" style="background:#25d366;color:#fff;border-color:#25d366">📲 WhatsApp</button>` : ''}
               <button type="button" class="btn secondary small" id="btnEditarDepilacao">✏️ Editar</button>
               <button type="button" class="btn danger small" id="btnExcluirDepilacao">🗑️ Excluir</button>
             </div>
@@ -3293,6 +3338,18 @@
           </div>
         </div>
       `;
+      if (c.telefone) {
+        el.querySelector('#btnWhatsDepilacao')?.addEventListener('click', () => {
+          const tel = c.telefone.replace(/\D/g,'');
+          const full = tel.startsWith('55') ? tel : '55' + tel;
+          const linhas = [`*Ficha de Depilação — ${c.nome}*\n`];
+          [['alergiaResina','Alergia a resina/cera'],['peleReativa','Pele muito reativa'],['varizes','Varizes na área'],['tomouSol','Exposição solar recente'],['gravidez','Gestante'],['diabetes','Diabética'],['queloides','Tendência a queloides'],['isotretinoina','Uso de isotretinoína'],['hormonal','Tratamento hormonal']].forEach(([k,l])=>{ if(d[k]) linhas.push(`✓ ${l}`); });
+          if(d.metodo) linhas.push(`Método: ${d.metodo}`);
+          if(d.areas) linhas.push(`Áreas: ${d.areas}`);
+          if(d.observacoes) linhas.push(`Obs: ${d.observacoes}`);
+          const waD = document.createElement('a'); waD.href='https://wa.me/'+full+'?text='+encodeURIComponent(linhas.join('\n')); waD.target='_blank'; waD.rel='noopener'; document.body.appendChild(waD); waD.click(); document.body.removeChild(waD);
+        });
+      }
       el.querySelector('#btnEditarDepilacao').addEventListener('click', () => { c.anamneseDepilacao._editando = true; renderAbaDepilacao(el, c); });
       el.querySelector('#btnExcluirDepilacao').addEventListener('click', () => {
         if (!confirm('Excluir ficha de depilação? Essa ação não pode ser desfeita.')) return;
@@ -3393,6 +3450,7 @@
                     <button class="btn small" style="background:#1a7d3a;color:#fff" data-orc-aceitar="${o.id}">✅ Aceito</button>
                     <button class="btn small danger" data-orc-recusar="${o.id}">❌ Recusado</button>
                   ` : ''}
+                  ${c.telefone ? `<button class="btn small" style="background:#25d366;color:#fff;border-color:#25d366" data-orc-whats="${o.id}" data-orc-val="${o.valor||0}" data-orc-desc="${esc(o.descricao||'')}" data-orc-data="${o.data||''}">📲</button>` : ''}
                   <button class="btn danger small" data-orc-del="${o.id}">🗑️</button>
                 </div>
               </div>
@@ -3444,6 +3502,25 @@
       save(STORAGE_KEYS.clientes, state.clientes);
       renderAbaOrcamento(el, c);
     }));
+    if (c.telefone) {
+      el.querySelectorAll('[data-orc-whats]').forEach(btn => btn.addEventListener('click', () => {
+        const orcId = btn.dataset.orcWhats;
+        const o = (c.orcamentos || []).find(x => x.id === orcId);
+        if (!o) return;
+        const tel = c.telefone.replace(/\D/g,'');
+        const full = tel.startsWith('55') ? tel : '55' + tel;
+        const linhas = [
+          `*Orçamento — ${c.nome}*`,
+          `Data: ${formatDateBR(o.data)}${o.validade ? ` | Válido até: ${formatDateBR(o.validade)}` : ''}`,
+          o.descricao ? `Serviços: ${o.descricao}` : '',
+          `*Valor: ${formatMoney(o.valor)}*`,
+          o.obs ? `Obs: ${o.obs}` : '',
+          '',
+          'Aguardamos sua confirmação! 😊'
+        ].filter(Boolean);
+        const waO = document.createElement('a'); waO.href='https://wa.me/'+full+'?text='+encodeURIComponent(linhas.join('\n')); waO.target='_blank'; waO.rel='noopener'; document.body.appendChild(waO); waO.click(); document.body.removeChild(waO);
+      }));
+    }
   }
 
   // ---------- Ficha: aba "Tratamentos" ----------
