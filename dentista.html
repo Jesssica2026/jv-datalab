@@ -4996,6 +4996,14 @@
   window.addEventListener('supa:carregado', () => {
     if (document.getElementById('appContainer') && document.getElementById('appContainer').style.display !== 'none') {
       recarregarStateDoLocalStorage();
+      // Se estiver na página de tratamento e já tiver algo digitado na busca, re-executa
+      const pagTrat = document.getElementById('page-tratamento');
+      if (pagTrat && pagTrat.classList.contains('active')) {
+        const nome = document.getElementById('tratBuscaNome')?.value || '';
+        const cpf  = document.getElementById('tratBuscaCpf')?.value || '';
+        const id   = document.getElementById('tratBuscaId')?.value || '';
+        if (nome || cpf || id) buscarPacientesTrat();
+      }
     }
   });
 
@@ -5301,6 +5309,7 @@
     { id: 'tratamentos', label: '📋 Histórico' }
   ];
 
+  let _tratBuscandoSupa = false;
   async function buscarPacientesTrat() {
     const nome = (document.getElementById('tratBuscaNome')?.value || '').toLowerCase().trim();
     const cpf = (document.getElementById('tratBuscaCpf')?.value || '').replace(/\D/g,'').trim();
@@ -5309,9 +5318,10 @@
     if (!resultado) return;
     if (!nome && !cpf && !idBusca) { resultado.innerHTML = ''; return; }
 
-    // Se state.clientes está vazio, recarrega do Supabase antes de pesquisar
-    if (!state.clientes || state.clientes.length === 0) {
-      resultado.innerHTML = '<div class="empty-msg" style="color:#6b7280">🔄 Carregando pacientes...</div>';
+    // Se state.clientes está vazio OU nunca foi sincronizado do Supabase, carrega agora
+    if ((!state.clientes || state.clientes.length === 0) && !_tratBuscandoSupa) {
+      _tratBuscandoSupa = true;
+      resultado.innerHTML = '<div class="empty-msg" style="color:#6b7280">🔄 Carregando pacientes do servidor...</div>';
       if (window._supaCarregarClientes) {
         try {
           const dadosSupa = await window._supaCarregarClientes();
@@ -5321,6 +5331,7 @@
           }
         } catch(e) { console.warn('[Trat] recarregar clientes:', e); }
       }
+      _tratBuscandoSupa = false;
     }
 
     const lista = state.clientes.filter((c, idx) =>
@@ -5329,7 +5340,7 @@
       (idBusca && (String(idx+1) === idBusca || c.id === idBusca))
     ).slice(0, 10);
     if (!lista.length) { resultado.innerHTML = '<div class="empty-msg">Nenhum paciente encontrado.</div>'; return; }
-    resultado.innerHTML = lista.map((c, idx) => {
+    resultado.innerHTML = lista.map((c) => {
       const i = state.clientes.indexOf(c) + 1;
       return `<div class="list-row" style="cursor:pointer;padding:10px;border-radius:8px;background:#f8f9fc;margin-bottom:6px;border:1px solid var(--cor-borda)">
         <div>
