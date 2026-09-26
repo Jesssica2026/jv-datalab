@@ -1314,6 +1314,14 @@
   };
   window.state = state;
   window._STORAGE_KEYS = STORAGE_KEYS;
+  // expõe funções de tratamento para blocos externos
+  window._renderAbaOdontograma   = (...a) => renderAbaOdontograma(...a);
+  window._renderAbaPlano         = (...a) => renderAbaPlano(...a);
+  window._renderAbaProntuario    = (...a) => renderAbaProntuario(...a);
+  window._renderAbaReceituario   = (...a) => renderAbaReceituario(...a);
+  window._renderAbaHarmonizacao  = (...a) => renderAbaHarmonizacao(...a);
+  window._renderAbaOrcamento     = (...a) => renderAbaOrcamento(...a);
+  window._renderAbaTratamentos   = (...a) => renderAbaTratamentos(...a);
   state.config = Object.assign({}, DEFAULT_CONFIG, state.config);
   state.regrasStatus = Object.assign({ diasInativo: 30, diasAbandono: 90, diasRevisao: 180, diasAparelho: 45 }, load(STORAGE_KEYS.regrasStatus, null) || {});
   state.taxas = Object.assign({}, TAXAS_PADRAO, state.taxas || {});
