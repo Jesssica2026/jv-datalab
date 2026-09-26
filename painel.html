@@ -2015,15 +2015,15 @@
   }
 
   const DADOS_PESSOAIS = [
-    { k: 'nome', label: 'Nome', t: 'text', req: true },
-    { k: 'telefone', label: 'WhatsApp', t: 'tel', ph: '(11) 99999-9999' },
-    { k: 'idade', label: 'Idade', t: 'number' },
+    { k: 'nome', label: 'Nome completo', t: 'text', req: true },
+    { k: 'telefone', label: 'WhatsApp *', t: 'tel', ph: '(11) 99999-9999', req: true },
+    { k: 'cpf', label: 'CPF *', t: 'text', ph: '000.000.000-00', req: true },
     { k: 'nascimento', label: 'Data de nascimento', t: 'date' },
-    { k: 'cpf', label: 'CPF', t: 'text', ph: '000.000.000-00' },
-    { k: 'profissao', label: 'Profissão', t: 'text' },
+    { k: 'idade', label: 'Idade', t: 'number' },
     { k: 'email', label: 'E-mail', t: 'email' },
+    { k: 'profissao', label: 'Profissão', t: 'text' },
     { k: 'genero', label: 'Gênero', t: 'select', op: ['Feminino', 'Masculino', 'Outro', 'Prefiro não informar'] },
-    { k: 'comoConheceu', label: 'Como nos conheceu', t: 'select', op: ['Instagram', 'Facebook', 'Indicação'] },
+    { k: 'comoConheceu', label: 'Como nos conheceu', t: 'select', op: ['Instagram', 'Facebook', 'Indicação', 'Google', 'Outro'] },
     { k: 'apelido', label: 'Como gostaria de ser chamado(a)', t: 'text' }
   ];
 
@@ -2162,6 +2162,9 @@
     e.preventDefault();
     const id = document.getElementById('clienteId').value;
     const dados = lerDadosPessoais(clienteDadosModal, 'cli_');
+    if (!dados.nome) { showToast('Informe o nome completo.'); return; }
+    if (!dados.telefone) { showToast('WhatsApp é obrigatório.'); return; }
+    if (!dados.cpf) { showToast('CPF é obrigatório.'); return; }
     if (id) {
       Object.assign(state.clientes.find(c => c.id === id), dados);
     } else {
@@ -2417,12 +2420,6 @@
 
     el.innerHTML = `
       <form id="formAnamnese">
-        ${c.telefone && !a._editando ? `<div style="margin-bottom:12px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <span style="font-size:13px;color:#166534">📲 Peça para a cliente preencher a anamnese pelo WhatsApp</span>
-          <button type="button" id="btnWhatsAnamneseForm" style="background:#25d366;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Enviar mensagem →</button>
-        </div>` : ''}
-        <h4 class="ficha-secao">Dados</h4>
-        ${htmlDadosPessoais(c, 'dp_')}
         ${htmlSecoesAnamnese(ANAMNESE_CAPILAR, c.anamneseCapilar || {})}
         <div class="btn-row">
           <button type="submit" class="btn">Salvar anamnese capilar</button>
@@ -2431,28 +2428,16 @@
       </form>
     `;
     const form = document.getElementById('formAnamnese');
-    ligarDadosPessoais(form, 'dp_');
     ligarAnamnese(form);
-    // WhatsApp — pedir para cliente preencher anamnese (quando ainda não tem ficha)
-    form.querySelector('#btnWhatsAnamneseForm')?.addEventListener('click', () => {
-      const tel = c.telefone.replace(/\D/g,'');
-      const full = tel.startsWith('55') ? tel : '55' + tel;
-      const saudacao = `Olá ${c.nome}! 😊 Aqui é do salão. Para que possamos personalizar ainda melhor o seu atendimento, precisamos que você responda nossa ficha de anamnese capilar. Na sua próxima visita a profissional vai registrar as informações junto com você. Qualquer dúvida é só chamar! 💆‍♀️`;
-      const waUrl2 = 'https://wa.me/' + full + '?text=' + encodeURIComponent(saudacao);
-      const a2 = document.createElement('a'); a2.href = waUrl2; a2.target = '_blank'; a2.rel = 'noopener'; document.body.appendChild(a2); a2.click(); document.body.removeChild(a2);
-    });
     form.querySelector('#btnCancelarAnamnese')?.addEventListener('click', () => { delete c.anamneseCapilar._editando; renderAbaAnamnese(el, c); });
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const dados = lerDadosPessoais(form, 'dp_');
-      if (!dados.nome) { showToast('Informe o nome.'); return; }
-      Object.assign(c, dados);
       c.anamneseCapilar = Object.assign({}, c.anamneseCapilar, lerAnamnese(form, ANAMNESE_CAPILAR), { _salvoEm: new Date().toISOString() });
       delete c.anamneseCapilar._editando;
       save(STORAGE_KEYS.clientes, state.clientes);
       renderClientes();
       populateTodosSelects();
-      showToast('Ficha de anamnese salva! ' + (c.telefone ? '📲 Clique em WhatsApp para enviar.' : ''));
+      showToast('Ficha salva! ' + (c.telefone ? '📲 Use o botão WhatsApp no topo para enviar.' : ''));
       renderAbaAnamnese(el, c);
     });
   }
