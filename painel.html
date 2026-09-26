@@ -5196,7 +5196,9 @@
       const idBusca = (document.getElementById('tratBuscaId')?.value || '').trim().toLowerCase();
       if (!nome && !tel && !idBusca) { resultado.innerHTML = ''; return; }
       const _state = window._salao_state ? window._salao_state() : null;
-      const lista = (_state && _state.clientes ? _state.clientes : []).filter(c =>
+      let clientesLista = (_state && _state.clientes) ? _state.clientes : null;
+      if (!clientesLista) { try { clientesLista = JSON.parse(localStorage.getItem('salao_clientes') || '[]'); } catch(e) { clientesLista = []; } }
+      const lista = (clientesLista || []).filter(c =>
         (nome && c.nome?.toLowerCase().includes(nome)) ||
         (tel && (c.telefone || '').replace(/\D/g,'').includes(tel)) ||
         (idBusca && (c.id || '').toLowerCase().includes(idBusca))
@@ -5247,7 +5249,9 @@
   function selecionarClienteTrat(id) {
     tratClienteId = id;
     const state = window._salao_state ? window._salao_state() : null;
-    const c = state && state.clientes ? state.clientes.find(x => x.id === id) : null;
+    let clArr = (state && state.clientes) ? state.clientes : null;
+    if (!clArr) { try { clArr = JSON.parse(localStorage.getItem('salao_clientes') || '[]'); } catch(e) { clArr = []; } }
+    const c = (clArr || []).find(x => x.id === id);
     if (!c) return;
     document.getElementById('trat-busca-card').style.display = 'none';
     document.getElementById('tratClienteCard').style.display = 'block';
@@ -5280,7 +5284,9 @@
   function renderTratConteudo() {
     const el = document.getElementById('tratAbaConteudo');
     const state = window._salao_state ? window._salao_state() : null;
-    const c = state && state.clientes ? state.clientes.find(x => x.id === tratClienteId) : null;
+    let clArr2 = (state && state.clientes) ? state.clientes : null;
+    if (!clArr2) { try { clArr2 = JSON.parse(localStorage.getItem('salao_clientes') || '[]'); } catch(e) { clArr2 = []; } }
+    const c = (clArr2 || []).find(x => x.id === tratClienteId);
     if (!c || !el) return;
     if (tratAbaAtiva === 'orcamento') return window._salao_renderAbaOrcamento(el, c);
     if (tratAbaAtiva === 'tratamentos') return window._salao_renderAbaTratamentos(el, c);
