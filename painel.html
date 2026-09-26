@@ -2272,7 +2272,7 @@
 
   function renderAbaAnamnese(el, c) {
     const a = c.anamneseCapilar || {};
-    const jaSalva = !!(a._salvoEm && Object.keys(a).filter(k => !k.startsWith('_')).some(k => a[k] !== undefined && a[k] !== '' && a[k] !== false));
+    const jaSalva = !!(a._salvoEm);
     const dataExib = a._salvoEm ? formatDateBR(a._salvoEm.slice(0, 10)) : null;
 
     if (jaSalva && !a._editando) {
@@ -2369,7 +2369,8 @@
       save(STORAGE_KEYS.clientes, state.clientes);
       renderClientes();
       populateTodosSelects();
-      showToast('Ficha de anamnese salva!');
+      showToast('Ficha de anamnese salva! ' + (c.telefone ? '📲 Clique em WhatsApp para enviar.' : ''));
+      renderAbaAnamnese(el, c);
     });
   }
 
@@ -3053,7 +3054,7 @@
   // ---------- Fichas especializadas ----------
   function renderAbaManicure(el, c) {
     const m = c.anamneseManicure || {};
-    const jaSalva = !!(m._salvoEm && Object.keys(m).filter(k => !k.startsWith('_')).some(k => m[k]));
+    const jaSalva = !!(m._salvoEm);
     const dataExib = m._salvoEm ? formatDateBR(m._salvoEm.slice(0, 10)) : null;
 
     if (jaSalva && !m._editando) {
@@ -3137,7 +3138,7 @@
 
   function renderAbaCilios(el, c) {
     const ci = c.anamneseCilios || {};
-    const jaSalva = !!(ci._salvoEm && Object.keys(ci).filter(k => !k.startsWith('_')).some(k => ci[k]));
+    const jaSalva = !!(ci._salvoEm);
     const dataExib = ci._salvoEm ? formatDateBR(ci._salvoEm.slice(0, 10)) : null;
 
     if (jaSalva && !ci._editando) {
@@ -3229,7 +3230,7 @@
 
   function renderAbaSobrancelha(el, c) {
     const s = c.anamneseSobrancelha || {};
-    const jaSalva = !!(s._salvoEm && Object.keys(s).filter(k => !k.startsWith('_')).some(k => s[k]));
+    const jaSalva = !!(s._salvoEm);
     const dataExib = s._salvoEm ? formatDateBR(s._salvoEm.slice(0, 10)) : null;
 
     if (jaSalva && !s._editando) {
@@ -3316,7 +3317,7 @@
 
   function renderAbaDepilacao(el, c) {
     const d = c.anamneseDepilacao || {};
-    const jaSalva = !!(d._salvoEm && Object.keys(d).filter(k => !k.startsWith('_')).some(k => d[k]));
+    const jaSalva = !!(d._salvoEm);
     const dataExib = d._salvoEm ? formatDateBR(d._salvoEm.slice(0, 10)) : null;
 
     if (jaSalva && !d._editando) {
@@ -3545,13 +3546,7 @@
             <div class="field">
               <label>Produtos utilizados <span style="font-size:11px;color:#6b7280">(custo descontado do lucro)</span></label>
               <div style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1px solid var(--cor-borda);border-radius:8px;min-height:42px;background:#f9fafb">
-                ${state.produtos && state.produtos.length ? state.produtos.map(p => {
-                  const custo = custoPorUso(p);
-                  return `<label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;padding:4px 8px;border:1px solid var(--cor-borda);border-radius:6px;background:#fff">
-                    <input type="checkbox" class="trat-prod-cb" data-prod-id="${p.id}" data-prod-nome="${esc(p.nome)}" data-prod-custo="${custo.toFixed(2)}">
-                    ${esc(p.nome)} <span style="font-size:11px;color:var(--cor-secundaria)">${custo > 0 ? '−R$'+custo.toFixed(2)+'/uso' : ''}</span>
-                  </label>`;
-                }).join('') : '<span style="font-size:13px;color:#9ca3af">Nenhum produto no estoque</span>'}
+                ${(() => { let prods = (state.produtos && state.produtos.length) ? state.produtos : null; if (!prods) { try { prods = JSON.parse(localStorage.getItem('salao_produtos') || '[]'); } catch(e) { prods = []; } } return prods && prods.length ? prods.map(p => { const custo = custoPorUso(p); return `<label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;padding:4px 8px;border:1px solid var(--cor-borda);border-radius:6px;background:#fff"><input type="checkbox" class="trat-prod-cb" data-prod-id="${p.id}" data-prod-nome="${esc(p.nome)}" data-prod-custo="${custo.toFixed(2)}">${esc(p.nome)} <span style="font-size:11px;color:var(--cor-secundaria)">${custo > 0 ? '−R$'+custo.toFixed(2)+'/uso' : ''}</span></label>`; }).join('') : '<span style="font-size:13px;color:#9ca3af">Nenhum produto cadastrado no estoque ainda</span>'; })()
               </div>
               <div id="tratCustoProdResume" style="font-size:12px;color:#e65100;margin-top:6px;display:none">🧴 Custo dos produtos: <strong id="tratCustoProdTotal">R$ 0,00</strong> · Lucro estimado: <strong id="tratLucroEstimado">—</strong></div>
             </div>
