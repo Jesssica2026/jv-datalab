@@ -1175,7 +1175,26 @@
     try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
     catch (e) { return fallback; }
   }
-  function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+  function save(key, data) {
+    localStorage.setItem(key, JSON.stringify(data));
+    setTimeout(() => {
+      try {
+        if (key === STORAGE_KEYS.clientes && window._supaSalvarCliente) {
+          (Array.isArray(data) ? data : []).forEach(c => window._supaSalvarCliente(c));
+        } else if (key === STORAGE_KEYS.agendamentos && window._supaSalvarAgendamento) {
+          (Array.isArray(data) ? data : []).forEach(a => window._supaSalvarAgendamento(a));
+        } else if (key === STORAGE_KEYS.servicos && window._supaSalvarServicos) {
+          window._supaSalvarServicos(Array.isArray(data) ? data : []);
+        } else if (key === STORAGE_KEYS.profissionais && window._supaSalvarProfissionais) {
+          window._supaSalvarProfissionais(Array.isArray(data) ? data : []);
+        } else if (key === STORAGE_KEYS.produtos && window._supaSalvarProdutos) {
+          window._supaSalvarProdutos(Array.isArray(data) ? data : []);
+        } else if (key === STORAGE_KEYS.financeiro && window._supaSalvarPagamento) {
+          (Array.isArray(data) ? data : []).forEach(f => window._supaSalvarPagamento(f));
+        }
+      } catch(e) { console.warn('[Supa] sync save:', e); }
+    }, 0);
+  }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
   function gerarCodigoMaster() { return Math.random().toString(36).slice(2, 8).toUpperCase(); }
   function formatMoney(v) { return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -1201,6 +1220,7 @@
   function fichaVaziaPaciente() {
     return {
       anamnese: { hipertensao: false, diabetes: false, cardiopatia: false, anticoagulantes: false, alergiaAnestesia: false, alergiaLatex: false, gestante: false, amamentando: false, medicamentos: '', ultimaVisita: '', motivoConsulta: '', historicoProcedimentos: '' },
+      anamneseHarmonizacao: { alergiaDermaFiller: false, alergiaLatex: false, alergiaAnestesiaTopi: false, anticoagulantes: false, gestante: false, amamentando: false, herpeLabial: false, autoimune: false, queloides: false, medicamentos: '', procedimentosAnteriores: '', queixaPrincipal: '', objetivos: '' },
       odontogramaAtual: { tipo: 'permanente', dentes: {} },
       odontogramaHistorico: [],
       planoTratamento: { itens: [], parcelas: [], aceite: { aceito: false, data: '' } },
@@ -1242,6 +1262,7 @@
   state.clientes.forEach(c => {
     const vazia = fichaVaziaPaciente();
     if (!c.anamnese) c.anamnese = vazia.anamnese;
+    if (!c.anamneseHarmonizacao) c.anamneseHarmonizacao = vazia.anamneseHarmonizacao;
     if (!c.odontogramaAtual) c.odontogramaAtual = vazia.odontogramaAtual;
     if (!c.odontogramaHistorico) c.odontogramaHistorico = [];
     if (!c.planoTratamento) c.planoTratamento = vazia.planoTratamento;
@@ -1927,6 +1948,7 @@
     { id: 'odontograma', label: 'Odontograma' },
     { id: 'plano', label: 'Plano de Tratamento' },
     { id: 'prontuario', label: 'Prontuário' },
+    { id: 'harmonizacao', label: 'Harmonização Facial' },
     { id: 'receituario', label: 'Receituário' }
   ];
 
@@ -1987,6 +2009,7 @@
     if (abaAtivaCliente === 'odontograma') return renderAbaOdontograma(el, c);
     if (abaAtivaCliente === 'plano') return renderAbaPlano(el, c);
     if (abaAtivaCliente === 'prontuario') return renderAbaProntuario(el, c);
+    if (abaAtivaCliente === 'harmonizacao') return renderAbaHarmonizacao(el, c);
     if (abaAtivaCliente === 'receituario') return renderAbaReceituario(el, c);
   }
 
@@ -2414,6 +2437,58 @@
       showToast('Receita gerada!');
       renderAbaReceituario(el, p);
       imprimirReceita(r, p);
+    });
+  }
+
+  function renderAbaHarmonizacao(el, c) {
+    const h = c.anamneseHarmonizacao || {};
+    el.innerHTML = `
+      <form id="formHarmonizacao">
+        <h3 style="color:var(--cor-primaria);margin-bottom:14px">Anamnese – Harmonização Facial / Botox</h3>
+        <div class="form-grid" style="margin-bottom:14px">
+          ${[
+            ['alergiaDermaFiller','Alergia a preenchedores (ácido hialurônico)'],
+            ['alergiaLatex','Alergia a Látex'],
+            ['alergiaAnestesiaTopi','Alergia a anestésico tópico'],
+            ['anticoagulantes','Uso de anticoagulantes'],
+            ['gestante','Gestante'],
+            ['amamentando','Amamentando'],
+            ['herpeLabial','Herpes labial recorrente'],
+            ['autoimune','Doença autoimune'],
+            ['queloides','Tendência a queloides']
+          ].map(([k,label]) => `
+            <label class="checkbox-item">
+              <input type="checkbox" name="${k}" ${h[k]?'checked':''}> ${label}
+            </label>
+          `).join('')}
+        </div>
+        <div class="field"><label>Medicamentos em uso</label><textarea name="medicamentos" rows="2">${esc(h.medicamentos||'')}</textarea></div>
+        <div class="field"><label>Procedimentos estéticos anteriores</label><textarea name="procedimentosAnteriores" rows="2">${esc(h.procedimentosAnteriores||'')}</textarea></div>
+        <div class="field"><label>Queixa principal / área de interesse</label><textarea name="queixaPrincipal" rows="2">${esc(h.queixaPrincipal||'')}</textarea></div>
+        <div class="field"><label>Objetivos com o procedimento</label><textarea name="objetivos" rows="2">${esc(h.objetivos||'')}</textarea></div>
+        <div class="btn-row"><button type="submit" class="btn">Salvar anamnese de harmonização</button></div>
+      </form>
+    `;
+    el.querySelector('#formHarmonizacao').addEventListener('submit', e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      c.anamneseHarmonizacao = {
+        alergiaDermaFiller: fd.get('alergiaDermaFiller') === 'on',
+        alergiaLatex: fd.get('alergiaLatex') === 'on',
+        alergiaAnestesiaTopi: fd.get('alergiaAnestesiaTopi') === 'on',
+        anticoagulantes: fd.get('anticoagulantes') === 'on',
+        gestante: fd.get('gestante') === 'on',
+        amamentando: fd.get('amamentando') === 'on',
+        herpeLabial: fd.get('herpeLabial') === 'on',
+        autoimune: fd.get('autoimune') === 'on',
+        queloides: fd.get('queloides') === 'on',
+        medicamentos: fd.get('medicamentos') || '',
+        procedimentosAnteriores: fd.get('procedimentosAnteriores') || '',
+        queixaPrincipal: fd.get('queixaPrincipal') || '',
+        objetivos: fd.get('objetivos') || ''
+      };
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Anamnese de harmonização salva!');
     });
   }
 
@@ -4516,7 +4591,51 @@
     }
     goToPage(session.tipo === 'admin' ? 'dashboard' : 'agendamentos');
     setTimeout(bkVerificarDiario, 600);
+    if (window._supaCarregarTudo) window._supaCarregarTudo().catch(e => console.warn('[Supa]', e));
   }
+
+  function recarregarStateDoLocalStorage() {
+    const novosCli = load(STORAGE_KEYS.clientes, null);
+    if (novosCli && Array.isArray(novosCli) && novosCli.length > 0) {
+      state.clientes = novosCli;
+      state.clientes.forEach(c => {
+        const vazia = fichaVaziaPaciente();
+        if (!c.anamnese) c.anamnese = vazia.anamnese;
+        if (!c.anamneseHarmonizacao) c.anamneseHarmonizacao = vazia.anamneseHarmonizacao;
+        if (!c.odontogramaAtual) c.odontogramaAtual = vazia.odontogramaAtual;
+        if (!c.odontogramaHistorico) c.odontogramaHistorico = [];
+        if (!c.planoTratamento) c.planoTratamento = vazia.planoTratamento;
+        if (!c.consultas) c.consultas = [];
+        if (!c.receitas) c.receitas = [];
+        c.planoTratamento.itens.forEach(i => { if (i.dataConclusao === undefined) i.dataConclusao = ''; if (!Array.isArray(i.baixas)) i.baixas = []; if (i.servicoId === undefined) i.servicoId = ''; });
+        c.planoTratamento.parcelas.forEach(pc => { if (!Array.isArray(pc.lancamentos)) pc.lancamentos = []; });
+      });
+    }
+    const novosAg = load(STORAGE_KEYS.agendamentos, null);
+    if (novosAg && Array.isArray(novosAg)) state.agendamentos = novosAg;
+    const novosSrv = load(STORAGE_KEYS.servicos, null);
+    if (novosSrv && Array.isArray(novosSrv)) state.servicos = novosSrv;
+    const novosProf = load(STORAGE_KEYS.profissionais, null);
+    if (novosProf && Array.isArray(novosProf)) { state.profissionais = novosProf; state.profissionais.forEach(p => { if (!p.bloqueios) p.bloqueios = []; if (!p.excecoesDia) p.excecoesDia = {}; }); }
+    const novosProd = load(STORAGE_KEYS.produtos, null);
+    if (novosProd && Array.isArray(novosProd)) state.produtos = novosProd;
+    const novosFinan = load(STORAGE_KEYS.financeiro, null);
+    if (novosFinan && Array.isArray(novosFinan)) state.financeiro = novosFinan;
+    const novosGal = load(STORAGE_KEYS.galeria, null);
+    if (novosGal && Array.isArray(novosGal)) state.galeria = novosGal;
+    sincronizarStatusClientes();
+    renderClientes();
+    renderAgendaCompleta();
+    renderFinanceiro();
+    renderDashboard();
+    renderGaleria();
+    console.log('[Supa] State recarregado do localStorage ✓');
+  }
+  window.addEventListener('supa:carregado', () => {
+    if (document.getElementById('appContainer') && document.getElementById('appContainer').style.display !== 'none') {
+      recarregarStateDoLocalStorage();
+    }
+  });
 
   function iniciar() {
     applyLoginBranding();
@@ -4781,6 +4900,278 @@
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-page="ia"]').forEach(btn => btn.addEventListener('click', iaCarregarInativos));
   });
+</script>
+<script>
+(function() {
+  const SUPA_URL = 'https://dhcbgwoqvemveltqlkyb.supabase.co';
+  const SUPA_KEY = 'sb_publishable_2NBJeTDfI7FRe3xGfo_QpQ_voN44OJm';
+  const supa = window.supabase ? window.supabase.createClient(SUPA_URL, SUPA_KEY) : null;
+  if (!supa) { console.warn('[Supa] biblioteca não carregada'); return; }
+
+  const LICENCAS_KEY = "jv_datalab_licencas";
+  const LICENCA_PAINEL_KEY = "dentista_licenca";
+  function getLicenca() { try { return JSON.parse(localStorage.getItem(LICENCA_PAINEL_KEY)||'null'); } catch(e){return null;} }
+  function getLicencaCodigo() { const l=getLicenca(); return l&&l.codigo?l.codigo:null; }
+  function parseJsonb(v,fb){ if(v===null||v===undefined)return fb; if(typeof v==='object')return v; try{return JSON.parse(v);}catch(e){return fb;} }
+
+  // Licenças
+  window._supaCarregarLicencas = async function() {
+    try {
+      const {data} = await supa.from('licencas').select('*');
+      if(data&&data.length) {
+        const fmt = data.map(l=>({codigo:l.codigo,segmento:l.segmento,plano:l.plano,limiteProfissionais:l.limite_profissionais||3,dataVencimento:l.data_vencimento,nomeCliente:l.nome_cliente}));
+        localStorage.setItem(LICENCAS_KEY, JSON.stringify(fmt));
+      }
+    } catch(e){console.warn('[Supa] licencas:',e);}
+  };
+
+  // Clientes (pacientes)
+  function pacienteParaSupa(c, codigo) {
+    return {
+      id:c.id, licenca_codigo:codigo,
+      nome:c.nome||'', telefone:c.telefone||'', email:c.email||'',
+      cpf:c.cpf||'', datanascimento:c.nascimento||'',
+      observacoes:c.observacoes||'',
+      status:(c.statusCliente&&c.statusCliente.valor)||c.status||'ativo',
+      statusclientejson:c.statusCliente||{},
+      anamneses:{ dental:c.anamnese||{}, harmonizacao:c.anamneseHarmonizacao||{} },
+      objetivos:{ odontograma:c.odontogramaAtual||{}, historico:c.odontogramaHistorico||[] },
+      mapacorporal:c.planoTratamento||{},
+      medidas:c.consultas||[],
+      protocolo:{ receitas:c.receitas||[], aparelho:c.aparelho||{} },
+      pacotes:[],
+      historicostatus:c.historicoStatus||[]
+    };
+  }
+  function pacienteDeSupaParaLocal(r) {
+    const an = parseJsonb(r.anamneses, {});
+    const obj = parseJsonb(r.objetivos, {});
+    const proto = parseJsonb(r.protocolo, {});
+    return {
+      id:r.id, nome:r.nome||'', telefone:r.telefone||'', email:r.email||'',
+      cpf:r.cpf||'', nascimento:r.datanascimento||'',
+      observacoes:r.observacoes||'', status:r.status||'ativo',
+      statusCliente:parseJsonb(r.statusclientejson,{valor:r.status||'ativo',manual:false,desde:'',motivoAtual:'',justificativa:''}),
+      anamnese:an.dental||{},
+      anamneseHarmonizacao:an.harmonizacao||{},
+      odontogramaAtual:obj.odontograma||{tipo:'permanente',dentes:{}},
+      odontogramaHistorico:obj.historico||[],
+      planoTratamento:parseJsonb(r.mapacorporal,{itens:[],parcelas:[],aceite:{aceito:false,data:''}}),
+      consultas:parseJsonb(r.medidas,[]),
+      receitas:proto.receitas||[],
+      aparelho:proto.aparelho||{modo:'auto',ultimaManutencao:''},
+      historicoStatus:parseJsonb(r.historicostatus,[])
+    };
+  }
+  window._supaCarregarClientes = async function() {
+    const codigo=getLicencaCodigo(); if(!codigo) return null;
+    try {
+      const {data,error}=await supa.from('estetica_clientes').select('*').eq('licenca_codigo',codigo);
+      if(error)throw error;
+      return (data||[]).map(pacienteDeSupaParaLocal);
+    } catch(e){console.warn('[Supa] carregar clientes:',e);return null;}
+  };
+  window._supaSalvarCliente = async function(c) {
+    const codigo=getLicencaCodigo(); if(!codigo||!c) return;
+    try {
+      const {error}=await supa.from('estetica_clientes').upsert(pacienteParaSupa(c,codigo),{onConflict:'id'});
+      if(error)throw error;
+    } catch(e){console.warn('[Supa] salvar cliente:',e);}
+  };
+  window._supaExcluirCliente = async function(id) {
+    try{await supa.from('estetica_clientes').delete().eq('id',id);}catch(e){console.warn('[Supa] excluir cliente:',e);}
+  };
+
+  // Agendamentos
+  window._supaCarregarAgendamentos = async function() {
+    const codigo=getLicencaCodigo(); if(!codigo) return null;
+    try {
+      const {data,error}=await supa.from('estetica_agendamentos').select('*').eq('licenca_codigo',codigo);
+      if(error)throw error;
+      return (data||[]).map(r=>({id:r.id,data:r.data,hora:r.hora,clienteId:r.cliente_id,servicoId:r.servico_id,profissionalId:r.profissional_id||'',origem:r.origem||'manual',presenca:r.presenca||'',observacoes:r.observacoes||''}));
+    } catch(e){console.warn('[Supa] agendamentos:',e);return null;}
+  };
+  window._supaSalvarAgendamento = async function(a) {
+    const codigo=getLicencaCodigo(); if(!codigo||!a) return;
+    try {
+      await supa.from('estetica_agendamentos').upsert({id:a.id,licenca_codigo:codigo,data:a.data,hora:a.hora,cliente_id:a.clienteId,servico_id:a.servicoId,profissional_id:a.profissionalId||'',origem:a.origem||'manual',presenca:a.presenca||'',observacoes:a.observacoes||''},{onConflict:'id'});
+    } catch(e){console.warn('[Supa] salvar agendamento:',e);}
+  };
+  window._supaExcluirAgendamento = async function(id) {
+    try{await supa.from('estetica_agendamentos').delete().eq('id',id);}catch(e){}
+  };
+
+  // Serviços
+  window._supaCarregarServicos = async function() {
+    const codigo=getLicencaCodigo(); if(!codigo) return null;
+    try {
+      const {data,error}=await supa.from('estetica_servicos').select('*').eq('licenca_codigo',codigo);
+      if(error)throw error;
+      return (data||[]).map(r=>({id:r.id,nome:r.nome,preco:r.preco||0,duracao:r.duracao||60,foto:r.foto||'',insumos:parseJsonb(r.insumos,[])}));
+    } catch(e){console.warn('[Supa] servicos:',e);return null;}
+  };
+  window._supaSalvarServicos = async function(lista) {
+    const codigo=getLicencaCodigo(); if(!codigo) return;
+    try {
+      const rows=lista.map(s=>({id:s.id,licenca_codigo:codigo,nome:s.nome,preco:s.preco||0,duracao:s.duracao||60,foto:s.foto||'',insumos:s.insumos||[]}));
+      await supa.from('estetica_servicos').upsert(rows,{onConflict:'id'});
+    } catch(e){console.warn('[Supa] salvar servicos:',e);}
+  };
+  window._supaExcluirServico = async function(id) {
+    try{await supa.from('estetica_servicos').delete().eq('id',id);}catch(e){}
+  };
+
+  // Profissionais
+  window._supaCarregarProfissionais = async function() {
+    const codigo=getLicencaCodigo(); if(!codigo) return null;
+    try {
+      const {data,error}=await supa.from('estetica_profissionais').select('*').eq('licenca_codigo',codigo);
+      if(error)throw error;
+      return (data||[]).map(r=>({id:r.id,nome:r.nome,cargo:r.cargo||'',telefone:r.telefone||'',email:r.email||'',foto:r.foto||'',usuario:r.usuario||'',senha:r.senha||'',tipo:r.tipo||'profissional'}));
+    } catch(e){console.warn('[Supa] profissionais:',e);return null;}
+  };
+  window._supaSalvarProfissionais = async function(lista) {
+    const codigo=getLicencaCodigo(); if(!codigo) return;
+    try {
+      const rows=lista.map(p=>({id:p.id,licenca_codigo:codigo,nome:p.nome,cargo:p.especialidade||p.cargo||'',telefone:p.telefone||'',email:p.email||'',foto:p.foto||'',usuario:p.usuario||'',senha:p.senha||'',tipo:'profissional'}));
+      await supa.from('estetica_profissionais').upsert(rows,{onConflict:'id'});
+    } catch(e){console.warn('[Supa] salvar profissionais:',e);}
+  };
+  window._supaExcluirProfissional = async function(id) {
+    try{await supa.from('estetica_profissionais').delete().eq('id',id);}catch(e){}
+  };
+
+  // Produtos
+  window._supaCarregarProdutos = async function() {
+    const codigo=getLicencaCodigo(); if(!codigo) return null;
+    try {
+      const {data,error}=await supa.from('estetica_produtos').select('*').eq('licenca_codigo',codigo);
+      if(error)throw error;
+      return (data||[]).map(r=>({id:r.id,nome:r.nome,estoque:r.estoque||0,unidade:r.unidade||'unidade',usosPorUnidade:r.usosporunidade||1,usosRestantes:r.usosrestantes||0,valorCompra:r.valorcompra||0,custoUsoManual:r.custousoamanual||null,minimo:r.minimo||0,fornecedor:r.fornecedor||'',validade:r.validade||'',lote:r.lote||''}));
+    } catch(e){console.warn('[Supa] produtos:',e);return null;}
+  };
+  window._supaSalvarProdutos = async function(lista) {
+    const codigo=getLicencaCodigo(); if(!codigo) return;
+    try {
+      const rows=lista.map(p=>({id:p.id,licenca_codigo:codigo,nome:p.nome,estoque:p.estoque||0,unidade:p.unidade||'unidade',usosporunidade:p.usosPorUnidade||1,usosrestantes:p.usosRestantes||0,valorcompra:p.valorCompra||0,custousoamanual:p.custoUsoManual||null,minimo:p.minimo||0,fornecedor:p.fornecedor||'',validade:p.validade||'',lote:p.lote||''}));
+      await supa.from('estetica_produtos').upsert(rows,{onConflict:'id'});
+    } catch(e){console.warn('[Supa] salvar produtos:',e);}
+  };
+  window._supaExcluirProduto = async function(id) {
+    try{await supa.from('estetica_produtos').delete().eq('id',id);}catch(e){}
+  };
+
+  // Financeiro
+  window._supaCarregarFinanceiro = async function() {
+    const codigo=getLicencaCodigo(); if(!codigo) return null;
+    try {
+      const {data,error}=await supa.from('estetica_financeiro').select('*').eq('licenca_codigo',codigo);
+      if(error)throw error;
+      return (data||[]).map(r=>({id:r.id,tipo:r.tipo,data:r.data,descricao:r.descricao||'',valor:r.valor||0,formaPagamento:r.formapagamento||'',clienteId:r.cliente_id||'',agendamentoId:r.agendamento_id||'',servicoId:r.servico_id||'',categoria:r.categoria||'',observacoes:r.observacoes||''}));
+    } catch(e){console.warn('[Supa] financeiro:',e);return null;}
+  };
+  window._supaSalvarPagamento = async function(f) {
+    const codigo=getLicencaCodigo(); if(!codigo||!f) return;
+    try {
+      await supa.from('estetica_financeiro').upsert({id:f.id,licenca_codigo:codigo,tipo:f.tipo,data:f.data,descricao:f.descricao||'',valor:f.valor||0,formapagamento:f.formaPagamento||'',cliente_id:f.clienteId||'',agendamento_id:f.agendamentoId||'',servico_id:f.servicoId||'',categoria:f.categoria||'',observacoes:f.observacoes||''},{onConflict:'id'});
+    } catch(e){console.warn('[Supa] salvar pagamento:',e);}
+  };
+  window._supaExcluirPagamento = async function(id) {
+    try{await supa.from('estetica_financeiro').delete().eq('id',id);}catch(e){}
+  };
+
+  // Cancelamentos
+  window._supaCarregarCancelamentos = async function() {
+    const codigo=getLicencaCodigo(); if(!codigo) return null;
+    try {
+      const {data,error}=await supa.from('estetica_cancelamentos').select('*').eq('licenca_codigo',codigo);
+      if(error)throw error;
+      return (data||[]).map(r=>({id:r.id,data:r.data,hora:r.hora,clienteId:r.cliente_id,servicoId:r.servico_id,profissionalId:r.profissional_id,canceladoEm:r.cancelado_em,motivo:r.motivo||''}));
+    } catch(e){console.warn('[Supa] cancelamentos:',e);return null;}
+  };
+  window._supaSalvarCancelamento = async function(c) {
+    const codigo=getLicencaCodigo(); if(!codigo||!c) return;
+    try {
+      await supa.from('estetica_cancelamentos').upsert({id:c.id,licenca_codigo:codigo,data:c.data,hora:c.hora,cliente_id:c.clienteId,servico_id:c.servicoId,profissional_id:c.profissionalId,cancelado_em:c.canceladoEm,motivo:c.motivo||''},{onConflict:'id'});
+    } catch(e){console.warn('[Supa] salvar cancelamento:',e);}
+  };
+
+  // Config
+  window._supaCarregarConfig = async function() {
+    const codigo=getLicencaCodigo(); if(!codigo) return null;
+    try {
+      const {data,error}=await supa.from('estetica_config').select('*').eq('licenca_codigo',codigo).maybeSingle();
+      if(error)throw error;
+      if(!data) return null;
+      return {config:parseJsonb(data.config,{}),taxas:parseJsonb(data.taxas,{}),regrasStatus:parseJsonb(data.regras_status,{})};
+    } catch(e){console.warn('[Supa] config:',e);return null;}
+  };
+  window._supaSalvarConfig = async function(cfg,tax,reg) {
+    const codigo=getLicencaCodigo(); if(!codigo) return;
+    try {
+      await supa.from('estetica_config').upsert({licenca_codigo:codigo,config:cfg||{},taxas:tax||{},regras_status:reg||{}},{onConflict:'licenca_codigo'});
+    } catch(e){console.warn('[Supa] salvar config:',e);}
+  };
+
+  // Galeria
+  window._supaCarregarGaleria = async function() {
+    const codigo=getLicencaCodigo(); if(!codigo) return null;
+    try {
+      const {data,error}=await supa.from('estetica_galeria').select('*').eq('licenca_codigo',codigo);
+      if(error)throw error;
+      return (data||[]).map(r=>({id:r.id,clienteId:r.cliente_id,profissionalId:r.profissional_id||'',tipo:r.tipo||'facial',regiao:r.regiao||'',data:r.data,observacao:r.observacao||'',antes:r.antes_url||'',depois:r.depois_url||''}));
+    } catch(e){console.warn('[Supa] galeria:',e);return null;}
+  };
+  window._supaSalvarGaleria = async function(g) {
+    const codigo=getLicencaCodigo(); if(!codigo||!g) return;
+    try {
+      await supa.from('estetica_galeria').upsert({id:g.id,licenca_codigo:codigo,cliente_id:g.clienteId,profissional_id:g.profissionalId||'',tipo:g.tipo||'facial',regiao:g.regiao||'',data:g.data,observacao:g.observacao||'',antes_url:g.antes||'',depois_url:g.depois||''},{onConflict:'id'});
+    } catch(e){console.warn('[Supa] salvar galeria:',e);}
+  };
+  window._supaExcluirGaleria = async function(id) {
+    try{await supa.from('estetica_galeria').delete().eq('id',id);}catch(e){}
+  };
+
+  // Carga inicial (chamada em iniciarApp)
+  window._supaCarregarTudo = async function() {
+    await window._supaCarregarLicencas();
+    const codigo=getLicencaCodigo(); if(!codigo) return;
+    const [clientes,agendamentos,servicos,profissionais,produtos,financeiro,cancelamentos,galeria,cfgData]=await Promise.all([
+      window._supaCarregarClientes(),
+      window._supaCarregarAgendamentos(),
+      window._supaCarregarServicos(),
+      window._supaCarregarProfissionais(),
+      window._supaCarregarProdutos(),
+      window._supaCarregarFinanceiro(),
+      window._supaCarregarCancelamentos(),
+      window._supaCarregarGaleria(),
+      window._supaCarregarConfig()
+    ]);
+    const _ls=localStorage.setItem.bind(localStorage);
+    const _setIfTem=(key,val)=>{
+      if(!val)return;
+      if(Array.isArray(val)&&val.length===0){const local=JSON.parse(localStorage.getItem(key)||'[]');if(Array.isArray(local)&&local.length>0)return;}
+      _ls(key,JSON.stringify(val));
+    };
+    _setIfTem('dentista_pacientes',clientes);
+    _setIfTem('dentista_agendamentos',agendamentos);
+    _setIfTem('dentista_servicos',servicos);
+    _setIfTem('dentista_profissionais',profissionais);
+    _setIfTem('dentista_produtos',produtos);
+    _setIfTem('dentista_financeiro',financeiro);
+    _setIfTem('dentista_cancelamentos',cancelamentos);
+    _setIfTem('dentista_galeria',galeria);
+    if(cfgData){
+      if(cfgData.config)_ls('dentista_config',JSON.stringify(cfgData.config));
+      if(cfgData.taxas)_ls('dentista_taxas',JSON.stringify(cfgData.taxas));
+      if(cfgData.regrasStatus)_ls('dentista_regras_status',JSON.stringify(cfgData.regrasStatus));
+    }
+    console.log('[Supa] Carga inicial dentista completa ✓');
+    window.dispatchEvent(new Event('supa:carregado'));
+  };
+
+  console.log('[Supa] Dentista data layer v1 carregado ✓');
+})();
 </script>
 </body>
 </html>
