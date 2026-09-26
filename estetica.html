@@ -838,7 +838,7 @@
       <button data-page="galeria"><span class="icon">📸</span><span class="menu-label">Galeria Antes/Depois</span></button>
       <button data-page="personalizacao" class="admin-only"><span class="icon">🎨</span><span class="menu-label">Personalização</span></button>
       <button data-page="financeiro" class="admin-only"><span class="icon">💰</span><span class="menu-label">Financeiro</span></button>
-      <button data-page="ia" class="admin-only ia-only" style="display:none"><span class="icon">🤖</span><span class="menu-label">IA &amp; Promoções</span></button>
+      <button data-page="ia" class="admin-only"><span class="icon">🤖</span><span class="menu-label">IA &amp; Promoções</span></button>
     </nav>
     <div class="sidebar-footer" id="sidebarFooter"></div>
   </aside>
@@ -7427,6 +7427,14 @@
       return `<li><span>${c.nome}</span><span class="ia-badge">${dias} dias</span></li>`;
     }).join('') + '</ul>' + (inativos.length > 8 ? `<p style="font-size:12px;color:#888;margin-top:8px">+${inativos.length-8} clientes</p>` : '');
   }
+
+  // Expõe funções de IA chamadas via onclick no HTML
+  window.iaGerarPromocao    = iaGerarPromocao;
+  window.iaGerarMsgRetorno  = iaGerarMsgRetorno;
+  window.iaCopiar           = iaCopiar;
+  window.iaEnviarTodos      = iaEnviarTodos;
+  window.iaEnviarInativos   = iaEnviarInativos;
+  window.iaRenderizarInativos = iaRenderizarInativos;
 
   iniciarComLicenca();
 })();
