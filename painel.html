@@ -628,7 +628,7 @@
           <h3>Produtos cadastrados</h3>
           <div class="tabela-scroll">
             <table id="estoqueTabela">
-              <thead><tr><th>Produto</th><th>Estoque</th><th>Usos restantes</th><th>Valor de compra</th><th>Custo por uso</th><th>Mínimo</th><th>Fornecedor</th><th>Validade</th><th>Situação</th><th></th></tr></thead>
+              <thead><tr><th>ID</th><th>Produto</th><th>Estoque</th><th>Usos restantes</th><th>Valor de compra</th><th>Custo por uso</th><th>Mínimo</th><th>Fornecedor</th><th>Validade</th><th>Situação</th><th></th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -1097,6 +1097,10 @@
             <div class="field">
               <label>Telefone</label>
               <input type="text" id="tratBuscaTel" placeholder="(00) 00000-0000">
+            </div>
+            <div class="field">
+              <label>ID do cliente</label>
+              <input type="text" id="tratBuscaId" placeholder="Cole o ID do cliente...">
             </div>
           </div>
           <div id="tratResultadoBusca" style="margin-top:10px"></div>
@@ -1770,6 +1774,7 @@
     const lista = [...state.produtos].sort((a, b) => a.nome.localeCompare(b.nome));
     document.querySelector('#estoqueTabela tbody').innerHTML = lista.length ? lista.map(p => `
       <tr>
+        <td style="font-size:11px;color:#9ca3af;font-family:monospace">${p.id}</td>
         <td>${esc(p.nome)}</td>
         <td>${fmtQtd(p.quantidade)} ${esc(p.unidade)}</td>
         <td>${fmtQtd(p.quantidade * p.usosPorEmbalagem)}</td>
@@ -1780,7 +1785,7 @@
         <td>${p.validade ? formatDateBR(p.validade) : '—'}</td>
         <td>${htmlAlertasProduto(p) || '<span style="color:#1a7d3a;font-size:12px;font-weight:600">OK</span>'}</td>
         <td><button class="btn secondary small" data-edit-prod="${p.id}">Editar</button> <button class="btn danger small" data-del-prod="${p.id}">Excluir</button></td>
-      </tr>`).join('') : '<tr><td colspan="10" class="empty-msg">Nenhum produto cadastrado ainda.</td></tr>';
+      </tr>`).join('') : '<tr><td colspan="11" class="empty-msg">Nenhum produto cadastrado ainda.</td></tr>';
     const comAlerta = lista.filter(p => alertasProduto(p).length);
     document.getElementById('estoqueAlertas').innerHTML = comAlerta.length ? `
       <div class="card" style="border-left:4px solid #b3261e;margin-bottom:16px">
@@ -2275,7 +2280,8 @@
         <div style="margin-top:12px">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
             <div>${dataExib ? `<span style="background:#e8f5e9;color:#1a7d3a;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Salva em ${dataExib}</span>` : `<span style="background:#e3f0fd;color:#1565c0;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Ficha registrada</span>`}</div>
-            <div style="display:flex;gap:8px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              ${c.telefone ? `<button type="button" class="btn small" id="btnWhatsAnamnese" style="background:#25d366;color:#fff;border-color:#25d366">📲 Enviar pelo WhatsApp</button>` : ''}
               <button type="button" class="btn secondary small" id="btnEditarAnamnese">✏️ Editar</button>
               <button type="button" class="btn danger small" id="btnExcluirAnamnese">🗑️ Excluir</button>
             </div>
@@ -2295,6 +2301,25 @@
           </div>
         </div>
       `;
+      if (c.telefone) {
+        el.querySelector('#btnWhatsAnamnese')?.addEventListener('click', () => {
+          const tel = c.telefone.replace(/\D/g,'');
+          const full = tel.startsWith('55') ? tel : '55' + tel;
+          const linhas = [`*Anamnese Capilar — ${c.nome}*\n`];
+          ANAMNESE_CAPILAR.forEach(sec => {
+            const campos = sec.campos.filter(campo => campo.tipo === 'checkbox' ? a[campo.chave] : (a[campo.chave] !== undefined && a[campo.chave] !== ''));
+            if (!campos.length) return;
+            linhas.push(`*${sec.titulo}*`);
+            campos.forEach(campo => {
+              if (campo.tipo === 'checkbox') linhas.push(`✓ ${campo.label}`);
+              else linhas.push(`${campo.label}: ${a[campo.chave]}`);
+            });
+            linhas.push('');
+          });
+          const msg = linhas.join('\n');
+          window.open('https://wa.me/' + full + '?text=' + encodeURIComponent(msg), '_blank');
+        });
+      }
       el.querySelector('#btnEditarAnamnese').addEventListener('click', () => { c.anamneseCapilar._editando = true; renderAbaAnamnese(el, c); });
       el.querySelector('#btnExcluirAnamnese').addEventListener('click', () => {
         if (!confirm('Excluir ficha de anamnese capilar? Essa ação não pode ser desfeita.')) return;
@@ -5168,11 +5193,13 @@
     function buscarClientes() {
       const nome = (buscaNome?.value || '').toLowerCase().trim();
       const tel = (buscaTel?.value || '').replace(/\D/g,'').trim();
-      if (!nome && !tel) { resultado.innerHTML = ''; return; }
+      const idBusca = (document.getElementById('tratBuscaId')?.value || '').trim().toLowerCase();
+      if (!nome && !tel && !idBusca) { resultado.innerHTML = ''; return; }
       const _state = window._salao_state ? window._salao_state() : null;
       const lista = (_state && _state.clientes ? _state.clientes : []).filter(c =>
         (nome && c.nome?.toLowerCase().includes(nome)) ||
-        (tel && (c.telefone || '').replace(/\D/g,'').includes(tel))
+        (tel && (c.telefone || '').replace(/\D/g,'').includes(tel)) ||
+        (idBusca && (c.id || '').toLowerCase().includes(idBusca))
       ).slice(0, 8);
       if (!lista.length) { resultado.innerHTML = '<div class="empty-msg">Nenhuma cliente encontrada.</div>'; return; }
       resultado.innerHTML = lista.map(c => `
@@ -5180,6 +5207,7 @@
           <div>
             <strong>${esc(c.nome)}</strong>
             <span style="font-size:12.5px;color:#6b7280;margin-left:8px">${c.telefone ? esc(c.telefone) : ''}</span>
+            <span style="font-size:11px;color:#9ca3af;margin-left:8px;font-family:monospace">ID: ${c.id}</span>
           </div>
           <button class="btn small" data-sel-trat="${c.id}">Selecionar →</button>
         </div>`).join('');
@@ -5190,6 +5218,7 @@
 
     buscaNome?.addEventListener('input', buscarClientes);
     buscaTel?.addEventListener('input', buscarClientes);
+    document.getElementById('tratBuscaId')?.addEventListener('input', buscarClientes);
 
     document.getElementById('btnTratLimpar')?.addEventListener('click', () => {
       tratClienteId = null; tratTipoAtivo = null; tratAbaAtiva = null;
@@ -5198,6 +5227,7 @@
       document.getElementById('tratAbasDiv').style.display = 'none';
       if (buscaNome) buscaNome.value = '';
       if (buscaTel) buscaTel.value = '';
+      const idInput = document.getElementById('tratBuscaId'); if (idInput) idInput.value = '';
       resultado.innerHTML = '';
     });
 
