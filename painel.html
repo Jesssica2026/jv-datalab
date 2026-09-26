@@ -497,7 +497,7 @@
       <button data-page="galeria"><span class="icon">📸</span><span class="menu-label">Galeria de Evolução</span></button>
       <button data-page="personalizacao" class="admin-only"><span class="icon">🎨</span><span class="menu-label">Personalização</span></button>
       <button data-page="financeiro" class="admin-only"><span class="icon">💰</span><span class="menu-label">Financeiro</span></button>
-      <button data-page="ia" class="admin-only ia-only" style="display:none"><span class="icon">🤖</span><span class="menu-label">Assistente IA</span></button>
+      <button data-page="ia" class="admin-only"><span class="icon">🤖</span><span class="menu-label">Assistente IA</span></button>
     </nav>
     <div class="sidebar-footer" id="sidebarFooter"></div>
   </aside>
@@ -613,7 +613,7 @@
               <div class="field"><label>Quantidade em estoque (embalagens)</label><input type="number" id="prodQtd" min="0" step="0.01" required></div>
               <div class="field"><label>Valor de compra (R$ da embalagem)</label><input type="number" id="prodValor" min="0" step="0.01" required></div>
               <div class="field"><label>Usos por embalagem</label><input type="number" id="prodUsos" min="1" step="1" required placeholder="Ex: 50"></div>
-              <div class="field"><label>Custo por uso (R$)</label><input type="text" id="prodCustoUso" readonly value="R$ 0,00"></div>
+              <div class="field"><label>Custo por uso (R$) <span style="font-size:11px;color:#6b7280">— calculado automaticamente ou edite manualmente</span></label><input type="number" id="prodCustoUso" min="0" step="0.01" placeholder="0.00"></div>
               <div class="field"><label>Estoque mínimo (embalagens)</label><input type="number" id="prodMin" min="0" step="0.01"></div>
               <div class="field"><label>Fornecedor</label><input type="text" id="prodFornecedor"></div>
               <div class="field"><label>Data de validade</label><input type="date" id="prodValidade"></div>
@@ -1042,6 +1042,15 @@
       <section class="page admin-only" id="page-ia">
         <h2 class="page-title">🤖 IA & Promoções</h2>
         <p class="page-sub">Crie mensagens com inteligência artificial e envie para seus clientes</p>
+        <div class="card" style="margin-bottom:18px;padding:16px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font-size:13px;font-weight:600">🔑 Chave Gemini API:</span>
+            <input type="password" id="iaGeminiKeyInput" placeholder="Cole sua chave AIza..." style="flex:1;min-width:220px;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px">
+            <button class="btn small" onclick="iaSalvarChave()">Salvar chave</button>
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" style="font-size:12px;color:#2563eb">Obter chave gratuita →</a>
+          </div>
+          <div id="iaChaveStatus" style="font-size:12px;margin-top:6px"></div>
+        </div>
         <div class="ia-grid">
           <div class="ia-card">
             <h3>✨ Gerador de Promoção</h3>
@@ -1275,7 +1284,7 @@
 
   const LICENCAS_SHARED_KEY = 'jv_datalab_licencas';
   const JV_CONFIG_KEY = 'jv_datalab_config';
-  const ACCEPTED_SEGMENTOS = ['SAL', 'BAR'];
+  const ACCEPTED_SEGMENTOS = ['SAL', 'BAR', 'MAN', 'MAC', 'DEP', 'CIL', 'SOB'];
 
   const DEFAULT_CONFIG = {
     nomeNegocio: 'Meu Salão',
@@ -1624,6 +1633,7 @@
           <div class="name">${esc(s.nome)}</div>
           <div class="meta">${formatMoney(s.preco)} · ${s.duracao} min</div>
           <div class="meta">${s.insumos.length ? `Insumos: ${formatMoney(custo)} · Margem: ${fmtMargem(f.margem)}` : 'Sem ficha de custo'}</div>
+          <div class="meta" style="font-size:11px;color:#9ca3af">ID: ${s.id}</div>
           <div class="actions">
             <button class="btn secondary small" data-ficha-servico="${s.id}">Ficha de custo</button>
             <button class="btn danger small" data-del-servico="${s.id}">Excluir</button>
@@ -1665,6 +1675,7 @@
 
   // ---------- Estoque ----------
   function custoPorUso(p) {
+    if (p.custoUsoOverride != null && p.custoUsoOverride > 0) return p.custoUsoOverride;
     const usos = Number(p.usosPorEmbalagem);
     return usos > 0 ? Number(p.valorCompra) / usos : 0;
   }
@@ -1687,12 +1698,17 @@
   const formProduto = document.getElementById('formProduto');
   const cardProdutoForm = document.getElementById('cardProdutoForm');
   function atualizarCustoUsoForm() {
-    document.getElementById('prodCustoUso').value = formatMoney(custoPorUso({ valorCompra: num(document.getElementById('prodValor').value), usosPorEmbalagem: num(document.getElementById('prodUsos').value) }));
+    const calculado = custoPorUso({ valorCompra: num(document.getElementById('prodValor').value), usosPorEmbalagem: num(document.getElementById('prodUsos').value) });
+    // Only auto-fill if no manual override has been typed
+    if (!document.getElementById('prodCustoUso').dataset.manual) {
+      document.getElementById('prodCustoUso').value = calculado > 0 ? calculado.toFixed(2) : '';
+    }
   }
   function abrirFormProduto(p) {
     formProduto.reset();
     document.getElementById('prodId').value = p ? p.id : '';
-    document.getElementById('produtoFormTitulo').textContent = p ? 'Editar produto' : 'Novo produto';
+    document.getElementById('produtoFormTitulo').textContent = p ? `Editar produto — ID: ${p.id}` : 'Novo produto';
+    delete document.getElementById('prodCustoUso').dataset.manual;
     if (p) {
       document.getElementById('prodNome').value = p.nome;
       document.getElementById('prodUnidade').value = p.unidade;
@@ -1702,6 +1718,11 @@
       document.getElementById('prodMin').value = p.estoqueMinimo;
       document.getElementById('prodFornecedor').value = p.fornecedor || '';
       document.getElementById('prodValidade').value = p.validade || '';
+      const override = p.custoUsoOverride;
+      if (override != null) {
+        document.getElementById('prodCustoUso').value = override.toFixed(2);
+        document.getElementById('prodCustoUso').dataset.manual = '1';
+      }
     }
     atualizarCustoUsoForm();
     cardProdutoForm.style.display = 'block';
@@ -1720,15 +1741,20 @@
   formProduto.addEventListener('submit', (e) => {
     e.preventDefault();
     const id = document.getElementById('prodId').value;
+    const custoUsoVal = num(document.getElementById('prodCustoUso').value);
+    const valorCompra = Math.max(0, num(document.getElementById('prodValor').value));
+    const usosPorEmbalagem = Math.max(1, parseInt(document.getElementById('prodUsos').value, 10) || 1);
+    const calculado = valorCompra > 0 && usosPorEmbalagem > 0 ? valorCompra / usosPorEmbalagem : 0;
     const dados = {
       nome: document.getElementById('prodNome').value.trim(),
       unidade: document.getElementById('prodUnidade').value,
       quantidade: Math.max(0, num(document.getElementById('prodQtd').value)),
-      valorCompra: Math.max(0, num(document.getElementById('prodValor').value)),
-      usosPorEmbalagem: Math.max(1, parseInt(document.getElementById('prodUsos').value, 10) || 1),
+      valorCompra,
+      usosPorEmbalagem,
       estoqueMinimo: Math.max(0, num(document.getElementById('prodMin').value)),
       fornecedor: document.getElementById('prodFornecedor').value.trim(),
-      validade: document.getElementById('prodValidade').value
+      validade: document.getElementById('prodValidade').value,
+      custoUsoOverride: custoUsoVal > 0 && Math.abs(custoUsoVal - calculado) > 0.001 ? custoUsoVal : null
     };
     if (id) Object.assign(state.produtos.find(x => x.id === id), dados);
     else state.produtos.push(Object.assign({ id: uid() }, dados));
@@ -2201,6 +2227,7 @@
         <div>
           <h3 style="margin-bottom:4px">${esc(c.nome)}</h3>
           <div style="font-size:13px;color:#6b7280">${esc(c.telefone) || 'sem telefone'} ${c.email ? '· ' + esc(c.email) : ''}</div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:2px">ID: ${c.id}</div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn small" id="btnVerEvolucao">📈 Ver evolução</button>
@@ -4979,16 +5006,32 @@
     iniciar();
   }
 
+  // Expor funções usadas fora do IIFE
+  window._salao_renderAbaOrcamento = renderAbaOrcamento;
+  window._salao_renderAbaTratamentos = renderAbaTratamentos;
+  window._salao_renderAbaEvolucao = renderAbaEvolucao;
+  window._salao_state = () => state;
+
   iniciarComLicenca();
 })();
 
   // ===== IA GEMINI =====
-  const GEMINI_KEY = 'AIzaSyAQ.Ab8RN6LAHBV4lO2iXUrDGXXo2zpyFjiPfrh7WPQ1mJIU7UQuVg';
-  const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_KEY;
   const IA_SEGMENTO = 'salão de beleza';
 
+  function geminiGetKey() { return localStorage.getItem('salao_gemini_key') || ''; }
+  function geminiGetUrl() { return 'https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash-lite:generateContent?key=' + geminiGetKey(); }
+  function iaSalvarChave() {
+    const key = document.getElementById('iaGeminiKeyInput').value.trim();
+    if (!key) { alert('Cole a chave antes de salvar!'); return; }
+    localStorage.setItem('salao_gemini_key', key);
+    const st = document.getElementById('iaChaveStatus');
+    st.textContent = '✅ Chave salva!'; st.style.color = '#1a7d3a';
+  }
+
   async function geminiGerarTexto(prompt) {
-    const resp = await fetch(GEMINI_URL, {
+    const key = geminiGetKey();
+    if (!key) { alert('Configure a chave Gemini API primeiro!'); throw new Error('Chave não configurada'); }
+    const resp = await fetch(geminiGetUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -5037,7 +5080,8 @@
 
   function iaEnviarTodos() {
     const msg = document.getElementById('iaResultadoPromo').textContent;
-    const clientes = load(STORAGE_CLIENTES, []);
+    const _st = window._salao_state ? window._salao_state() : null;
+    const clientes = (_st && _st.clientes) ? _st.clientes : [];
     if (!clientes.length) { alert('Nenhum cliente cadastrado!'); return; }
     if (!confirm(`Vai abrir ${clientes.length} conversas no WhatsApp. Confirma?`)) return;
     clientes.forEach((c, i) => {
@@ -5062,7 +5106,8 @@
   }
 
   function iaGetInativos() {
-    const clientes = load(STORAGE_CLIENTES, []);
+    const _st = window._salao_state ? window._salao_state() : null;
+    const clientes = (_st && _st.clientes) ? _st.clientes : [];
     const hoje = new Date();
     return clientes.filter(c => {
       if (!c.ultimaVisita) return true;
@@ -5112,7 +5157,10 @@
     ]
   };
 
+  let tratamentoIniciado = false;
   function initTratamento() {
+    if (tratamentoIniciado) return;
+    tratamentoIniciado = true;
     const buscaNome = document.getElementById('tratBuscaNome');
     const buscaTel = document.getElementById('tratBuscaTel');
     const resultado = document.getElementById('tratResultadoBusca');
@@ -5121,7 +5169,8 @@
       const nome = (buscaNome?.value || '').toLowerCase().trim();
       const tel = (buscaTel?.value || '').replace(/\D/g,'').trim();
       if (!nome && !tel) { resultado.innerHTML = ''; return; }
-      const lista = state.clientes.filter(c =>
+      const _state = window._salao_state ? window._salao_state() : null;
+      const lista = (_state && _state.clientes ? _state.clientes : []).filter(c =>
         (nome && c.nome?.toLowerCase().includes(nome)) ||
         (tel && (c.telefone || '').replace(/\D/g,'').includes(tel))
       ).slice(0, 8);
@@ -5167,7 +5216,8 @@
 
   function selecionarClienteTrat(id) {
     tratClienteId = id;
-    const c = state.clientes.find(x => x.id === id);
+    const state = window._salao_state ? window._salao_state() : null;
+    const c = state && state.clientes ? state.clientes.find(x => x.id === id) : null;
     if (!c) return;
     document.getElementById('trat-busca-card').style.display = 'none';
     document.getElementById('tratClienteCard').style.display = 'block';
@@ -5199,11 +5249,12 @@
 
   function renderTratConteudo() {
     const el = document.getElementById('tratAbaConteudo');
-    const c = state.clientes.find(x => x.id === tratClienteId);
+    const state = window._salao_state ? window._salao_state() : null;
+    const c = state && state.clientes ? state.clientes.find(x => x.id === tratClienteId) : null;
     if (!c || !el) return;
-    if (tratAbaAtiva === 'orcamento') return renderAbaOrcamento(el, c);
-    if (tratAbaAtiva === 'tratamentos') return renderAbaTratamentos(el, c);
-    if (tratAbaAtiva === 'evolucao') return renderAbaEvolucao(el, c);
+    if (tratAbaAtiva === 'orcamento') return window._salao_renderAbaOrcamento(el, c);
+    if (tratAbaAtiva === 'tratamentos') return window._salao_renderAbaTratamentos(el, c);
+    if (tratAbaAtiva === 'evolucao') return window._salao_renderAbaEvolucao(el, c);
     el.innerHTML = '<div class="empty-msg">Selecione uma aba.</div>';
   }
 </script>
