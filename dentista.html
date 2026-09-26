@@ -7428,6 +7428,14 @@
     }).join('') + '</ul>' + (inativos.length > 8 ? `<p style="font-size:12px;color:#888;margin-top:8px">+${inativos.length-8} clientes</p>` : '');
   }
 
+  // Expõe funções de IA chamadas via onclick no HTML
+  window.iaGerarPromocao    = iaGerarPromocao;
+  window.iaGerarMsgRetorno  = iaGerarMsgRetorno;
+  window.iaCopiar           = iaCopiar;
+  window.iaEnviarTodos      = iaEnviarTodos;
+  window.iaEnviarInativos   = iaEnviarInativos;
+  window.iaRenderizarInativos = iaRenderizarInativos;
+
   iniciarComLicenca();
 })();
 </script>
