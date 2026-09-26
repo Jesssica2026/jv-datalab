@@ -952,6 +952,13 @@
               <label>CPF</label>
               <input type="text" id="tratBuscaCpf" placeholder="000.000.000-00" maxlength="14">
             </div>
+            <div class="field">
+              <label>ID do paciente</label>
+              <input type="number" id="tratBuscaId" placeholder="Ex: 1, 2, 3...">
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:8px">
+            <button type="button" class="btn small" id="btnTratBuscar">🔍 Buscar</button>
           </div>
           <div id="tratResultadoBusca" style="margin-top:10px"></div>
         </div>
@@ -977,7 +984,7 @@
             <h3>Tipo de atendimento</h3>
             <div style="display:flex;gap:10px;flex-wrap:wrap" id="tratTiposDiv">
               <button type="button" class="trat-cat-btn" data-tipo="odonto">🦷 Odontologia</button>
-              <button type="button" class="trat-cat-btn" data-tipo="harmonizacao">✨ Harmonização Facial</button>
+              <button type="button" class="trat-cat-btn" data-tipo="harmonizacao">✨ Harmonização / Botox</button>
             </div>
           </div>
 
@@ -1031,9 +1038,9 @@
       <div class="field"><label>Nome</label><input type="text" id="clienteNome" required></div>
       <div class="form-grid">
         <div class="field"><label>Data de nascimento</label><input type="date" id="clienteNascimento"></div>
-        <div class="field"><label>CPF</label><input type="text" id="clienteCpf" placeholder="000.000.000-00"></div>
+        <div class="field"><label>CPF</label><input type="text" id="clienteCpf" placeholder="000.000.000-00" required></div>
       </div>
-      <div class="field"><label>Telefone</label><input type="tel" id="clienteTelefone" placeholder="(11) 99999-9999"></div>
+      <div class="field"><label>Telefone</label><input type="tel" id="clienteTelefone" placeholder="(11) 99999-9999" required></div>
       <div class="field"><label>E-mail</label><input type="email" id="clienteEmail"></div>
       <div class="field"><label>Convênio</label><input type="text" id="clienteConvenio" placeholder="Ex: Particular, Amil, Bradesco Dental"></div>
       <div class="btn-row">
@@ -1589,14 +1596,14 @@
   function renderServicos() {
     const grid = document.getElementById('servicosGrid');
     if (!state.servicos.length) { grid.innerHTML = '<div class="empty-msg">Nenhum serviço cadastrado ainda.</div>'; return; }
-    grid.innerHTML = state.servicos.map(s => {
+    grid.innerHTML = state.servicos.map((s, idx) => {
       const custo = custoInsumosServico(s);
       const f = calcularFicha(s.preco, custo, s.tempoProfissional);
       return `
       <div class="item-card">
         ${s.foto ? `<img class="thumb" src="${s.foto}" alt="${esc(s.nome)}">` : `<div class="thumb">Sem foto</div>`}
         <div class="body">
-          <div class="name">${esc(s.nome)}</div>
+          <div class="name">${esc(s.nome)} <span style="font-size:11px;color:#9ca3af;font-weight:400">#${String(idx+1).padStart(3,'0')}</span></div>
           <div class="meta">${formatMoney(s.preco)} · ${s.duracao} min</div>
           <div class="meta">${s.insumos.length ? `Materiais: ${formatMoney(custo)} · Margem: ${fmtMargem(f.margem)}` : 'Sem ficha de custo'}</div>
           <div class="actions">
@@ -1640,6 +1647,7 @@
 
   // ---------- Estoque ----------
   function custoPorUso(p) {
+    if (p.custoUsoOverride != null) return Number(p.custoUsoOverride);
     const usos = Number(p.usosPorEmbalagem);
     return usos > 0 ? Number(p.valorCompra) / usos : 0;
   }
@@ -1717,13 +1725,13 @@
 
   function renderEstoque() {
     const lista = [...state.produtos].sort((a, b) => a.nome.localeCompare(b.nome));
-    document.querySelector('#estoqueTabela tbody').innerHTML = lista.length ? lista.map(p => `
+    document.querySelector('#estoqueTabela tbody').innerHTML = lista.length ? lista.map((p, idx) => `
       <tr>
-        <td>${esc(p.nome)}</td>
+        <td>${esc(p.nome)} <span style="font-size:11px;color:#9ca3af">#${String(idx+1).padStart(3,'0')}</span></td>
         <td>${fmtQtd(p.quantidade)} ${esc(p.unidade)}</td>
         <td>${fmtQtd(p.quantidade * p.usosPorEmbalagem)}</td>
         <td>${formatMoney(p.valorCompra)}</td>
-        <td>${formatMoney(custoPorUso(p))}</td>
+        <td><input type="number" step="0.01" min="0" value="${r2(p.custoUsoOverride != null ? p.custoUsoOverride : custoPorUso(p))}" style="width:80px;border:1px solid var(--cor-borda);border-radius:5px;padding:3px 6px;font-size:12px" title="Custo por uso (editável)" data-custo-uso-prod="${p.id}" onchange="(function(el){const prod=state.produtos.find(x=>x.id==='${p.id}');if(prod){prod.custoUsoOverride=parseFloat(el.value)||0;save(STORAGE_KEYS.produtos,state.produtos);}})(this)"></td>
         <td>${fmtQtd(p.estoqueMinimo)}</td>
         <td>${esc(p.fornecedor) || '—'}</td>
         <td>${p.validade ? formatDateBR(p.validade) : '—'}</td>
@@ -1989,9 +1997,9 @@
     }
     const lista = document.getElementById('listaClientes');
     const filtrados = base.filter(c => c.nome.toLowerCase().includes(busca) && (!filtroStatus || c.statusCliente.valor === filtroStatus));
-    lista.innerHTML = filtrados.length ? filtrados.map(c => `
+    lista.innerHTML = filtrados.length ? filtrados.map((c, idx) => `
       <div class="cliente-list-item ${c.id === clienteSelecionadoId ? 'selected' : ''}" data-cliente="${c.id}">
-        <span title="${STATUS_CLIENTE[c.statusCliente.valor].label}">${STATUS_CLIENTE[c.statusCliente.valor].emoji} ${esc(c.nome)}</span><span class="sub">${esc(c.telefone || '')}</span>
+        <span title="${STATUS_CLIENTE[c.statusCliente.valor].label}">${STATUS_CLIENTE[c.statusCliente.valor].emoji} ${esc(c.nome)} <span class="sub">#${String(idx+1).padStart(3,'0')}</span></span><span class="sub">${esc(c.telefone || '')}</span>
       </div>
     `).join('') : '<div class="empty-msg">Nenhum paciente encontrado.</div>';
   }
@@ -2031,6 +2039,7 @@
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn small" id="btnVerEvolucao">📈 Ver evolução</button>
+          <button class="btn secondary small" id="btnEnviarAnamnese">📤 Enviar anamnese via WhatsApp</button>
           ${podeGerenciar ? `<button class="btn secondary small" id="btnEditarCliente">Editar</button><button class="btn danger small" id="btnExcluirCliente">Excluir</button>` : ''}
         </div>
       </div>
@@ -2040,6 +2049,12 @@
     `;
     renderStatusPainel(c);
     document.getElementById('btnVerEvolucao').addEventListener('click', () => abrirEvolucao(c));
+    document.getElementById('btnEnviarAnamnese').addEventListener('click', () => {
+      const link = window.location.origin + window.location.pathname + '?anamnese=' + btoa(JSON.stringify({cid: c.id, tipo: 'anamnese', ts: Date.now()}));
+      const tel = (c.telefone || '').replace(/\D/g,'');
+      if (!tel) { alert('Paciente sem telefone cadastrado.'); return; }
+      window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent('Olá ' + c.nome + '! Acesse o link para preencher sua ficha de anamnese: ' + link));
+    });
 
     if (podeGerenciar) {
       document.getElementById('btnEditarCliente').addEventListener('click', () => {
@@ -2820,21 +2835,31 @@
 
   function imprimirReceita(r, p) {
     const dent = state.profissionais.find(pr => pr.id === r.dentistaId);
+    const clinica = (state.personalizacao && state.personalizacao.nomeClinica) || state.config.nomeNegocio || 'Clínica Odontológica';
+    const endereco = (state.personalizacao && state.personalizacao.endereco) || '';
+    const tel = (state.personalizacao && state.personalizacao.telefone) || '';
     const area = document.getElementById('areaImpressaoReceita');
     area.innerHTML = `
-      <div style="max-width:600px;margin:40px auto;font-family:'Segoe UI',Arial,sans-serif;color:#1f2430">
-        <div style="text-align:center;margin-bottom:30px">
-          <h2 style="color:#0d1b3e">${state.config.nomeNegocio}</h2>
-          <div style="font-size:13px;color:#666">Receituário Odontológico</div>
+      <div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;padding:30px;color:#1f2430">
+        <div style="border-bottom:2px solid #000;padding-bottom:15px;margin-bottom:20px">
+          <h2 style="margin:0 0 4px 0;font-size:20px">${clinica}</h2>
+          <div style="font-size:13px">${dent ? 'Dr(a). ' + dent.nome + (dent.cro ? ' — CRO: ' + dent.cro : '') : 'Dentista responsável'}</div>
+          ${endereco ? `<div style="font-size:12px;color:#555">${endereco}${tel ? ' · Tel: ' + tel : ''}</div>` : ''}
         </div>
-        <p><strong>Paciente:</strong> ${p.nome}</p>
-        <p><strong>Data:</strong> ${formatDateBR(r.data)}</p>
-        <hr style="margin:20px 0">
-        <p style="font-size:16px;margin-bottom:8px"><strong>${r.medicamento}</strong></p>
-        <p>Dose: ${r.dose}</p>
-        <p>Posologia: ${r.posologia}</p>
-        <div style="margin-top:60px;text-align:center">
-          <div style="border-top:1px solid #333;width:280px;margin:0 auto;padding-top:6px">${dent ? dent.nome + (dent.cro ? ' — ' + dent.cro : '') : 'Dentista responsável'}</div>
+        <div style="text-align:center;font-weight:bold;font-size:16px;margin-bottom:20px;text-transform:uppercase;letter-spacing:.08em">Receituário</div>
+        <div style="display:flex;gap:20px;margin-bottom:20px;font-size:13px">
+          <div><strong>Paciente:</strong> ${p.nome}</div>
+          <div><strong>Data:</strong> ${formatDateBR(r.data)}</div>
+        </div>
+        <div style="min-height:180px;margin:20px 0;border-bottom:1px solid #ccc;padding-bottom:20px;font-size:14px">
+          <p style="margin-bottom:8px"><strong>Rp.</strong></p>
+          <p style="font-size:16px;font-weight:600;margin-bottom:4px">${r.medicamento}</p>
+          ${r.dose ? `<p style="margin:4px 0">Dose: ${r.dose}</p>` : ''}
+          ${r.posologia ? `<p style="margin:4px 0">Posologia: ${r.posologia}</p>` : ''}
+        </div>
+        <div style="text-align:right;margin-top:40px">
+          ___________________________________<br>
+          <span style="font-size:12px">${dent ? 'Dr(a). ' + dent.nome + (dent.cro ? ' — CRO: ' + dent.cro : '') : 'Assinatura e Carimbo'}</span>
         </div>
       </div>
     `;
@@ -5229,7 +5254,25 @@
   }
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-page="ia"]').forEach(btn => btn.addEventListener('click', iaCarregarInativos));
+    verificarLinkAnamnese();
   });
+
+  function verificarLinkAnamnese() {
+    const params = new URLSearchParams(window.location.search);
+    const anamneseParam = params.get('anamnese');
+    if (!anamneseParam) return;
+    try {
+      const dados = JSON.parse(atob(anamneseParam));
+      const c = state.clientes.find(x => x.id === dados.cid);
+      if (!c) { alert('Link de anamnese inválido ou paciente não encontrado.'); return; }
+      // Navigate to client and open anamnese tab
+      clienteSelecionadoId = c.id;
+      abaAtivaCliente = 'anamnese';
+      navegarPara('clientes');
+      renderClientes();
+      showToast('Link de anamnese carregado para ' + c.nome);
+    } catch(e) { console.warn('Link de anamnese inválido', e); }
+  }
 
   // ===== PÁGINA TRATAMENTO =====
   let tratClienteId = null;
@@ -5254,15 +5297,18 @@
   function initTratamento() {
     const buscaNome = document.getElementById('tratBuscaNome');
     const buscaCpf = document.getElementById('tratBuscaCpf');
+    const buscaId = document.getElementById('tratBuscaId');
     const resultado = document.getElementById('tratResultadoBusca');
 
     function buscarPacientes() {
       const nome = (buscaNome?.value || '').toLowerCase().trim();
       const cpf = (buscaCpf?.value || '').replace(/\D/g,'').trim();
-      if (!nome && !cpf) { resultado.innerHTML = ''; return; }
-      const lista = state.clientes.filter(c =>
+      const idBusca = (buscaId?.value || '').trim();
+      if (!nome && !cpf && !idBusca) { resultado.innerHTML = ''; return; }
+      const lista = state.clientes.filter((c, idx) =>
         (nome && c.nome?.toLowerCase().includes(nome)) ||
-        (cpf && (c.cpf || '').replace(/\D/g,'').includes(cpf))
+        (cpf && (c.cpf || '').replace(/\D/g,'').includes(cpf)) ||
+        (idBusca && (String(idx+1) === idBusca || c.id === idBusca))
       ).slice(0, 8);
       if (!lista.length) { resultado.innerHTML = '<div class="empty-msg">Nenhum paciente encontrado.</div>'; return; }
       resultado.innerHTML = lista.map(c => `
@@ -5280,6 +5326,11 @@
 
     buscaNome?.addEventListener('input', buscarPacientes);
     buscaCpf?.addEventListener('input', buscarPacientes);
+    buscaId?.addEventListener('input', buscarPacientes);
+    [buscaNome, buscaCpf, buscaId].forEach(el => {
+      el?.addEventListener('keydown', e => { if (e.key === 'Enter') buscarPacientes(); });
+    });
+    document.getElementById('btnTratBuscar')?.addEventListener('click', buscarPacientes);
 
     document.getElementById('btnTratLimpar')?.addEventListener('click', () => {
       tratClienteId = null; tratTipoAtivo = null; tratAbaAtiva = null;
@@ -5288,6 +5339,7 @@
       document.getElementById('tratAbasDiv').style.display = 'none';
       if (buscaNome) buscaNome.value = '';
       if (buscaCpf) buscaCpf.value = '';
+      if (buscaId) buscaId.value = '';
       resultado.innerHTML = '';
     });
 
