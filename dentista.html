@@ -5301,13 +5301,28 @@
     { id: 'tratamentos', label: '📋 Histórico' }
   ];
 
-  function buscarPacientesTrat() {
+  async function buscarPacientesTrat() {
     const nome = (document.getElementById('tratBuscaNome')?.value || '').toLowerCase().trim();
     const cpf = (document.getElementById('tratBuscaCpf')?.value || '').replace(/\D/g,'').trim();
     const idBusca = (document.getElementById('tratBuscaId')?.value || '').trim();
     const resultado = document.getElementById('tratResultadoBusca');
     if (!resultado) return;
     if (!nome && !cpf && !idBusca) { resultado.innerHTML = ''; return; }
+
+    // Se state.clientes está vazio, recarrega do Supabase antes de pesquisar
+    if (!state.clientes || state.clientes.length === 0) {
+      resultado.innerHTML = '<div class="empty-msg" style="color:#6b7280">🔄 Carregando pacientes...</div>';
+      if (window._supaCarregarClientes) {
+        try {
+          const dadosSupa = await window._supaCarregarClientes();
+          if (dadosSupa && dadosSupa.length > 0) {
+            state.clientes = dadosSupa;
+            save(STORAGE_KEYS.clientes, state.clientes);
+          }
+        } catch(e) { console.warn('[Trat] recarregar clientes:', e); }
+      }
+    }
+
     const lista = state.clientes.filter((c, idx) =>
       (nome && c.nome?.toLowerCase().includes(nome)) ||
       (cpf && (c.cpf || '').replace(/\D/g,'').includes(cpf)) ||
