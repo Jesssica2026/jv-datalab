@@ -754,15 +754,26 @@
     ]);
 
     const _ls = localStorage.setItem.bind(localStorage);
-    if (clientes)       _ls('estetica_clientes',       JSON.stringify(clientes));
-    if (agendamentos)   _ls('estetica_agendamentos',   JSON.stringify(agendamentos));
-    if (servicos)       _ls('estetica_servicos',        JSON.stringify(servicos));
-    if (profissionais)  _ls('estetica_profissionais',  JSON.stringify(profissionais));
-    if (protocolos)     _ls('estetica_protocolos',     JSON.stringify(protocolos));
-    if (produtos)       _ls('estetica_produtos',        JSON.stringify(produtos));
-    if (financeiro)     _ls('estetica_financeiro',     JSON.stringify(financeiro));
-    if (cancelamentos)  _ls('estetica_cancelamentos',  JSON.stringify(cancelamentos));
-    if (galeria)        _ls('estetica_galeria',         JSON.stringify(galeria));
+    // Só sobrescreve localStorage se Supabase trouxe dados (array com itens)
+    // Isso evita apagar dados locais recém-salvos que ainda não chegaram ao Supabase
+    const _setIfTem = (key, val) => {
+      if (!val) return;
+      if (Array.isArray(val) && val.length === 0) {
+        // Supabase retornou vazio — só sobrescreve se o localStorage também estiver vazio
+        const local = JSON.parse(localStorage.getItem(key) || '[]');
+        if (Array.isArray(local) && local.length > 0) return; // mantém dados locais
+      }
+      _ls(key, JSON.stringify(val));
+    };
+    _setIfTem('estetica_clientes',      clientes);
+    _setIfTem('estetica_agendamentos',  agendamentos);
+    _setIfTem('estetica_servicos',      servicos);
+    _setIfTem('estetica_profissionais', profissionais);
+    _setIfTem('estetica_protocolos',    protocolos);
+    _setIfTem('estetica_produtos',      produtos);
+    _setIfTem('estetica_financeiro',    financeiro);
+    _setIfTem('estetica_cancelamentos', cancelamentos);
+    _setIfTem('estetica_galeria',       galeria);
     if (cfgData) {
       if (cfgData.config)      _ls('estetica_config',       JSON.stringify(cfgData.config));
       if (cfgData.taxas)       _ls('estetica_taxas',        JSON.stringify(cfgData.taxas));
@@ -773,10 +784,9 @@
     window.dispatchEvent(new Event('supa:carregado'));
   };
 
-  document.addEventListener('DOMContentLoaded', function() {
-    // Carga adiada — o app escuta 'supa:carregado' para reinicializar o state
-    window._supaCarregarTudo().catch(e => console.warn('[Supa] carga inicial falhou:', e));
-  });
+  // _supaCarregarTudo() é chamado dentro de iniciarApp() após login,
+  // quando a licença já está disponível no localStorage.
+  // NÃO chamar aqui no DOMContentLoaded (licença ainda não está disponível).
 
   console.log('[Supa] Camada de dados v2 carregada ✓');
 })();
@@ -2145,15 +2155,24 @@
 
   // Quando o Supabase termina a carga inicial, recarrega o state e re-renderiza a tela ativa
   function recarregarStateDoLocalStorage() {
-    state.clientes      = load(STORAGE_KEYS.clientes, []);
-    state.agendamentos  = load(STORAGE_KEYS.agendamentos, []);
-    state.servicos      = load(STORAGE_KEYS.servicos, state.servicos);
-    state.profissionais = load(STORAGE_KEYS.profissionais, state.profissionais);
-    state.protocolos    = load(STORAGE_KEYS.protocolos, state.protocolos);
-    state.produtos      = load(STORAGE_KEYS.produtos, []);
-    state.financeiro    = load(STORAGE_KEYS.financeiro, []);
-    state.cancelamentos = load(STORAGE_KEYS.cancelamentos, []);
-    state.galeria       = load(STORAGE_KEYS.galeria, []);
+    // Só substitui state se o Supabase trouxe dados (array não-vazio ou objeto não-vazio)
+    // Isso evita sobrescrever dados locais recém-salvos caso o Supabase ainda não tenha sincronizado
+    const _loadSupa = (key, atual) => {
+      const novo = load(key, null);
+      if (Array.isArray(novo) && novo.length > 0) return novo;
+      if (Array.isArray(novo) && Array.isArray(atual) && atual.length > 0) return atual; // mantém local
+      if (novo !== null && !Array.isArray(novo)) return novo; // objeto config etc
+      return Array.isArray(atual) ? atual : (novo || []);
+    };
+    state.clientes      = _loadSupa(STORAGE_KEYS.clientes, state.clientes);
+    state.agendamentos  = _loadSupa(STORAGE_KEYS.agendamentos, state.agendamentos);
+    state.servicos      = _loadSupa(STORAGE_KEYS.servicos, state.servicos);
+    state.profissionais = _loadSupa(STORAGE_KEYS.profissionais, state.profissionais);
+    state.protocolos    = _loadSupa(STORAGE_KEYS.protocolos, state.protocolos);
+    state.produtos      = _loadSupa(STORAGE_KEYS.produtos, state.produtos);
+    state.financeiro    = _loadSupa(STORAGE_KEYS.financeiro, state.financeiro);
+    state.cancelamentos = _loadSupa(STORAGE_KEYS.cancelamentos, state.cancelamentos);
+    state.galeria       = _loadSupa(STORAGE_KEYS.galeria, state.galeria);
     const cfgSupa = load(STORAGE_KEYS.config, null);
     if (cfgSupa) state.config = Object.assign({}, DEFAULT_CONFIG, cfgSupa);
     const taxSupa = load(STORAGE_KEYS.taxas, null);
@@ -6265,6 +6284,10 @@
     verificarBannerRenovacao(licencaAtiva);
     goToPage(session.tipo === 'admin' ? 'dashboard' : 'agendamentos');
     setTimeout(bkVerificarDiario, 600);
+    // Sincroniza com Supabase após o app estar pronto e a licença disponível
+    if (window._supaCarregarTudo) {
+      window._supaCarregarTudo().catch(e => console.warn('[Supa] carga inicial falhou:', e));
+    }
   }
 
   function iniciar() {
