@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -1694,6 +1695,18 @@
       <section class="page admin-only" id="page-ia">
         <h2 class="page-title">🤖 IA & Promoções</h2>
         <p class="page-sub">Crie mensagens com inteligência artificial e envie para seus clientes</p>
+
+        <!-- Configuração da chave Gemini -->
+        <div class="card" id="iaConfigCard" style="margin-bottom:18px;padding:16px;background:var(--bg-card);border-radius:12px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font-size:13px;font-weight:600;color:var(--text)">🔑 Chave Gemini API:</span>
+            <input type="password" id="iaGeminiKeyInput" placeholder="Cole sua chave AIza..." style="flex:1;min-width:200px;padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)">
+            <button class="btn small" onclick="iaSalvarChave()">Salvar</button>
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" style="font-size:12px;color:var(--cor-primaria)">Obter chave gratuita →</a>
+          </div>
+          <div id="iaChaveStatus" style="font-size:12px;margin-top:6px;color:#6b7280"></div>
+        </div>
+
         <div class="ia-grid">
 
           <!-- Gerador de Promoção -->
@@ -7310,12 +7323,34 @@
   }
 
   // ===== IA GEMINI =====
-  const GEMINI_KEY = 'AIzaSyAQ.Ab8RN6LAHBV4lO2iXUrDGXXo2zpyFjiPfrh7WPQ1mJIU7UQuVg';
-  const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_KEY;
+  function geminiGetKey() {
+    return localStorage.getItem('estetica_gemini_key') || '';
+  }
+  function geminiGetUrl() {
+    return 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + geminiGetKey();
+  }
+  function iaSalvarChave() {
+    const key = document.getElementById('iaGeminiKeyInput').value.trim();
+    if (!key) { alert('Cole a chave antes de salvar!'); return; }
+    localStorage.setItem('estetica_gemini_key', key);
+    document.getElementById('iaChaveStatus').textContent = '✅ Chave salva! Agora teste a geração de mensagem.';
+    document.getElementById('iaChaveStatus').style.color = '#1a7d3a';
+  }
+  // ao abrir a página, preenche campo se já tiver chave salva
+  setTimeout(() => {
+    const saved = geminiGetKey();
+    const inp = document.getElementById('iaGeminiKeyInput');
+    const status = document.getElementById('iaChaveStatus');
+    if (saved && inp) {
+      inp.value = saved;
+      if (status) { status.textContent = '✅ Chave configurada.'; status.style.color = '#1a7d3a'; }
+    }
+  }, 500);
   const IA_SEGMENTO = 'clínica de estética';
 
   async function geminiGerarTexto(prompt) {
-    const resp = await fetch(GEMINI_URL, {
+    if (!geminiGetKey()) throw new Error('Configure a chave Gemini API no topo da página IA & Promoções.');
+    const resp = await fetch(geminiGetUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -7429,6 +7464,7 @@
   }
 
   // Expõe funções de IA chamadas via onclick no HTML
+  window.iaSalvarChave      = iaSalvarChave;
   window.iaGerarPromocao    = iaGerarPromocao;
   window.iaGerarMsgRetorno  = iaGerarMsgRetorno;
   window.iaCopiar           = iaCopiar;
