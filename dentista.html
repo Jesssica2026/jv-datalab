@@ -191,6 +191,13 @@
   }
   .ficha-tab-btn.active { background: var(--cor-primaria); color: #fff; border-color: var(--cor-primaria); }
 
+  .trat-cat-btn {
+    background: #fff; border: 2px solid var(--cor-borda); color: #4b5162; padding: 10px 18px; border-radius: 10px;
+    font-size: 14px; cursor: pointer; font-weight: 600; transition: background .15s, border-color .15s, color .15s;
+  }
+  .trat-cat-btn:hover { border-color: var(--cor-secundaria); color: var(--cor-primaria); }
+  .trat-cat-btn.active { background: var(--cor-primaria); color: #fff; border-color: var(--cor-primaria); }
+
   /* Odontograma */
   .dente { cursor: pointer; stroke: var(--cor-borda); stroke-width: 1.5; transition: fill .15s, stroke .15s; }
   .dente.saudavel { fill: #ffffff; }
@@ -343,6 +350,7 @@
       <button data-page="estoque" class="admin-only"><span class="icon">📦</span><span class="menu-label">Estoque</span></button>
       <button data-page="agendamentos"><span class="icon">📅</span><span class="menu-label">Agendamentos</span></button>
       <button data-page="clientes"><span class="icon">👥</span><span class="menu-label">Pacientes</span></button>
+      <button data-page="tratamento" class="admin-only"><span class="icon">🩺</span><span class="menu-label">Tratamento</span></button>
       <button data-page="retencao" class="admin-only"><span class="icon">🔁</span><span class="menu-label">Retenção</span></button>
       <button data-page="galeria"><span class="icon">📸</span><span class="menu-label">Galeria</span></button>
       <button data-page="personalizacao" class="admin-only"><span class="icon">🎨</span><span class="menu-label">Personalização</span></button>
@@ -926,6 +934,61 @@
           </div>
         </div>
       </section>
+
+      <!-- TRATAMENTO -->
+      <section class="page admin-only" id="page-tratamento">
+        <h2 class="page-title">Tratamento</h2>
+        <p class="page-sub">Odontograma, planos, prontuários, orçamentos e receituários por paciente</p>
+
+        <!-- Busca de paciente -->
+        <div class="card" id="trat-busca-card">
+          <h3>Buscar paciente</h3>
+          <div class="form-grid">
+            <div class="field">
+              <label>Nome</label>
+              <input type="text" id="tratBuscaNome" placeholder="Buscar por nome...">
+            </div>
+            <div class="field">
+              <label>CPF</label>
+              <input type="text" id="tratBuscaCpf" placeholder="000.000.000-00" maxlength="14">
+            </div>
+          </div>
+          <div id="tratResultadoBusca" style="margin-top:10px"></div>
+        </div>
+
+        <!-- Cliente selecionado -->
+        <div id="tratClienteCard" style="display:none">
+          <div class="card" style="margin-top:16px;border-left:4px solid var(--cor-secundaria)">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+              <div>
+                <div style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Paciente selecionado</div>
+                <div style="font-size:19px;font-weight:700;color:var(--cor-primaria);margin-top:3px" id="tratClienteNome"></div>
+                <div style="font-size:13px;color:#6b7280;margin-top:2px" id="tratClienteInfo"></div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <div id="tratAnamneseBadges"></div>
+                <button type="button" class="btn secondary small" id="btnTratLimpar">↩ Trocar paciente</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seletor de tipo -->
+          <div class="card" style="margin-top:14px">
+            <h3>Tipo de atendimento</h3>
+            <div style="display:flex;gap:10px;flex-wrap:wrap" id="tratTiposDiv">
+              <button type="button" class="trat-cat-btn" data-tipo="odonto">🦷 Odontologia</button>
+              <button type="button" class="trat-cat-btn" data-tipo="harmonizacao">✨ Harmonização Facial</button>
+            </div>
+          </div>
+
+          <!-- Abas do tratamento (aparecem após selecionar tipo) -->
+          <div id="tratAbasDiv" style="display:none">
+            <div class="ficha-tabs" id="tratTabs" style="margin-top:16px"></div>
+            <div id="tratAbaConteudo" style="margin-top:16px"></div>
+          </div>
+        </div>
+      </section>
+
     </div>
   </div>
 </div>
@@ -1158,7 +1221,7 @@
 
   const REGIOES_INTRABUCAL = ['Anterior', 'Lateral Direita', 'Lateral Esquerda', 'Superior', 'Inferior'];
 
-  const ADMIN_ONLY_PAGES = ['dashboard', 'servicos', 'profissionais', 'estoque', 'retencao', 'personalizacao', 'financeiro'];
+  const ADMIN_ONLY_PAGES = ['dashboard', 'servicos', 'profissionais', 'estoque', 'retencao', 'personalizacao', 'financeiro', 'tratamento'];
   const TAXAS_PADRAO = { debito: 0, credito1x: 0, credito2a6: 0, credito7a12: 0, outros: [] };
   // Materiais de exemplo (valores editáveis): custo por uso = valor de compra / usos por embalagem
   const PRODUTOS_PADRAO = [
@@ -1225,7 +1288,9 @@
       odontogramaHistorico: [],
       planoTratamento: { itens: [], parcelas: [], aceite: { aceito: false, data: '' } },
       consultas: [],
-      receitas: []
+      receitas: [],
+      orcamentos: [],
+      tratamentos: []
     };
   }
 
@@ -1268,6 +1333,8 @@
     if (!c.planoTratamento) c.planoTratamento = vazia.planoTratamento;
     if (!c.consultas) c.consultas = [];
     if (!c.receitas) c.receitas = [];
+    if (!c.orcamentos) c.orcamentos = [];
+    if (!c.tratamentos) c.tratamentos = [];
     c.planoTratamento.itens.forEach(i => { if (i.dataConclusao === undefined) i.dataConclusao = ''; if (!Array.isArray(i.baixas)) i.baixas = []; if (i.servicoId === undefined) i.servicoId = ''; });
     c.planoTratamento.parcelas.forEach(pc => { if (!Array.isArray(pc.lancamentos)) pc.lancamentos = []; });
   });
@@ -1361,6 +1428,7 @@
     if (pageId === 'financeiro') { renderFinanceiro(); renderParcelasGlobais(); }
     if (pageId === 'estoque') renderEstoque();
     if (pageId === 'retencao') renderRetencao();
+    if (pageId === 'tratamento') initTratamento();
   }
   document.getElementById('toggleSidebar').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
 
@@ -1944,12 +2012,8 @@
   });
 
   const ABAS_CLIENTE = [
-    { id: 'anamnese', label: 'Anamnese' },
-    { id: 'odontograma', label: 'Odontograma' },
-    { id: 'plano', label: 'Plano de Tratamento' },
-    { id: 'prontuario', label: 'Prontuário' },
-    { id: 'harmonizacao', label: 'Harmonização Facial' },
-    { id: 'receituario', label: 'Receituário' }
+    { id: 'anamnese', label: '🦷 Anamnese Dental' },
+    { id: 'harmonizacao', label: '✨ Anamnese Harmonização' }
   ];
 
   function renderClienteDetalhe() {
@@ -2005,18 +2069,55 @@
 
   function renderAbaCliente(c) {
     const el = document.getElementById('fichaAbaConteudo');
-    if (abaAtivaCliente === 'anamnese') return renderAbaAnamnese(el, c);
-    if (abaAtivaCliente === 'odontograma') return renderAbaOdontograma(el, c);
-    if (abaAtivaCliente === 'plano') return renderAbaPlano(el, c);
-    if (abaAtivaCliente === 'prontuario') return renderAbaProntuario(el, c);
+    if (!abaAtivaCliente || abaAtivaCliente === 'anamnese') return renderAbaAnamnese(el, c);
     if (abaAtivaCliente === 'harmonizacao') return renderAbaHarmonizacao(el, c);
-    if (abaAtivaCliente === 'receituario') return renderAbaReceituario(el, c);
+    renderAbaAnamnese(el, c);
   }
 
   function renderAbaAnamnese(el, c) {
-    const a = c.anamnese;
+    const a = c.anamnese || {};
+    const jaSalva = !!(a._salvoEm && Object.keys(a).filter(k => !k.startsWith('_')).some(k => a[k]));
+    const dataExib = a._salvoEm ? formatDateBR(a._salvoEm.slice(0,10)) : null;
+
+    if (jaSalva && !a._editando) {
+      el.innerHTML = `
+        <div style="margin-top:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+            <div>
+              ${dataExib ? `<span style="background:#e8f5e9;color:#1a7d3a;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Salva em ${dataExib}</span>` : `<span style="background:#e3f0fd;color:#1565c0;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Anamnese registrada</span>`}
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="button" class="btn secondary small" id="btnEditarAnamnese">✏️ Editar</button>
+              <button type="button" class="btn danger small" id="btnExcluirAnamnese">🗑️ Excluir</button>
+            </div>
+          </div>
+          <div class="card" style="padding:16px">
+            <div class="form-grid">
+              ${[['hipertensao','Hipertensão'],['diabetes','Diabetes'],['cardiopatia','Cardiopatia'],['anticoagulantes','Anticoagulantes'],['alergiaAnestesia','Alergia a anestesia'],['alergiaLatex','Alergia a látex'],['gestante','Gestante'],['amamentando','Amamentando']].map(([k,l])=>a[k]?`<div style="font-size:13px;color:#1a7d3a;font-weight:500">✓ ${l}</div>`:''). join('')}
+            </div>
+            ${a.medicamentos ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Medicamentos</span><span>${esc(a.medicamentos)}</span></div>` : ''}
+            ${a.ultimaVisita ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Última visita</span><span>${formatDateBR(a.ultimaVisita)}</span></div>` : ''}
+            ${a.motivoConsulta ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Motivo</span><span>${esc(a.motivoConsulta)}</span></div>` : ''}
+            ${a.historicoProcedimentos ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Histórico</span><span>${esc(a.historicoProcedimentos)}</span></div>` : ''}
+          </div>
+        </div>
+      `;
+      el.querySelector('#btnEditarAnamnese').addEventListener('click', () => {
+        c.anamnese._editando = true;
+        renderAbaAnamnese(el, c);
+      });
+      el.querySelector('#btnExcluirAnamnese').addEventListener('click', () => {
+        if (!confirm('Excluir a anamnese? Essa ação não pode ser desfeita.')) return;
+        c.anamnese = {};
+        save(STORAGE_KEYS.clientes, state.clientes);
+        showToast('Anamnese excluída.');
+        renderAbaAnamnese(el, c);
+      });
+      return;
+    }
+
     el.innerHTML = `
-      <form id="formAnamnese">
+      <form id="formAnamnese" style="margin-top:10px">
         <div class="checkbox-grid">
           <label class="checkbox-item"><input type="checkbox" id="anaHipertensao" ${a.hipertensao ? 'checked' : ''}> Hipertensão</label>
           <label class="checkbox-item"><input type="checkbox" id="anaDiabetes" ${a.diabetes ? 'checked' : ''}> Diabetes</label>
@@ -2028,17 +2129,25 @@
           <label class="checkbox-item"><input type="checkbox" id="anaAmamentando" ${a.amamentando ? 'checked' : ''}> Amamentando</label>
         </div>
         <div class="form-grid">
-          <div class="field"><label>Medicamentos em uso</label><input type="text" id="anaMedicamentos" value="${a.medicamentos || ''}"></div>
+          <div class="field"><label>Medicamentos em uso</label><input type="text" id="anaMedicamentos" value="${esc(a.medicamentos || '')}"></div>
           <div class="field"><label>Última visita ao dentista</label><input type="date" id="anaUltimaVisita" value="${a.ultimaVisita || ''}"></div>
         </div>
-        <div class="field"><label>Motivo da consulta</label><textarea id="anaMotivo">${a.motivoConsulta || ''}</textarea></div>
-        <div class="field"><label>Histórico de procedimentos anteriores</label><textarea id="anaHistorico">${a.historicoProcedimentos || ''}</textarea></div>
-        <div class="btn-row"><button type="submit" class="btn">Salvar anamnese</button></div>
+        <div class="field"><label>Motivo da consulta</label><textarea id="anaMotivo">${esc(a.motivoConsulta || '')}</textarea></div>
+        <div class="field"><label>Histórico de procedimentos anteriores</label><textarea id="anaHistorico">${esc(a.historicoProcedimentos || '')}</textarea></div>
+        <div class="btn-row">
+          <button type="submit" class="btn">Salvar anamnese</button>
+          ${a._editando ? `<button type="button" class="btn secondary" id="btnCancelarAna">Cancelar</button>` : ''}
+        </div>
       </form>
     `;
+    el.querySelector('#btnCancelarAna')?.addEventListener('click', () => {
+      delete c.anamnese._editando;
+      renderAbaAnamnese(el, c);
+    });
     document.getElementById('formAnamnese').addEventListener('submit', (e) => {
       e.preventDefault();
-      c.anamnese = {
+      const prev = c.anamnese || {};
+      c.anamnese = Object.assign({}, prev, {
         hipertensao: document.getElementById('anaHipertensao').checked,
         diabetes: document.getElementById('anaDiabetes').checked,
         cardiopatia: document.getElementById('anaCardiopatia').checked,
@@ -2050,10 +2159,13 @@
         medicamentos: document.getElementById('anaMedicamentos').value.trim(),
         ultimaVisita: document.getElementById('anaUltimaVisita').value,
         motivoConsulta: document.getElementById('anaMotivo').value.trim(),
-        historicoProcedimentos: document.getElementById('anaHistorico').value.trim()
-      };
+        historicoProcedimentos: document.getElementById('anaHistorico').value.trim(),
+        _salvoEm: new Date().toISOString()
+      });
+      delete c.anamnese._editando;
       save(STORAGE_KEYS.clientes, state.clientes);
       showToast('Anamnese salva!');
+      renderAbaAnamnese(el, c);
     });
   }
 
@@ -2442,8 +2554,48 @@
 
   function renderAbaHarmonizacao(el, c) {
     const h = c.anamneseHarmonizacao || {};
+    const jaSalva = !!(h._salvoEm && Object.keys(h).filter(k => !k.startsWith('_')).some(k => h[k]));
+    const dataExib = h._salvoEm ? formatDateBR(h._salvoEm.slice(0,10)) : null;
+
+    if (jaSalva && !h._editando) {
+      el.innerHTML = `
+        <div style="margin-top:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+            <div>
+              ${dataExib ? `<span style="background:#e8f5e9;color:#1a7d3a;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Salva em ${dataExib}</span>` : `<span style="background:#e3f0fd;color:#1565c0;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Anamnese registrada</span>`}
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="button" class="btn secondary small" id="btnEditarHarmo">✏️ Editar</button>
+              <button type="button" class="btn danger small" id="btnExcluirHarmo">🗑️ Excluir</button>
+            </div>
+          </div>
+          <div class="card" style="padding:16px">
+            <div class="form-grid">
+              ${[['alergiaDermaFiller','Alergia a preenchedores'],['alergiaLatex','Alergia a Látex'],['alergiaAnestesiaTopi','Alergia a anestésico tópico'],['anticoagulantes','Anticoagulantes'],['gestante','Gestante'],['amamentando','Amamentando'],['herpeLabial','Herpes labial recorrente'],['autoimune','Doença autoimune'],['queloides','Tendência a queloides']].map(([k,l])=>h[k]?`<div style="font-size:13px;color:#1a7d3a;font-weight:500">✓ ${l}</div>`:''). join('')}
+            </div>
+            ${h.medicamentos ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Medicamentos</span><span>${esc(h.medicamentos)}</span></div>` : ''}
+            ${h.procedimentosAnteriores ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Procedimentos anteriores</span><span>${esc(h.procedimentosAnteriores)}</span></div>` : ''}
+            ${h.queixaPrincipal ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Queixa principal</span><span>${esc(h.queixaPrincipal)}</span></div>` : ''}
+            ${h.objetivos ? `<div class="list-row"><span style="font-size:12px;color:#6b7280">Objetivos</span><span>${esc(h.objetivos)}</span></div>` : ''}
+          </div>
+        </div>
+      `;
+      el.querySelector('#btnEditarHarmo').addEventListener('click', () => {
+        c.anamneseHarmonizacao._editando = true;
+        renderAbaHarmonizacao(el, c);
+      });
+      el.querySelector('#btnExcluirHarmo').addEventListener('click', () => {
+        if (!confirm('Excluir a anamnese de harmonização? Essa ação não pode ser desfeita.')) return;
+        c.anamneseHarmonizacao = {};
+        save(STORAGE_KEYS.clientes, state.clientes);
+        showToast('Anamnese de harmonização excluída.');
+        renderAbaHarmonizacao(el, c);
+      });
+      return;
+    }
+
     el.innerHTML = `
-      <form id="formHarmonizacao">
+      <form id="formHarmonizacao" style="margin-top:10px">
         <h3 style="color:var(--cor-primaria);margin-bottom:14px">Anamnese – Harmonização Facial / Botox</h3>
         <div class="form-grid" style="margin-bottom:14px">
           ${[
@@ -2466,13 +2618,21 @@
         <div class="field"><label>Procedimentos estéticos anteriores</label><textarea name="procedimentosAnteriores" rows="2">${esc(h.procedimentosAnteriores||'')}</textarea></div>
         <div class="field"><label>Queixa principal / área de interesse</label><textarea name="queixaPrincipal" rows="2">${esc(h.queixaPrincipal||'')}</textarea></div>
         <div class="field"><label>Objetivos com o procedimento</label><textarea name="objetivos" rows="2">${esc(h.objetivos||'')}</textarea></div>
-        <div class="btn-row"><button type="submit" class="btn">Salvar anamnese de harmonização</button></div>
+        <div class="btn-row">
+          <button type="submit" class="btn">Salvar anamnese de harmonização</button>
+          ${h._editando ? `<button type="button" class="btn secondary" id="btnCancelarHarmo">Cancelar</button>` : ''}
+        </div>
       </form>
     `;
+    el.querySelector('#btnCancelarHarmo')?.addEventListener('click', () => {
+      delete c.anamneseHarmonizacao._editando;
+      renderAbaHarmonizacao(el, c);
+    });
     el.querySelector('#formHarmonizacao').addEventListener('submit', e => {
       e.preventDefault();
       const fd = new FormData(e.target);
-      c.anamneseHarmonizacao = {
+      const prev = c.anamneseHarmonizacao || {};
+      c.anamneseHarmonizacao = Object.assign({}, prev, {
         alergiaDermaFiller: fd.get('alergiaDermaFiller') === 'on',
         alergiaLatex: fd.get('alergiaLatex') === 'on',
         alergiaAnestesiaTopi: fd.get('alergiaAnestesiaTopi') === 'on',
@@ -2485,11 +2645,177 @@
         medicamentos: fd.get('medicamentos') || '',
         procedimentosAnteriores: fd.get('procedimentosAnteriores') || '',
         queixaPrincipal: fd.get('queixaPrincipal') || '',
-        objetivos: fd.get('objetivos') || ''
-      };
+        objetivos: fd.get('objetivos') || '',
+        _salvoEm: new Date().toISOString()
+      });
+      delete c.anamneseHarmonizacao._editando;
       save(STORAGE_KEYS.clientes, state.clientes);
       showToast('Anamnese de harmonização salva!');
+      renderAbaHarmonizacao(el, c);
     });
+  }
+
+  function renderAbaOrcamento(el, c) {
+    const orcamentos = c.orcamentos || [];
+    el.innerHTML = `
+      <div style="margin-top:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <h4 style="color:var(--cor-primaria)">Orçamentos</h4>
+          <button type="button" class="btn small" id="btnNovoOrcamento">+ Novo orçamento</button>
+        </div>
+        <div id="formNovoOrcamento" style="display:none" class="card" style="margin-bottom:14px">
+          <h4 style="color:var(--cor-primaria);margin-bottom:12px">Novo orçamento</h4>
+          <form id="formOrcDados">
+            <div class="form-grid">
+              <div class="field"><label>Data</label><input type="date" id="orcData" value="${todayISO()}"></div>
+              <div class="field"><label>Validade</label><input type="date" id="orcValidade"></div>
+            </div>
+            <div class="field"><label>Descrição / Procedimentos</label><textarea id="orcDescricao" rows="3" placeholder="Ex: Extração dente 36, Restauração dente 21..."></textarea></div>
+            <div class="field"><label>Valor total (R$)</label><input type="number" id="orcValor" min="0" step="0.01" placeholder="0,00"></div>
+            <div class="field"><label>Observações</label><textarea id="orcObs" rows="2"></textarea></div>
+            <div class="btn-row">
+              <button type="submit" class="btn">Salvar orçamento</button>
+              <button type="button" class="btn secondary" id="btnCancelarOrc">Cancelar</button>
+            </div>
+          </form>
+        </div>
+        <div id="listaOrcamentos">
+          ${!orcamentos.length ? '<div class="empty-msg">Nenhum orçamento cadastrado.</div>' : orcamentos.slice().reverse().map(o => `
+            <div class="card" style="margin-bottom:12px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+                <div>
+                  <strong style="color:var(--cor-primaria)">${formatDateBR(o.data)}</strong>
+                  ${o.validade ? `<span style="font-size:12px;color:#6b7280;margin-left:8px">Válido até ${formatDateBR(o.validade)}</span>` : ''}
+                  <br><span style="font-size:13px;font-weight:600;color:var(--cor-secundaria)">${formatMoney(o.valor)}</span>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                  ${o.status === 'aceito' ? '<span style="background:#e8f5e9;color:#1a7d3a;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Aceito</span>' :
+                    o.status === 'recusado' ? '<span style="background:#fdecea;color:#b3261e;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">❌ Recusado</span>' :
+                    '<span style="background:#fff3e0;color:#e65100;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">⏳ Aguardando</span>'}
+                  ${!o.status || o.status === 'aguardando' ? `
+                    <button class="btn small" style="background:#1a7d3a;color:#fff" data-orc-aceitar="${o.id}">✅ Aceito</button>
+                    <button class="btn small danger" data-orc-recusar="${o.id}">❌ Recusado</button>
+                  ` : ''}
+                  <button class="btn danger small" data-orc-del="${o.id}">🗑️</button>
+                </div>
+              </div>
+              ${o.descricao ? `<div style="font-size:13px;margin-bottom:4px">${esc(o.descricao)}</div>` : ''}
+              ${o.obs ? `<div style="font-size:12px;color:#6b7280">${esc(o.obs)}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    el.querySelector('#btnNovoOrcamento').addEventListener('click', () => {
+      el.querySelector('#formNovoOrcamento').style.display = 'block';
+    });
+    el.querySelector('#btnCancelarOrc').addEventListener('click', () => {
+      el.querySelector('#formNovoOrcamento').style.display = 'none';
+    });
+    el.querySelector('#formOrcDados').addEventListener('submit', e => {
+      e.preventDefault();
+      if (!c.orcamentos) c.orcamentos = [];
+      c.orcamentos.push({
+        id: uid(), data: document.getElementById('orcData').value,
+        validade: document.getElementById('orcValidade').value,
+        descricao: document.getElementById('orcDescricao').value.trim(),
+        valor: num(document.getElementById('orcValor').value),
+        obs: document.getElementById('orcObs').value.trim(),
+        status: 'aguardando'
+      });
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Orçamento salvo!');
+      renderAbaOrcamento(el, c);
+    });
+    el.querySelectorAll('[data-orc-aceitar]').forEach(btn => btn.addEventListener('click', () => {
+      const o = c.orcamentos.find(x => x.id === btn.dataset.orcAceitar);
+      if (o) { o.status = 'aceito'; o.statusEm = new Date().toISOString(); save(STORAGE_KEYS.clientes, state.clientes); showToast('Orçamento aceito!'); renderAbaOrcamento(el, c); }
+    }));
+    el.querySelectorAll('[data-orc-recusar]').forEach(btn => btn.addEventListener('click', () => {
+      const o = c.orcamentos.find(x => x.id === btn.dataset.orcRecusar);
+      if (o) { o.status = 'recusado'; o.statusEm = new Date().toISOString(); save(STORAGE_KEYS.clientes, state.clientes); showToast('Orçamento recusado.'); renderAbaOrcamento(el, c); }
+    }));
+    el.querySelectorAll('[data-orc-del]').forEach(btn => btn.addEventListener('click', () => {
+      if (!confirm('Excluir orçamento?')) return;
+      c.orcamentos = c.orcamentos.filter(x => x.id !== btn.dataset.orcDel);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderAbaOrcamento(el, c);
+    }));
+  }
+
+  function renderAbaTratamentos(el, c) {
+    const tratamentos = c.tratamentos || [];
+    const hoje = todayISO();
+    el.innerHTML = `
+      <div style="margin-top:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <h4 style="color:var(--cor-primaria)">Histórico de tratamentos</h4>
+          <button type="button" class="btn small" id="btnNovoTrat">+ Registrar tratamento</button>
+        </div>
+        <div id="formNovoTrat" style="display:none" class="card" style="margin-bottom:14px">
+          <h4 style="color:var(--cor-primaria);margin-bottom:12px">Novo tratamento</h4>
+          <form id="formTratDados">
+            <div class="form-grid">
+              <div class="field"><label>Data</label><input type="date" id="tratData" value="${hoje}" required></div>
+              <div class="field"><label>Dentista</label><select id="tratProf"><option value="">Selecione</option>${state.profissionais.map(p=>`<option value="${p.id}" ${p.id===(session.tipo==='profissional'?session.profissionalId:'') ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select></div>
+              <div class="field"><label>Procedimento</label><select id="tratServico"><option value="">Selecione</option>${state.servicos.map(s=>`<option value="${s.id}">${esc(s.nome)}</option>`).join('')}</select></div>
+              <div class="field"><label>Dente(s) / Região</label><input type="text" id="tratRegiao" placeholder="Ex: 36, 21, Superior esquerdo"></div>
+              <div class="field"><label>Valor cobrado (R$)</label><input type="number" id="tratValor" min="0" step="0.01"></div>
+            </div>
+            <div class="field"><label>Observações clínicas</label><textarea id="tratObs" rows="3"></textarea></div>
+            <div class="btn-row">
+              <button type="submit" class="btn">Salvar tratamento</button>
+              <button type="button" class="btn secondary" id="btnCancelarTrat">Cancelar</button>
+            </div>
+          </form>
+        </div>
+        <div id="listaTratamentos">
+          ${!tratamentos.length ? '<div class="empty-msg">Nenhum tratamento registrado ainda.</div>' : tratamentos.slice().sort((a,b)=>b.data.localeCompare(a.data)).map(t => `
+            <div class="card" style="margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+                <div>
+                  <strong style="color:var(--cor-primaria)">${formatDateBR(t.data)}</strong>
+                  ${t.regiao ? `<span style="font-size:12px;color:#6b7280;margin-left:6px">${esc(t.regiao)}</span>` : ''}
+                  <br><span style="font-size:13px">${esc(nomeServicoPorId(t.servicoId)) || esc(t.procedimento) || '—'}</span>
+                  ${t.profissionalId ? `<span style="font-size:12px;color:#6b7280"> · ${esc(nomeProfissionalPorId(t.profissionalId))}</span>` : ''}
+                  ${t.valor ? `<br><span style="font-size:13px;font-weight:600;color:var(--cor-secundaria)">${formatMoney(t.valor)}</span>` : ''}
+                </div>
+                <button class="btn danger small" data-del-trat="${t.id}">🗑️ Excluir</button>
+              </div>
+              ${t.observacoes ? `<div style="font-size:13px;color:#4b5162;margin-top:8px;padding-top:8px;border-top:1px solid var(--cor-borda)">${esc(t.observacoes)}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    el.querySelector('#btnNovoTrat').addEventListener('click', () => {
+      el.querySelector('#formNovoTrat').style.display = 'block';
+    });
+    el.querySelector('#btnCancelarTrat').addEventListener('click', () => {
+      el.querySelector('#formNovoTrat').style.display = 'none';
+    });
+    el.querySelector('#formTratDados').addEventListener('submit', e => {
+      e.preventDefault();
+      if (!c.tratamentos) c.tratamentos = [];
+      c.tratamentos.push({
+        id: uid(), data: document.getElementById('tratData').value,
+        profissionalId: document.getElementById('tratProf').value,
+        servicoId: document.getElementById('tratServico').value,
+        procedimento: nomeServicoPorId(document.getElementById('tratServico').value) || '',
+        regiao: document.getElementById('tratRegiao').value.trim(),
+        valor: num(document.getElementById('tratValor').value),
+        observacoes: document.getElementById('tratObs').value.trim()
+      });
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Tratamento registrado!');
+      renderAbaTratamentos(el, c);
+    });
+    el.querySelectorAll('[data-del-trat]').forEach(btn => btn.addEventListener('click', () => {
+      if (!confirm('Excluir este tratamento?')) return;
+      c.tratamentos = c.tratamentos.filter(x => x.id !== btn.dataset.delTrat);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderAbaTratamentos(el, c);
+    }));
   }
 
   function imprimirReceita(r, p) {
@@ -2935,6 +3261,8 @@
       if (!c.aparelho) c.aparelho = { modo: 'auto', ultimaManutencao: '' };
       if (!c.statusCliente || !c.statusCliente.valor) { c.statusCliente = statusVazio(calcularStatusAutomatico(c).valor); criou = true; }
       if (!Array.isArray(c.statusCliente.historico)) c.statusCliente.historico = [];
+      if (!c.orcamentos) c.orcamentos = [];
+      if (!c.tratamentos) c.tratamentos = [];
     });
     if (criou) save(STORAGE_KEYS.clientes, state.clientes);
   }
@@ -4607,6 +4935,8 @@
         if (!c.planoTratamento) c.planoTratamento = vazia.planoTratamento;
         if (!c.consultas) c.consultas = [];
         if (!c.receitas) c.receitas = [];
+        if (!c.orcamentos) c.orcamentos = [];
+        if (!c.tratamentos) c.tratamentos = [];
         c.planoTratamento.itens.forEach(i => { if (i.dataConclusao === undefined) i.dataConclusao = ''; if (!Array.isArray(i.baixas)) i.baixas = []; if (i.servicoId === undefined) i.servicoId = ''; });
         c.planoTratamento.parcelas.forEach(pc => { if (!Array.isArray(pc.lancamentos)) pc.lancamentos = []; });
       });
@@ -4900,6 +5230,131 @@
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-page="ia"]').forEach(btn => btn.addEventListener('click', iaCarregarInativos));
   });
+
+  // ===== PÁGINA TRATAMENTO =====
+  let tratClienteId = null;
+  let tratTipoAtivo = null;
+  let tratAbaAtiva = null;
+
+  const TRAT_ABAS_ODONTO = [
+    { id: 'odontograma', label: 'Odontograma' },
+    { id: 'plano', label: 'Plano de Tratamento' },
+    { id: 'prontuario', label: 'Prontuário' },
+    { id: 'orcamento', label: '💰 Orçamento' },
+    { id: 'receituario', label: 'Receituário' },
+    { id: 'tratamentos', label: '📋 Histórico' }
+  ];
+
+  const TRAT_ABAS_HARMONIZACAO = [
+    { id: 'harmonizacao_ficha', label: 'Ficha Clínica' },
+    { id: 'orcamento', label: '💰 Orçamento' },
+    { id: 'tratamentos', label: '📋 Histórico' }
+  ];
+
+  function initTratamento() {
+    const buscaNome = document.getElementById('tratBuscaNome');
+    const buscaCpf = document.getElementById('tratBuscaCpf');
+    const resultado = document.getElementById('tratResultadoBusca');
+
+    function buscarPacientes() {
+      const nome = (buscaNome?.value || '').toLowerCase().trim();
+      const cpf = (buscaCpf?.value || '').replace(/\D/g,'').trim();
+      if (!nome && !cpf) { resultado.innerHTML = ''; return; }
+      const lista = state.clientes.filter(c =>
+        (nome && c.nome?.toLowerCase().includes(nome)) ||
+        (cpf && (c.cpf || '').replace(/\D/g,'').includes(cpf))
+      ).slice(0, 8);
+      if (!lista.length) { resultado.innerHTML = '<div class="empty-msg">Nenhum paciente encontrado.</div>'; return; }
+      resultado.innerHTML = lista.map(c => `
+        <div class="list-row" style="cursor:pointer;padding:10px;border-radius:8px;background:#f8f9fc;margin-bottom:6px;border:1px solid var(--cor-borda)" data-sel-trat="${c.id}">
+          <div>
+            <strong>${esc(c.nome)}</strong>
+            <span style="font-size:12.5px;color:#6b7280;margin-left:8px">${c.telefone ? esc(c.telefone) : ''} ${c.cpf ? '· CPF: '+esc(c.cpf) : ''}</span>
+          </div>
+          <button class="btn small" data-sel-trat="${c.id}">Selecionar →</button>
+        </div>`).join('');
+      resultado.querySelectorAll('[data-sel-trat]').forEach(el => {
+        el.addEventListener('click', () => selecionarPacienteTrat(el.dataset.selTrat));
+      });
+    }
+
+    buscaNome?.addEventListener('input', buscarPacientes);
+    buscaCpf?.addEventListener('input', buscarPacientes);
+
+    document.getElementById('btnTratLimpar')?.addEventListener('click', () => {
+      tratClienteId = null; tratTipoAtivo = null; tratAbaAtiva = null;
+      document.getElementById('tratClienteCard').style.display = 'none';
+      document.getElementById('trat-busca-card').style.display = 'block';
+      document.getElementById('tratAbasDiv').style.display = 'none';
+      if (buscaNome) buscaNome.value = '';
+      if (buscaCpf) buscaCpf.value = '';
+      resultado.innerHTML = '';
+    });
+
+    document.getElementById('tratTiposDiv')?.querySelectorAll('[data-tipo]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#tratTiposDiv [data-tipo]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        tratTipoAtivo = btn.dataset.tipo;
+        tratAbaAtiva = tratTipoAtivo === 'odonto' ? 'odontograma' : 'harmonizacao_ficha';
+        renderTratAbas();
+        renderTratConteudo();
+      });
+    });
+  }
+
+  function selecionarPacienteTrat(id) {
+    tratClienteId = id;
+    const c = state.clientes.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('trat-busca-card').style.display = 'none';
+    document.getElementById('tratClienteCard').style.display = 'block';
+    document.getElementById('tratClienteNome').textContent = c.nome;
+    document.getElementById('tratClienteInfo').textContent = [c.telefone, c.email, c.convenio].filter(Boolean).join(' · ');
+    const badges = document.getElementById('tratAnamneseBadges');
+    const temDental = !!(c.anamnese?._salvoEm);
+    const temHarmonizacao = !!(c.anamneseHarmonizacao?._salvoEm);
+    badges.innerHTML = [
+      temDental ? '<span style="background:#e6f4ea;color:#1a7d3a;border-radius:6px;padding:3px 9px;font-size:12px;font-weight:600">✅ Anamnese dental</span>' : '<span style="background:#fef3c7;color:#92400e;border-radius:6px;padding:3px 9px;font-size:12px;font-weight:600">⚠️ Sem anamnese dental</span>',
+      temHarmonizacao ? '<span style="background:#e6f4ea;color:#1a7d3a;border-radius:6px;padding:3px 9px;font-size:12px;font-weight:600">✅ Anamnese harmonização</span>' : ''
+    ].filter(Boolean).join(' ');
+    tratTipoAtivo = null; tratAbaAtiva = null;
+    document.getElementById('tratAbasDiv').style.display = 'none';
+    document.querySelectorAll('#tratTiposDiv [data-tipo]').forEach(b => b.classList.remove('active'));
+  }
+
+  function renderTratAbas() {
+    const abas = tratTipoAtivo === 'odonto' ? TRAT_ABAS_ODONTO : TRAT_ABAS_HARMONIZACAO;
+    const tabs = document.getElementById('tratTabs');
+    tabs.innerHTML = abas.map(a => `<button type="button" class="ficha-tab-btn ${tratAbaAtiva === a.id ? 'active' : ''}" data-trat-aba="${a.id}">${a.label}</button>`).join('');
+    tabs.querySelectorAll('[data-trat-aba]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        tratAbaAtiva = btn.dataset.tratAba;
+        renderTratAbas();
+        renderTratConteudo();
+      });
+    });
+    document.getElementById('tratAbasDiv').style.display = 'block';
+  }
+
+  function renderTratConteudo() {
+    const el = document.getElementById('tratAbaConteudo');
+    const c = state.clientes.find(x => x.id === tratClienteId);
+    if (!c || !el) return;
+    if (tratAbaAtiva === 'odontograma') return renderAbaOdontograma(el, c);
+    if (tratAbaAtiva === 'plano') return renderAbaPlano(el, c);
+    if (tratAbaAtiva === 'prontuario') return renderAbaProntuario(el, c);
+    if (tratAbaAtiva === 'orcamento') return renderAbaOrcamento(el, c);
+    if (tratAbaAtiva === 'receituario') return renderAbaReceituario(el, c);
+    if (tratAbaAtiva === 'tratamentos') return renderAbaTratamentos(el, c);
+    if (tratAbaAtiva === 'harmonizacao_ficha') return renderAbaHarmonizacaoFicha(el, c);
+    el.innerHTML = '<div class="empty-msg">Selecione uma aba.</div>';
+  }
+
+  function renderAbaHarmonizacaoFicha(el, c) {
+    renderAbaHarmonizacao(el, c);
+  }
+
 </script>
 <script>
 (function() {
