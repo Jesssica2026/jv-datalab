@@ -2227,6 +2227,17 @@
     }
     const podeGerenciar = session.tipo === 'admin';
     const tabsHtml = ABAS_CLIENTE.map(a => `<button type="button" class="ficha-tab-btn ${abaAtivaCliente === a.id ? 'active' : ''}" data-aba="${a.id}">${a.label}</button>`).join('');
+    const fichasWhats = [];
+    if (c.telefone) {
+      const tel = c.telefone.replace(/\D/g,'');
+      const full = tel.startsWith('55') ? tel : '55' + tel;
+      if ((c.anamneseCapilar||{})._salvoEm) fichasWhats.push({ label: '💇 Anamnese Capilar', id: 'whatsCapilar' });
+      if ((c.anamneseManicure||{})._salvoEm) fichasWhats.push({ label: '💅 Manicure', id: 'whatsManicure' });
+      if ((c.anamneseCilios||{})._salvoEm) fichasWhats.push({ label: '👁️ Cílios', id: 'whatsCilios' });
+      if ((c.anamneseSobrancelha||{})._salvoEm) fichasWhats.push({ label: '✏️ Sobrancelhas', id: 'whatsSobrancelha' });
+      if ((c.anamneseDepilacao||{})._salvoEm) fichasWhats.push({ label: '🌊 Depilação', id: 'whatsDepilacao' });
+    }
+    const whatsButtonsHtml = fichasWhats.map(f => `<button class="btn small" id="${f.id}" style="background:#25d366;color:#fff;border-color:#25d366">📲 ${f.label}</button>`).join('');
     box.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:10px">
         <div>
@@ -2234,13 +2245,14 @@
           <div style="font-size:13px;color:#6b7280">${esc(c.telefone) || 'sem telefone'} ${c.email ? '· ' + esc(c.email) : ''}</div>
           <div style="font-size:11px;color:#9ca3af;margin-top:2px">ID: ${c.id}</div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <button class="btn small" id="btnVerEvolucao">📈 Ver evolução</button>
           ${podeGerenciar ? `
           <button class="btn secondary small" id="btnEditarCliente">Editar</button>
           <button class="btn danger small" id="btnExcluirCliente">Excluir</button>` : ''}
         </div>
       </div>
+      ${fichasWhats.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;align-items:center"><span style="font-size:12px;color:#166534;font-weight:600;margin-right:4px">📲 Enviar ficha:</span>${whatsButtonsHtml}</div>` : ''}
       <div class="status-painel" id="statusClientePainel"></div>
       <div class="ficha-tabs">${tabsHtml}</div>
       <div id="fichaAbaConteudo"></div>
@@ -2261,6 +2273,77 @@
     document.querySelectorAll('.ficha-tab-btn[data-aba]').forEach(btn => {
       btn.addEventListener('click', () => { abaAtivaCliente = btn.dataset.aba; renderClienteDetalhe(); });
     });
+
+    // Botões WhatsApp do topo — envia cada ficha salva
+    if (c.telefone) {
+      const tel = c.telefone.replace(/\D/g,'');
+      const full = tel.startsWith('55') ? tel : '55' + tel;
+      function enviarWhatsApp(texto) {
+        const wa = document.createElement('a'); wa.href = 'https://wa.me/' + full + '?text=' + encodeURIComponent(texto); wa.target = '_blank'; wa.rel = 'noopener'; document.body.appendChild(wa); wa.click(); document.body.removeChild(wa);
+      }
+      const ac = c.anamneseCapilar || {};
+      if (ac._salvoEm) {
+        document.getElementById('whatsCapilar')?.addEventListener('click', () => {
+          const linhas = ['*Anamnese Capilar — ' + c.nome + '*\n'];
+          ANAMNESE_CAPILAR.forEach(sec => {
+            const campos = sec.campos.filter(f => f.tipo === 'checkbox' ? ac[f.chave] : (ac[f.chave] !== undefined && ac[f.chave] !== ''));
+            if (!campos.length) return;
+            linhas.push('*' + sec.titulo + '*');
+            campos.forEach(f => { if (f.tipo === 'checkbox') linhas.push('✓ ' + f.label); else linhas.push(f.label + ': ' + ac[f.chave]); });
+            linhas.push('');
+          });
+          enviarWhatsApp(linhas.join('\n'));
+        });
+      }
+      const am = c.anamneseManicure || {};
+      if (am._salvoEm) {
+        document.getElementById('whatsManicure')?.addEventListener('click', () => {
+          const linhas = ['*Ficha de Manicure/Pedicure — ' + c.nome + '*\n'];
+          [['gelosa','Usa esmalte em gel'],['acrilica','Unha acrílica'],['fibra','Fibra de vidro'],['alergiaEsmalte','Alergia a esmalte'],['diabetica','Diabética'],['micose','Histórico de micose'],['unhaEncravada','Unha encravada recorrente']].forEach(([k,l]) => { if (am[k]) linhas.push('✓ ' + l); });
+          if (am.corPreferida) linhas.push('Cor preferida: ' + am.corPreferida);
+          if (am.formato) linhas.push('Formato: ' + am.formato);
+          if (am.observacoes) linhas.push('Obs: ' + am.observacoes);
+          enviarWhatsApp(linhas.join('\n'));
+        });
+      }
+      const aci = c.anamneseCilios || {};
+      if (aci._salvoEm) {
+        document.getElementById('whatsCilios')?.addEventListener('click', () => {
+          const linhas = ['*Ficha de Cílios — ' + c.nome + '*\n'];
+          [['alergiaGlue','Alergia a cola'],['olhoSeco','Olho seco'],['conjuntivite','Histórico de conjuntivite'],['lentesContato','Usa lentes de contato'],['extensaoAnterior','Já fez extensão antes']].forEach(([k,l]) => { if (aci[k]) linhas.push('✓ ' + l); });
+          if (aci.tipoFio) linhas.push('Tipo de fio: ' + aci.tipoFio);
+          if (aci.curvatura) linhas.push('Curvatura: ' + aci.curvatura);
+          if (aci.espessura) linhas.push('Espessura: ' + aci.espessura);
+          if (aci.comprimento) linhas.push('Comprimento: ' + aci.comprimento);
+          if (aci.observacoes) linhas.push('Obs: ' + aci.observacoes);
+          enviarWhatsApp(linhas.join('\n'));
+        });
+      }
+      const as = c.anamneseSobrancelha || {};
+      if (as._salvoEm) {
+        document.getElementById('whatsSobrancelha')?.addEventListener('click', () => {
+          const linhas = ['*Ficha de Sobrancelhas — ' + c.nome + '*\n'];
+          [['alergiaTinta','Alergia a tinta/henna'],['alergiaAnestesia','Alergia a anestésico'],['queloides','Queloides'],['peleOleosa','Pele oleosa'],['tomouSol','Exposição solar recente'],['gravidez','Gestante/amamentando'],['micropigmentacaoAnterior','Já fez micropigmentação']].forEach(([k,l]) => { if (as[k]) linhas.push('✓ ' + l); });
+          if (as.tecnica) linhas.push('Técnica: ' + as.tecnica);
+          if (as.formato) linhas.push('Formato: ' + as.formato);
+          if (as.corPreferida) linhas.push('Tom/cor: ' + as.corPreferida);
+          if (as.observacoes) linhas.push('Obs: ' + as.observacoes);
+          enviarWhatsApp(linhas.join('\n'));
+        });
+      }
+      const ad = c.anamneseDepilacao || {};
+      if (ad._salvoEm) {
+        document.getElementById('whatsDepilacao')?.addEventListener('click', () => {
+          const linhas = ['*Ficha de Depilação — ' + c.nome + '*\n'];
+          [['alergiacera','Alergia a cera'],['diabetica','Diabética'],['queloides','Queloides'],['varizes','Varizes/circulação'],['gravidez','Gestante/amamentando'],['tomouSol','Exposição solar recente'],['usaRetinol','Usa retinol/ácido'],['anticoagulante','Usa anticoagulante']].forEach(([k,l]) => { if (ad[k]) linhas.push('✓ ' + l); });
+          if (ad.regioes) linhas.push('Regiões: ' + ad.regioes);
+          if (ad.tipoDepilacao) linhas.push('Método: ' + ad.tipoDepilacao);
+          if (ad.observacoes) linhas.push('Obs: ' + ad.observacoes);
+          enviarWhatsApp(linhas.join('\n'));
+        });
+      }
+    }
+
     const el = document.getElementById('fichaAbaConteudo');
     if (!abaAtivaCliente || abaAtivaCliente === 'anamnese') return renderAbaAnamnese(el, c);
     if (abaAtivaCliente === 'manicure') return renderAbaManicure(el, c);
