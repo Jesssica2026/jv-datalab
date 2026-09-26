@@ -946,19 +946,19 @@
           <div class="form-grid">
             <div class="field">
               <label>Nome</label>
-              <input type="text" id="tratBuscaNome" placeholder="Buscar por nome...">
+              <input type="text" id="tratBuscaNome" placeholder="Buscar por nome..." oninput="buscarPacientesTrat()" onkeydown="if(event.key==='Enter')buscarPacientesTrat()">
             </div>
             <div class="field">
               <label>CPF</label>
-              <input type="text" id="tratBuscaCpf" placeholder="000.000.000-00" maxlength="14">
+              <input type="text" id="tratBuscaCpf" placeholder="000.000.000-00" maxlength="14" oninput="buscarPacientesTrat()" onkeydown="if(event.key==='Enter')buscarPacientesTrat()">
             </div>
             <div class="field">
               <label>ID do paciente</label>
-              <input type="number" id="tratBuscaId" placeholder="Ex: 1, 2, 3...">
+              <input type="number" id="tratBuscaId" placeholder="Ex: 1, 2, 3..." oninput="buscarPacientesTrat()" onkeydown="if(event.key==='Enter')buscarPacientesTrat()">
             </div>
           </div>
           <div class="btn-row" style="margin-top:8px">
-            <button type="button" class="btn small" id="btnTratBuscar">🔍 Buscar</button>
+            <button type="button" class="btn small" onclick="buscarPacientesTrat()">🔍 Buscar</button>
           </div>
           <div id="tratResultadoBusca" style="margin-top:10px"></div>
         </div>
@@ -1731,13 +1731,20 @@
         <td>${fmtQtd(p.quantidade)} ${esc(p.unidade)}</td>
         <td>${fmtQtd(p.quantidade * p.usosPorEmbalagem)}</td>
         <td>${formatMoney(p.valorCompra)}</td>
-        <td><input type="number" step="0.01" min="0" value="${r2(p.custoUsoOverride != null ? p.custoUsoOverride : custoPorUso(p))}" style="width:80px;border:1px solid var(--cor-borda);border-radius:5px;padding:3px 6px;font-size:12px" title="Custo por uso (editável)" data-custo-uso-prod="${p.id}" onchange="(function(el){const prod=state.produtos.find(x=>x.id==='${p.id}');if(prod){prod.custoUsoOverride=parseFloat(el.value)||0;save(STORAGE_KEYS.produtos,state.produtos);}})(this)"></td>
+        <td><input type="number" step="0.01" min="0" value="${r2(p.custoUsoOverride != null ? p.custoUsoOverride : custoPorUso(p))}" style="width:80px;border:1px solid var(--cor-borda);border-radius:5px;padding:3px 6px;font-size:12px" title="Custo por uso (editável)" data-custo-uso-id="${p.id}"></td>
         <td>${fmtQtd(p.estoqueMinimo)}</td>
         <td>${esc(p.fornecedor) || '—'}</td>
         <td>${p.validade ? formatDateBR(p.validade) : '—'}</td>
         <td>${htmlAlertasProduto(p) || '<span style="color:#1a7d3a;font-size:12px;font-weight:600">OK</span>'}</td>
         <td><button class="btn secondary small" data-edit-prod="${p.id}">Editar</button> <button class="btn danger small" data-del-prod="${p.id}">Excluir</button></td>
       </tr>`).join('') : '<tr><td colspan="10" class="empty-msg">Nenhum material cadastrado ainda.</td></tr>';
+    // Listeners para custo por uso editável
+    document.querySelectorAll('[data-custo-uso-id]').forEach(input => {
+      input.onchange = function() {
+        const prod = state.produtos.find(x => x.id === this.dataset.custoUsoId);
+        if (prod) { prod.custoUsoOverride = parseFloat(this.value) || 0; save(STORAGE_KEYS.produtos, state.produtos); showToast('Custo por uso salvo!'); }
+      };
+    });
     const comAlerta = lista.filter(p => alertasProduto(p).length);
     document.getElementById('estoqueAlertas').innerHTML = comAlerta.length ? `
       <div class="card" style="border-left:4px solid #b3261e;margin-bottom:16px">
@@ -5294,53 +5301,42 @@
     { id: 'tratamentos', label: '📋 Histórico' }
   ];
 
-  function initTratamento() {
-    const buscaNome = document.getElementById('tratBuscaNome');
-    const buscaCpf = document.getElementById('tratBuscaCpf');
-    const buscaId = document.getElementById('tratBuscaId');
+  function buscarPacientesTrat() {
+    const nome = (document.getElementById('tratBuscaNome')?.value || '').toLowerCase().trim();
+    const cpf = (document.getElementById('tratBuscaCpf')?.value || '').replace(/\D/g,'').trim();
+    const idBusca = (document.getElementById('tratBuscaId')?.value || '').trim();
     const resultado = document.getElementById('tratResultadoBusca');
+    if (!resultado) return;
+    if (!nome && !cpf && !idBusca) { resultado.innerHTML = ''; return; }
+    const lista = state.clientes.filter((c, idx) =>
+      (nome && c.nome?.toLowerCase().includes(nome)) ||
+      (cpf && (c.cpf || '').replace(/\D/g,'').includes(cpf)) ||
+      (idBusca && (String(idx+1) === idBusca || c.id === idBusca))
+    ).slice(0, 10);
+    if (!lista.length) { resultado.innerHTML = '<div class="empty-msg">Nenhum paciente encontrado.</div>'; return; }
+    resultado.innerHTML = lista.map((c, idx) => {
+      const i = state.clientes.indexOf(c) + 1;
+      return `<div class="list-row" style="cursor:pointer;padding:10px;border-radius:8px;background:#f8f9fc;margin-bottom:6px;border:1px solid var(--cor-borda)">
+        <div>
+          <span style="font-size:11px;color:#9ca3af;font-weight:600">#${String(i).padStart(3,'0')}</span>
+          <strong style="margin-left:6px">${esc(c.nome)}</strong>
+          <span style="font-size:12.5px;color:#6b7280;margin-left:8px">${c.telefone ? esc(c.telefone) : ''} ${c.cpf ? '· '+esc(c.cpf) : ''}</span>
+        </div>
+        <button class="btn small" onclick="selecionarPacienteTrat('${c.id.replace(/'/g,"\\'")}')">Selecionar →</button>
+      </div>`;
+    }).join('');
+  }
 
-    function buscarPacientes() {
-      const nome = (buscaNome?.value || '').toLowerCase().trim();
-      const cpf = (buscaCpf?.value || '').replace(/\D/g,'').trim();
-      const idBusca = (buscaId?.value || '').trim();
-      if (!nome && !cpf && !idBusca) { resultado.innerHTML = ''; return; }
-      const lista = state.clientes.filter((c, idx) =>
-        (nome && c.nome?.toLowerCase().includes(nome)) ||
-        (cpf && (c.cpf || '').replace(/\D/g,'').includes(cpf)) ||
-        (idBusca && (String(idx+1) === idBusca || c.id === idBusca))
-      ).slice(0, 8);
-      if (!lista.length) { resultado.innerHTML = '<div class="empty-msg">Nenhum paciente encontrado.</div>'; return; }
-      resultado.innerHTML = lista.map(c => `
-        <div class="list-row" style="cursor:pointer;padding:10px;border-radius:8px;background:#f8f9fc;margin-bottom:6px;border:1px solid var(--cor-borda)" data-sel-trat="${c.id}">
-          <div>
-            <strong>${esc(c.nome)}</strong>
-            <span style="font-size:12.5px;color:#6b7280;margin-left:8px">${c.telefone ? esc(c.telefone) : ''} ${c.cpf ? '· CPF: '+esc(c.cpf) : ''}</span>
-          </div>
-          <button class="btn small" data-sel-trat="${c.id}">Selecionar →</button>
-        </div>`).join('');
-      resultado.querySelectorAll('[data-sel-trat]').forEach(el => {
-        el.addEventListener('click', () => selecionarPacienteTrat(el.dataset.selTrat));
-      });
-    }
-
-    buscaNome?.addEventListener('input', buscarPacientes);
-    buscaCpf?.addEventListener('input', buscarPacientes);
-    buscaId?.addEventListener('input', buscarPacientes);
-    [buscaNome, buscaCpf, buscaId].forEach(el => {
-      el?.addEventListener('keydown', e => { if (e.key === 'Enter') buscarPacientes(); });
-    });
-    document.getElementById('btnTratBuscar')?.addEventListener('click', buscarPacientes);
-
+  function initTratamento() {
     document.getElementById('btnTratLimpar')?.addEventListener('click', () => {
       tratClienteId = null; tratTipoAtivo = null; tratAbaAtiva = null;
       document.getElementById('tratClienteCard').style.display = 'none';
       document.getElementById('trat-busca-card').style.display = 'block';
       document.getElementById('tratAbasDiv').style.display = 'none';
-      if (buscaNome) buscaNome.value = '';
-      if (buscaCpf) buscaCpf.value = '';
-      if (buscaId) buscaId.value = '';
-      resultado.innerHTML = '';
+      const n = document.getElementById('tratBuscaNome'); if (n) n.value = '';
+      const cp = document.getElementById('tratBuscaCpf'); if (cp) cp.value = '';
+      const id = document.getElementById('tratBuscaId'); if (id) id.value = '';
+      const r = document.getElementById('tratResultadoBusca'); if (r) r.innerHTML = '';
     });
 
     document.getElementById('tratTiposDiv')?.querySelectorAll('[data-tipo]').forEach(btn => {
