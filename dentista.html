@@ -5448,13 +5448,20 @@
     if (!c.anamnese) c.anamnese = vazia.anamnese;
     if (!c.anamneseHarmonizacao) c.anamneseHarmonizacao = vazia.anamneseHarmonizacao;
     try {
-      if (tratAbaAtiva === 'odontograma') return renderAbaOdontograma(el, c);
-      if (tratAbaAtiva === 'plano') return renderAbaPlano(el, c);
-      if (tratAbaAtiva === 'prontuario') return renderAbaProntuario(el, c);
-      if (tratAbaAtiva === 'orcamento') return renderAbaOrcamento(el, c);
-      if (tratAbaAtiva === 'receituario') return renderAbaReceituario(el, c);
-      if (tratAbaAtiva === 'tratamentos') return renderAbaTratamentos(el, c);
-      if (tratAbaAtiva === 'harmonizacao_ficha') return renderAbaHarmonizacaoFicha(el, c);
+      const _odo  = window._renderAbaOdontograma  || (typeof renderAbaOdontograma  !== 'undefined' ? renderAbaOdontograma  : null);
+      const _plan = window._renderAbaPlano         || (typeof renderAbaPlano         !== 'undefined' ? renderAbaPlano         : null);
+      const _pron = window._renderAbaProntuario    || (typeof renderAbaProntuario    !== 'undefined' ? renderAbaProntuario    : null);
+      const _orc  = window._renderAbaOrcamento     || (typeof renderAbaOrcamento     !== 'undefined' ? renderAbaOrcamento     : null);
+      const _rec  = window._renderAbaReceituario   || (typeof renderAbaReceituario   !== 'undefined' ? renderAbaReceituario   : null);
+      const _trat = window._renderAbaTratamentos   || (typeof renderAbaTratamentos   !== 'undefined' ? renderAbaTratamentos   : null);
+      const _harm = window._renderAbaHarmonizacao  || (typeof renderAbaHarmonizacao  !== 'undefined' ? renderAbaHarmonizacao  : null);
+      if (tratAbaAtiva === 'odontograma'        && _odo)  return _odo(el, c);
+      if (tratAbaAtiva === 'plano'              && _plan) return _plan(el, c);
+      if (tratAbaAtiva === 'prontuario'         && _pron) return _pron(el, c);
+      if (tratAbaAtiva === 'orcamento'          && _orc)  return _orc(el, c);
+      if (tratAbaAtiva === 'receituario'        && _rec)  return _rec(el, c);
+      if (tratAbaAtiva === 'tratamentos'        && _trat) return _trat(el, c);
+      if (tratAbaAtiva === 'harmonizacao_ficha' && _harm) return _harm(el, c);
       el.innerHTML = '<div class="empty-msg">Selecione uma aba.</div>';
     } catch(err) {
       console.error('[renderTratConteudo] erro na aba "' + tratAbaAtiva + '":', err);
@@ -5463,7 +5470,8 @@
   }
 
   function renderAbaHarmonizacaoFicha(el, c) {
-    renderAbaHarmonizacao(el, c);
+    const _harm = window._renderAbaHarmonizacao || (typeof renderAbaHarmonizacao !== 'undefined' ? renderAbaHarmonizacao : null);
+    if (_harm) _harm(el, c);
   }
 
 </script>
