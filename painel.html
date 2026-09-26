@@ -2333,6 +2333,10 @@
 
     el.innerHTML = `
       <form id="formAnamnese">
+        ${c.telefone && !a._editando ? `<div style="margin-bottom:12px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span style="font-size:13px;color:#166534">📲 Peça para a cliente preencher a anamnese pelo WhatsApp</span>
+          <button type="button" id="btnWhatsAnamneseForm" style="background:#25d366;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Enviar mensagem →</button>
+        </div>` : ''}
         <h4 class="ficha-secao">Dados</h4>
         ${htmlDadosPessoais(c, 'dp_')}
         ${htmlSecoesAnamnese(ANAMNESE_CAPILAR, c.anamneseCapilar || {})}
@@ -2345,6 +2349,13 @@
     const form = document.getElementById('formAnamnese');
     ligarDadosPessoais(form, 'dp_');
     ligarAnamnese(form);
+    // WhatsApp — pedir para cliente preencher anamnese (quando ainda não tem ficha)
+    form.querySelector('#btnWhatsAnamneseForm')?.addEventListener('click', () => {
+      const tel = c.telefone.replace(/\D/g,'');
+      const full = tel.startsWith('55') ? tel : '55' + tel;
+      const saudacao = `Olá ${c.nome}! 😊 Aqui é do salão. Para que possamos personalizar ainda melhor o seu atendimento, precisamos que você responda nossa ficha de anamnese capilar. Na sua próxima visita a profissional vai registrar as informações junto com você. Qualquer dúvida é só chamar! 💆‍♀️`;
+      window.open('https://wa.me/' + full + '?text=' + encodeURIComponent(saudacao), '_blank');
+    });
     form.querySelector('#btnCancelarAnamnese')?.addEventListener('click', () => { delete c.anamneseCapilar._editando; renderAbaAnamnese(el, c); });
     form.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -3455,14 +3466,17 @@
               <div class="field"><label>Valor cobrado (R$)</label><input type="number" id="tratValor" min="0" step="0.01"></div>
             </div>
             <div class="field">
-              <label>Produtos utilizados <span style="font-size:11px;color:#6b7280">(marque os que foram usados)</span></label>
+              <label>Produtos utilizados <span style="font-size:11px;color:#6b7280">(custo descontado do lucro)</span></label>
               <div style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1px solid var(--cor-borda);border-radius:8px;min-height:42px;background:#f9fafb">
-                ${state.produtos && state.produtos.length ? state.produtos.map(p => `
-                  <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;padding:4px 8px;border:1px solid var(--cor-borda);border-radius:6px;background:#fff">
-                    <input type="checkbox" class="trat-prod-cb" data-prod-id="${p.id}" data-prod-nome="${esc(p.nome)}">
-                    ${esc(p.nome)}<span style="font-size:11px;color:#9ca3af;margin-left:2px">${p.unidade||''}</span>
-                  </label>`).join('') : '<span style="font-size:13px;color:#9ca3af">Nenhum produto no estoque</span>'}
+                ${state.produtos && state.produtos.length ? state.produtos.map(p => {
+                  const custo = custoPorUso(p);
+                  return `<label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;padding:4px 8px;border:1px solid var(--cor-borda);border-radius:6px;background:#fff">
+                    <input type="checkbox" class="trat-prod-cb" data-prod-id="${p.id}" data-prod-nome="${esc(p.nome)}" data-prod-custo="${custo.toFixed(2)}">
+                    ${esc(p.nome)} <span style="font-size:11px;color:var(--cor-secundaria)">${custo > 0 ? '−R$'+custo.toFixed(2)+'/uso' : ''}</span>
+                  </label>`;
+                }).join('') : '<span style="font-size:13px;color:#9ca3af">Nenhum produto no estoque</span>'}
               </div>
+              <div id="tratCustoProdResume" style="font-size:12px;color:#e65100;margin-top:6px;display:none">🧴 Custo dos produtos: <strong id="tratCustoProdTotal">R$ 0,00</strong> · Lucro estimado: <strong id="tratLucroEstimado">—</strong></div>
             </div>
             <div class="field"><label>Observações</label><textarea id="tratObs" rows="3"></textarea></div>
             <div class="btn-row">
@@ -3479,7 +3493,7 @@
                   <strong style="color:var(--cor-primaria)">${formatDateBR(t.data)}</strong>
                   <br><span style="font-size:13px">${esc(nomeServicoPorId(t.servicoId)) || '—'}</span>
                   ${t.profissionalId ? `<span style="font-size:12px;color:#6b7280"> · ${esc(nomeProfissionalPorId(t.profissionalId))}</span>` : ''}
-                  ${t.valor ? `<br><span style="font-size:13px;font-weight:600;color:var(--cor-secundaria)">${formatMoney(t.valor)}</span>` : ''}
+                  ${t.valor ? `<br><span style="font-size:13px;font-weight:600;color:var(--cor-secundaria)">${formatMoney(t.valor)}</span>${t.custoProdutos > 0 ? `<span style="font-size:11px;color:#e65100;margin-left:6px">−${formatMoney(t.custoProdutos)} prod.</span>` : ''}${t.lucro != null && t.valor > 0 ? `<span style="font-size:12px;font-weight:700;margin-left:6px;color:${t.lucro >= 0 ? '#1a7d3a' : '#b3261e'}">= ${formatMoney(t.lucro)} lucro</span>` : ''}` : ''}
                 </div>
                 <button class="btn danger small" data-del-trat="${t.id}">🗑️ Excluir</button>
               </div>
@@ -3492,15 +3506,33 @@
     `;
     el.querySelector('#btnNovoTrat').addEventListener('click', () => { el.querySelector('#formNovoTrat').style.display = 'block'; });
     el.querySelector('#btnCancelarTrat').addEventListener('click', () => { el.querySelector('#formNovoTrat').style.display = 'none'; });
+    // Atualiza custo/lucro ao marcar produtos ou mudar valor
+    function atualizarCustoTrat() {
+      const custoProd = Array.from(el.querySelectorAll('.trat-prod-cb:checked')).reduce((s,cb) => s + parseFloat(cb.dataset.prodCusto||0), 0);
+      const valor = num(document.getElementById('tratValor')?.value || '0');
+      const resumo = document.getElementById('tratCustoProdResume');
+      if (custoProd > 0 && resumo) {
+        resumo.style.display = 'block';
+        document.getElementById('tratCustoProdTotal').textContent = formatMoney(custoProd);
+        const lucro = valor - custoProd;
+        document.getElementById('tratLucroEstimado').textContent = valor > 0 ? formatMoney(lucro) + (lucro < 0 ? ' ⚠️' : '') : '—';
+      } else if (resumo) { resumo.style.display = 'none'; }
+    }
+    el.querySelectorAll('.trat-prod-cb').forEach(cb => cb.addEventListener('change', atualizarCustoTrat));
+    document.getElementById('tratValor')?.addEventListener('input', atualizarCustoTrat);
     el.querySelector('#formTratDados').addEventListener('submit', e => {
       e.preventDefault();
       if (!c.tratamentos) c.tratamentos = [];
-      const produtosUsados = Array.from(el.querySelectorAll('.trat-prod-cb:checked')).map(cb => ({ id: cb.dataset.prodId, nome: cb.dataset.prodNome }));
+      const produtosUsados = Array.from(el.querySelectorAll('.trat-prod-cb:checked')).map(cb => ({ id: cb.dataset.prodId, nome: cb.dataset.prodNome, custo: parseFloat(cb.dataset.prodCusto||0) }));
+      const custoProdutos = produtosUsados.reduce((s,p) => s + p.custo, 0);
+      const valorCobrado = num(document.getElementById('tratValor').value);
       c.tratamentos.push({
         id: uid(), data: document.getElementById('tratData').value,
         profissionalId: document.getElementById('tratProf').value,
         servicoId: document.getElementById('tratServico').value,
-        valor: num(document.getElementById('tratValor').value),
+        valor: valorCobrado,
+        custoProdutos: custoProdutos,
+        lucro: valorCobrado > 0 ? valorCobrado - custoProdutos : null,
         produtosUsados: produtosUsados,
         observacoes: document.getElementById('tratObs').value.trim()
       });
