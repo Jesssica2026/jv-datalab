@@ -5006,6 +5006,7 @@
   window.addEventListener('supa:carregado', () => {
     if (document.getElementById('appContainer') && document.getElementById('appContainer').style.display !== 'none') {
       recarregarStateDoLocalStorage();
+      showToast('☁️ Dados sincronizados com a nuvem', 2500);
       // Se estiver na página de tratamento e já tiver algo digitado na busca, re-executa
       const pagTrat = document.getElementById('page-tratamento');
       if (pagTrat && pagTrat.classList.contains('active')) {
@@ -5013,6 +5014,8 @@
         const cpf  = document.getElementById('tratBuscaCpf')?.value || '';
         const id   = document.getElementById('tratBuscaId')?.value || '';
         if (nome || cpf || id) buscarPacientesTrat();
+        // Se já tinha paciente selecionado, re-renderiza o conteúdo da aba
+        if (typeof tratClienteId !== 'undefined' && tratClienteId && typeof renderTratConteudo === 'function') renderTratConteudo();
       }
     }
   });
@@ -5428,7 +5431,8 @@
 
   function renderTratConteudo() {
     const el = document.getElementById('tratAbaConteudo');
-    const c = (window.state || state).clientes.find(x => x.id === tratClienteId);
+    const _st = window.state || state;
+    const c = _st.clientes.find(x => x.id === tratClienteId);
     if (!el) return;
     if (!c) { el.innerHTML = '<div class="empty-msg">Paciente não encontrado. Tente buscar novamente.</div>'; return; }
     // garante campos obrigatórios vindos do Supabase
@@ -5439,16 +5443,22 @@
     if (!c.consultas) c.consultas = [];
     if (!c.receitas) c.receitas = [];
     if (!c.tratamentos) c.tratamentos = [];
+    if (!c.orcamentos) c.orcamentos = [];
     if (!c.anamnese) c.anamnese = vazia.anamnese;
     if (!c.anamneseHarmonizacao) c.anamneseHarmonizacao = vazia.anamneseHarmonizacao;
-    if (tratAbaAtiva === 'odontograma') return renderAbaOdontograma(el, c);
-    if (tratAbaAtiva === 'plano') return renderAbaPlano(el, c);
-    if (tratAbaAtiva === 'prontuario') return renderAbaProntuario(el, c);
-    if (tratAbaAtiva === 'orcamento') return renderAbaOrcamento(el, c);
-    if (tratAbaAtiva === 'receituario') return renderAbaReceituario(el, c);
-    if (tratAbaAtiva === 'tratamentos') return renderAbaTratamentos(el, c);
-    if (tratAbaAtiva === 'harmonizacao_ficha') return renderAbaHarmonizacaoFicha(el, c);
-    el.innerHTML = '<div class="empty-msg">Selecione uma aba.</div>';
+    try {
+      if (tratAbaAtiva === 'odontograma') return renderAbaOdontograma(el, c);
+      if (tratAbaAtiva === 'plano') return renderAbaPlano(el, c);
+      if (tratAbaAtiva === 'prontuario') return renderAbaProntuario(el, c);
+      if (tratAbaAtiva === 'orcamento') return renderAbaOrcamento(el, c);
+      if (tratAbaAtiva === 'receituario') return renderAbaReceituario(el, c);
+      if (tratAbaAtiva === 'tratamentos') return renderAbaTratamentos(el, c);
+      if (tratAbaAtiva === 'harmonizacao_ficha') return renderAbaHarmonizacaoFicha(el, c);
+      el.innerHTML = '<div class="empty-msg">Selecione uma aba.</div>';
+    } catch(err) {
+      console.error('[renderTratConteudo] erro na aba "' + tratAbaAtiva + '":', err);
+      el.innerHTML = '<div class="empty-msg" style="color:#e74c3c">⚠️ Erro ao carregar aba: ' + (err && err.message ? err.message : String(err)) + '</div>';
+    }
   }
 
   function renderAbaHarmonizacaoFicha(el, c) {
@@ -5493,7 +5503,7 @@
       objetivos:{ odontograma:c.odontogramaAtual||{}, historico:c.odontogramaHistorico||[] },
       mapacorporal:c.planoTratamento||{},
       medidas:c.consultas||[],
-      protocolo:{ receitas:c.receitas||[], aparelho:c.aparelho||{} },
+      protocolo:{ receitas:c.receitas||[], tratamentos:c.tratamentos||[], orcamentos:c.orcamentos||[], aparelho:c.aparelho||{} },
       pacotes:[],
       historicostatus:c.historicoStatus||[]
     };
@@ -5514,6 +5524,8 @@
       planoTratamento:parseJsonb(r.mapacorporal,{itens:[],parcelas:[],aceite:{aceito:false,data:''}}),
       consultas:parseJsonb(r.medidas,[]),
       receitas:proto.receitas||[],
+      tratamentos:proto.tratamentos||[],
+      orcamentos:proto.orcamentos||[],
       aparelho:proto.aparelho||{modo:'auto',ultimaManutencao:''},
       historicoStatus:parseJsonb(r.historicostatus,[])
     };
