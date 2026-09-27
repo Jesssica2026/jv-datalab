@@ -561,6 +561,7 @@
         <div class="card">
           <h3>Novo serviço</h3>
           <form id="formServico">
+            <input type="hidden" id="servId">
             <div class="form-grid">
               <div class="field">
                 <label>Nome do serviço</label>
@@ -579,8 +580,26 @@
                 <input type="file" id="servFoto" accept="image/*">
               </div>
             </div>
+            <!-- Disponibilidade do serviço -->
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--cor-borda)">
+              <label style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:8px">📅 Dias em que este serviço é oferecido</label>
+              <div style="display:flex;gap:10px;flex-wrap:wrap" id="servDiasCheck">
+                <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer"><input type="checkbox" value="1" checked> Seg</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer"><input type="checkbox" value="2" checked> Ter</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer"><input type="checkbox" value="3" checked> Qua</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer"><input type="checkbox" value="4" checked> Qui</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer"><input type="checkbox" value="5" checked> Sex</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer"><input type="checkbox" value="6"> Sáb</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer"><input type="checkbox" value="0"> Dom</label>
+              </div>
+              <div class="form-grid" style="margin-top:10px">
+                <div class="field"><label>Horário inicial de atendimento</label><input type="time" id="servHorarioInicio" value="08:00"></div>
+                <div class="field"><label>Horário final de atendimento</label><input type="time" id="servHorarioFim" value="19:00"></div>
+              </div>
+            </div>
             <div class="btn-row">
               <button type="submit" class="btn">Salvar serviço</button>
+              <button type="button" class="btn secondary" id="btnCancelarEdicaoServ" style="display:none">Cancelar edição</button>
             </div>
           </form>
         </div>
@@ -1664,22 +1683,49 @@
 
   document.getElementById('formServico').addEventListener('submit', (e) => {
     e.preventDefault();
-    const servico = {
-      id: uid(),
-      _num: nextNum(state.servicos),
-      nome: document.getElementById('servNome').value.trim(),
-      preco: parseFloat(document.getElementById('servPreco').value),
-      duracao: parseInt(document.getElementById('servDuracao').value, 10),
-      foto: pendingServicoFoto,
-      insumos: []
-    };
-    state.servicos.push(servico);
+    const editId = document.getElementById('servId').value;
+    const diasDisp = Array.from(document.querySelectorAll('#servDiasCheck input[type=checkbox]')).filter(c => c.checked).map(c => Number(c.value));
+    const horarioInicio = document.getElementById('servHorarioInicio').value || '08:00';
+    const horarioFim = document.getElementById('servHorarioFim').value || '19:00';
+    if (editId) {
+      const s = state.servicos.find(x => x.id === editId);
+      if (s) {
+        s.nome = document.getElementById('servNome').value.trim();
+        s.preco = parseFloat(document.getElementById('servPreco').value);
+        s.duracao = parseInt(document.getElementById('servDuracao').value, 10);
+        s.diasDisp = diasDisp; s.horarioInicio = horarioInicio; s.horarioFim = horarioFim;
+        if (pendingServicoFoto) s.foto = pendingServicoFoto;
+      }
+    } else {
+      const servico = {
+        id: uid(),
+        _num: nextNum(state.servicos),
+        nome: document.getElementById('servNome').value.trim(),
+        preco: parseFloat(document.getElementById('servPreco').value),
+        duracao: parseInt(document.getElementById('servDuracao').value, 10),
+        foto: pendingServicoFoto,
+        diasDisp,
+        horarioInicio,
+        horarioFim,
+        insumos: []
+      };
+      state.servicos.push(servico);
+    }
     save(STORAGE_KEYS.servicos, state.servicos);
     e.target.reset();
+    document.getElementById('servId').value = '';
+    document.getElementById('btnCancelarEdicaoServ').style.display = 'none';
     pendingServicoFoto = '';
     renderServicos();
     populateTodosSelects();
-    showToast('Serviço cadastrado!');
+    showToast(editId ? 'Serviço atualizado!' : 'Serviço cadastrado!');
+  });
+
+  document.getElementById('btnCancelarEdicaoServ').addEventListener('click', () => {
+    document.getElementById('formServico').reset();
+    document.getElementById('servId').value = '';
+    document.getElementById('btnCancelarEdicaoServ').style.display = 'none';
+    pendingServicoFoto = '';
   });
 
   function renderServicos() {
@@ -1698,8 +1744,10 @@
           <div class="name">${esc(s.nome)}</div>
           <div class="meta">${formatMoney(s.preco)} · ${s.duracao} min</div>
           <div class="meta">${s.insumos.length ? `Insumos: ${formatMoney(custo)} · Margem: ${fmtMargem(f.margem)}` : 'Sem ficha de custo'}</div>
+          <div class="meta" style="color:#059669;font-size:11px">${(() => { const nomes=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']; const dias=s.diasDisp||[1,2,3,4,5]; return '🗓 '+dias.map(d=>nomes[d]).join(', ')+' · '+(s.horarioInicio||'08:00')+'–'+(s.horarioFim||'19:00'); })()}</div>
           <div class="meta" style="font-size:11px;color:#9ca3af">Serviço #${s._num || s.id}</div>
           <div class="actions">
+            <button class="btn secondary small" data-edit-servico="${s.id}">Editar</button>
             <button class="btn secondary small" data-ficha-servico="${s.id}">Ficha de custo</button>
             <button class="btn danger small" data-del-servico="${s.id}">Excluir</button>
           </div>
@@ -1709,6 +1757,22 @@
   }
   document.getElementById('servicosGrid').addEventListener('click', (e) => {
     if (e.target.dataset.fichaServico) { abrirFichaCusto(e.target.dataset.fichaServico); return; }
+    if (e.target.dataset.editServico) {
+      const s = state.servicos.find(x => x.id === e.target.dataset.editServico);
+      if (!s) return;
+      document.getElementById('servId').value = s.id;
+      document.getElementById('servNome').value = s.nome;
+      document.getElementById('servPreco').value = s.preco;
+      document.getElementById('servDuracao').value = s.duracao;
+      document.getElementById('servHorarioInicio').value = s.horarioInicio || '08:00';
+      document.getElementById('servHorarioFim').value = s.horarioFim || '19:00';
+      const diasSalvos = s.diasDisp || [1,2,3,4,5];
+      document.querySelectorAll('#servDiasCheck input[type=checkbox]').forEach(c => { c.checked = diasSalvos.includes(Number(c.value)); });
+      document.getElementById('btnCancelarEdicaoServ').style.display = 'inline-block';
+      pendingServicoFoto = '';
+      window.scrollTo({ top: document.getElementById('page-servicos').offsetTop, behavior: 'smooth' });
+      return;
+    }
     const id = e.target.dataset.delServico;
     if (!id) return;
     state.servicos = state.servicos.filter(s => s.id !== id);
