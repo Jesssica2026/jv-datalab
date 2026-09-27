@@ -2638,6 +2638,8 @@
     // Helper: "HH:MM" → minutos
     function toMinCal(h) { const [hh, mm] = h.split(':').map(Number); return hh * 60 + mm; }
 
+    const intervalo = state.config.intervaloGrade || 30;
+
     // Pré-calcular quais slots estão cobertos por algum agendamento (considerando duração)
     // Retorna Map<iso, Set<minutos_ocupados>>
     const ocMin = {};
