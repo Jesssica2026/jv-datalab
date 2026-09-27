@@ -320,11 +320,42 @@
     }
 
     const slots = gerarSlotsServico();
-    const ocupados = new Set(
-      agendamentos.filter(a => a.data === dataSel && (!profissionalId || a.profissionalId === profissionalId)).map(a => a.hora)
-    );
+    const duracaoServico = servSel ? (servSel.duracao || intervalo) : intervalo;
 
-    // Calcular horários bloqueados pela disponibilidade do profissional
+    // Converte "HH:MM" em minutos totais
+    function toMin(h) { const [hh, mm] = h.split(':').map(Number); return hh * 60 + mm; }
+
+    // Agendamentos do dia filtrados pelo profissional (se escolhido)
+    const agendsDia = agendamentos.filter(a => a.data === dataSel && (profissionalId ? a.profissionalId === profissionalId : true));
+
+    // Verifica se um slot está bloqueado por algum agendamento existente
+    // Um slot fica bloqueado se:
+    //   (A) já existe agendamento que começa nele, OU
+    //   (B) existe agendamento anterior cuja duração ainda não terminou ao chegar neste slot
+    function slotOcupado(hora) {
+      const minSlot = toMin(hora);
+      return agendsDia.some(a => {
+        const servA = servicos.find(s => s.id === a.servicoId);
+        const durA = servA ? (servA.duracao || intervalo) : intervalo;
+        const inicio = toMin(a.hora);
+        const fim = inicio + durA;
+        // o slot está dentro do intervalo ocupado pelo agendamento existente
+        return minSlot >= inicio && minSlot < fim;
+      });
+    }
+
+    // Verifica se, ao agendar neste slot, o tempo do novo serviço caberia
+    // sem conflitar com o próximo agendamento existente
+    function slotConflitaFuturo(hora) {
+      const minSlot = toMin(hora);
+      const fimNovo = minSlot + duracaoServico;
+      return agendsDia.some(a => {
+        const inicioA = toMin(a.hora);
+        return inicioA > minSlot && inicioA < fimNovo;
+      });
+    }
+
+    // Disponibilidade do profissional escolhido
     const prof = profissionalId ? profissionais.find(p => p.id === profissionalId) : null;
     const diaSemana = dataSel ? new Date(dataSel + 'T12:00:00').getDay() : -1;
     function foraDaDispProf(hora) {
@@ -337,13 +368,19 @@
       return hh * 60 + mm < ih * 60 + im || hh * 60 + mm > fh * 60 + fm;
     }
 
+    // O serviço novo precisa caber antes do horário de fechamento
+    function naoCobeNoHorario(hora) {
+      const [fh, fm] = fimEfetivo.split(':').map(Number);
+      return toMin(hora) + duracaoServico > fh * 60 + fm;
+    }
+
     const grade = document.getElementById('gradeHorarios');
     grade.innerHTML = '';
     if (!slots.length) { grade.innerHTML = '<div class="empty-msg">Nenhum horário disponível.</div>'; return; }
     let algumDisp = false;
     slots.forEach(hora => {
       const el = document.createElement('div');
-      const ocupado = ocupados.has(hora) || foraDaDispProf(hora);
+      const ocupado = slotOcupado(hora) || slotConflitaFuturo(hora) || foraDaDispProf(hora) || naoCobeNoHorario(hora);
       if (!ocupado) algumDisp = true;
       el.className = 'slot' + (ocupado ? ' ocupado' : '') + (hora === horaSel ? ' selecionado' : '');
       el.textContent = hora;
@@ -385,9 +422,21 @@
     agendamentos = load(STORAGE_KEY_AGENDAMENTOS, []);
     clientes = load(STORAGE_KEY_CLIENTES, []);
 
-    // Verificar se horário ainda está disponível (concorrência)
-    const ainda = agendamentos.find(a => a.data === dataSel && a.hora === horaSel && (!profissionalId || a.profissionalId === profissionalId));
-    if (ainda) { alert('Este horário acabou de ser ocupado. Por favor escolha outro.'); irParaPasso(3); renderHorarios(); return; }
+    // Verificar conflito com duração (releitura fresca do localStorage para evitar concorrência)
+    const servConf = servicos.find(s => s.id === servicoId);
+    const durConf = servConf ? (servConf.duracao || intervalo) : intervalo;
+    function toMinC(h) { const [hh, mm] = h.split(':').map(Number); return hh * 60 + mm; }
+    const minNovo = toMinC(horaSel);
+    const fimNovo = minNovo + durConf;
+    const agendsDiaConf = agendamentos.filter(a => a.data === dataSel && (profissionalId ? a.profissionalId === profissionalId : true));
+    const conflito = agendsDiaConf.some(a => {
+      const servA = servicos.find(s => s.id === a.servicoId);
+      const durA = servA ? (servA.duracao || intervalo) : intervalo;
+      const inicioA = toMinC(a.hora);
+      const fimA = inicioA + durA;
+      return minNovo < fimA && fimNovo > inicioA; // sobreposição
+    });
+    if (conflito) { alert('Este horário acabou de ser ocupado. Por favor escolha outro.'); irParaPasso(3); renderHorarios(); return; }
 
     // Encontrar ou criar cliente
     let cli = clientes.find(c => c.telefone && c.telefone.replace(/\D/g,'') === tel.replace(/\D/g,''));
