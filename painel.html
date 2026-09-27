@@ -2687,7 +2687,10 @@
           const prof = state.profissionais.find(p => p.id === a.profissionalId);
           const label = [cli ? cli.nome.split(' ')[0] : '?', serv ? serv.nome : ''].filter(Boolean).join(' · ');
           const cor = prof ? hashCor(prof.id) : 'var(--cor-primaria)';
-          return `<div class="cal-evento${a.origem === 'online' ? ' online' : ''}" style="${a.origem !== 'online' ? 'background:' + cor : ''}" data-agenda-id="${a.id}" title="${label}${prof ? ' · ' + prof.nome : ''}">${label}</div>`;
+          const cancelado = a.canceladoCliente;
+          const estiloCancelado = cancelado ? 'background:#fee2e2!important;color:#b91c1c;text-decoration:line-through;opacity:.8;border:1px solid #fca5a5' : '';
+          const labelCancelado = cancelado ? '✗ ' + label : label;
+          return `<div class="cal-evento${a.origem === 'online' ? ' online' : ''}" style="${cancelado ? estiloCancelado : (a.origem !== 'online' ? 'background:' + cor : '')}" data-agenda-id="${a.id}" title="${cancelado ? 'CANCELADO · ' : ''}${label}${prof ? ' · ' + prof.nome : ''}">${labelCancelado}</div>`;
         }).join('');
 
         const continuacaoHtml = (dentroDeOcupado && !agendsDaCelula.length)
