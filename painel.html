@@ -1370,6 +1370,9 @@
   function uid() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
+  function nextNum(lista) {
+    return (lista.reduce((mx, x) => Math.max(mx, x._num || 0), 0)) + 1;
+  }
   function gerarCodigoMaster() {
     return Math.random().toString(36).slice(2, 8).toUpperCase();
   }
@@ -1606,6 +1609,7 @@
     e.preventDefault();
     const servico = {
       id: uid(),
+      _num: nextNum(state.servicos),
       nome: document.getElementById('servNome').value.trim(),
       preco: parseFloat(document.getElementById('servPreco').value),
       duracao: parseInt(document.getElementById('servDuracao').value, 10),
@@ -1637,7 +1641,7 @@
           <div class="name">${esc(s.nome)}</div>
           <div class="meta">${formatMoney(s.preco)} · ${s.duracao} min</div>
           <div class="meta">${s.insumos.length ? `Insumos: ${formatMoney(custo)} · Margem: ${fmtMargem(f.margem)}` : 'Sem ficha de custo'}</div>
-          <div class="meta" style="font-size:11px;color:#9ca3af">ID: ${s.id}</div>
+          <div class="meta" style="font-size:11px;color:#9ca3af">Serviço #${s._num || s.id}</div>
           <div class="actions">
             <button class="btn secondary small" data-ficha-servico="${s.id}">Ficha de custo</button>
             <button class="btn danger small" data-del-servico="${s.id}">Excluir</button>
@@ -1761,7 +1765,7 @@
       custoUsoOverride: custoUsoVal > 0 && Math.abs(custoUsoVal - calculado) > 0.001 ? custoUsoVal : null
     };
     if (id) Object.assign(state.produtos.find(x => x.id === id), dados);
-    else state.produtos.push(Object.assign({ id: uid() }, dados));
+    else state.produtos.push(Object.assign({ id: uid(), _num: nextNum(state.produtos) }, dados));
     save(STORAGE_KEYS.produtos, state.produtos);
     fecharFormProduto();
     renderEstoque();
@@ -1774,7 +1778,7 @@
     const lista = [...state.produtos].sort((a, b) => a.nome.localeCompare(b.nome));
     document.querySelector('#estoqueTabela tbody').innerHTML = lista.length ? lista.map(p => `
       <tr>
-        <td style="font-size:11px;color:#9ca3af;font-family:monospace">${p.id}</td>
+        <td style="font-size:11px;color:#9ca3af;font-family:monospace">#${p._num || p.id}</td>
         <td>${esc(p.nome)}</td>
         <td>${fmtQtd(p.quantidade)} ${esc(p.unidade)}</td>
         <td>${fmtQtd(p.quantidade * p.usosPorEmbalagem)}</td>
@@ -2168,7 +2172,7 @@
     if (id) {
       Object.assign(state.clientes.find(c => c.id === id), dados);
     } else {
-      state.clientes.push(Object.assign({ id: uid(), criadoEm: todayISO(), dataAvaliacao: todayISO(), statusCliente: statusVazio(), evolucoes: [], orcamentos: [], tratamentos: [] }, dados, { anamneseCapilar: {}, anamneseManicure: {}, anamneseCilios: {}, anamneseSobrancelha: {}, anamneseDepilacao: {} }));
+      state.clientes.push(Object.assign({ id: uid(), _num: nextNum(state.clientes), criadoEm: todayISO(), dataAvaliacao: todayISO(), statusCliente: statusVazio(), evolucoes: [], orcamentos: [], tratamentos: [] }, dados, { anamneseCapilar: {}, anamneseManicure: {}, anamneseCilios: {}, anamneseSobrancelha: {}, anamneseDepilacao: {} }));
     }
     save(STORAGE_KEYS.clientes, state.clientes);
     modalCliente.classList.remove('open');
@@ -2246,7 +2250,7 @@
         <div>
           <h3 style="margin-bottom:4px">${esc(c.nome)}</h3>
           <div style="font-size:13px;color:#6b7280">${esc(c.telefone) || 'sem telefone'} ${c.email ? '· ' + esc(c.email) : ''}</div>
-          <div style="font-size:11px;color:#9ca3af;margin-top:2px">ID: ${c.id}</div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:2px">Cliente #${c._num || c.id}</div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <button class="btn small" id="btnVerEvolucao">📈 Ver evolução</button>
