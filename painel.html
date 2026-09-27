@@ -2635,6 +2635,21 @@
     // Profissional filtrado (para verificar disponibilidade)
     const profFiltrado = filtro ? state.profissionais.find(p => p.id === filtro) : null;
 
+    // Helper: "HH:MM" → minutos
+    function toMinCal(h) { const [hh, mm] = h.split(':').map(Number); return hh * 60 + mm; }
+
+    // Pré-calcular quais slots estão cobertos por algum agendamento (considerando duração)
+    // Retorna Map<iso, Set<minutos_ocupados>>
+    const ocMin = {};
+    state.agendamentos.forEach(a => {
+      if (filtro && a.profissionalId !== filtro) return;
+      const s = state.servicos.find(x => x.id === a.servicoId);
+      const dur = s ? (s.duracao || intervalo) : intervalo;
+      const ini = toMinCal(a.hora);
+      if (!ocMin[a.data]) ocMin[a.data] = [];
+      ocMin[a.data].push({ ini, fim: ini + dur, agendId: a.id, horaInicio: a.hora });
+    });
+
     // Linhas por hora
     horas.forEach(hora => {
       const [hh, mm] = hora.split(':').map(Number);
@@ -2647,29 +2662,37 @@
         // Verificar disponibilidade do profissional selecionado
         let foraDaDisp = false;
         if (profFiltrado) {
-          const diaSemana = new Date(iso + 'T12:00:00').getDay(); // 0=Dom
+          const diaSemana = new Date(iso + 'T12:00:00').getDay();
           const diasDisp = profFiltrado.diasDisp || [1,2,3,4,5];
           const [ih, im] = (profFiltrado.horarioInicio || '08:00').split(':').map(Number);
           const [fh, fm] = (profFiltrado.horarioFim || '19:00').split(':').map(Number);
-          const minInicio = ih * 60 + im;
-          const minFim = fh * 60 + fm;
-          foraDaDisp = !diasDisp.includes(diaSemana) || minHora < minInicio || minHora > minFim;
+          foraDaDisp = !diasDisp.includes(diaSemana) || minHora < ih * 60 + im || minHora > fh * 60 + fm;
         }
 
-        // Agendamentos nesta célula
+        // Agendamentos que COMEÇAM nesta célula (para exibir o evento)
         let agendsDaCelula = state.agendamentos.filter(a => a.data === iso && a.hora === hora);
         if (filtro) agendsDaCelula = agendsDaCelula.filter(a => a.profissionalId === filtro);
+
+        // Esta célula está dentro da duração de algum agendamento?
+        const blocos = ocMin[iso] || [];
+        const dentroDeOcupado = blocos.some(b => minHora > b.ini && minHora < b.fim);
+        // label de continuação
+        const blocoIniciante = blocos.find(b => toMinCal(b.horaInicio) === minHora);
 
         const eventosHtml = agendsDaCelula.map(a => {
           const cli = state.clientes.find(c => c.id === a.clienteId);
           const serv = state.servicos.find(s => s.id === a.servicoId);
           const prof = state.profissionais.find(p => p.id === a.profissionalId);
           const label = [cli ? cli.nome.split(' ')[0] : '?', serv ? serv.nome : ''].filter(Boolean).join(' · ');
-          const cor = prof ? (hashCor(prof.id)) : 'var(--cor-primaria)';
+          const cor = prof ? hashCor(prof.id) : 'var(--cor-primaria)';
           return `<div class="cal-evento${a.origem === 'online' ? ' online' : ''}" style="${a.origem !== 'online' ? 'background:' + cor : ''}" data-agenda-id="${a.id}" title="${label}${prof ? ' · ' + prof.nome : ''}">${label}</div>`;
         }).join('');
 
-        html += `<div class="cal-cell${isHoje ? ' hoje' : ''}${passado ? ' passado' : ''}${foraDaDisp ? ' fora-disp' : ''}" data-cal-data="${iso}" data-cal-hora="${hora}"${foraDaDisp ? ' title="Fora do horário de atendimento"' : ''}>${eventosHtml}</div>`;
+        const continuacaoHtml = (dentroDeOcupado && !agendsDaCelula.length)
+          ? `<div style="height:100%;background:repeating-linear-gradient(135deg,rgba(0,0,0,.04) 0,rgba(0,0,0,.04) 3px,transparent 3px,transparent 6px);pointer-events:none"></div>`
+          : '';
+
+        html += `<div class="cal-cell${isHoje ? ' hoje' : ''}${passado ? ' passado' : ''}${foraDaDisp ? ' fora-disp' : ''}${dentroDeOcupado ? ' em-uso' : ''}" data-cal-data="${iso}" data-cal-hora="${hora}"${foraDaDisp ? ' title="Fora do horário de atendimento"' : ''}${dentroDeOcupado ? ' title="Em uso (continuação de serviço)"' : ''}>${eventosHtml}${continuacaoHtml}</div>`;
       });
     });
 
