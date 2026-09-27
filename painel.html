@@ -384,6 +384,8 @@
   .cal-cell.hoje { background: #fefce8; }
   .cal-cell.passado { background: #fafafa; cursor: default; }
   .cal-cell.passado:hover { background: #fafafa; }
+  .cal-cell.fora-disp { background: repeating-linear-gradient(135deg, #f3f4f6 0px, #f3f4f6 4px, #e9eaec 4px, #e9eaec 8px); cursor: not-allowed; opacity: 0.7; }
+  .cal-cell.fora-disp:hover { background: repeating-linear-gradient(135deg, #f3f4f6 0px, #f3f4f6 4px, #e9eaec 4px, #e9eaec 8px); }
   .cal-evento { position: absolute; left: 2px; right: 2px; top: 2px; border-radius: 5px; padding: 2px 5px; font-size: 11px; font-weight: 600; color: #fff; background: var(--cor-primaria); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; z-index: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
   .cal-evento.online { background: #059669; }
   .cal-evento:hover { opacity: 0.88; }
@@ -599,6 +601,23 @@
               <div class="field"><label>Senha de acesso</label><input type="text" id="profSenha" required placeholder="Senha para o profissional entrar"></div>
               <div class="field"><label>Cadeiras/vagas simultâneas</label><input type="number" id="profCadeiras" min="1" step="1" value="1" required></div>
               <div class="field"><label>Foto</label><input type="file" id="profFoto" accept="image/*"></div>
+            </div>
+            <!-- Disponibilidade -->
+            <div class="field" style="grid-column:1/-1;margin-top:8px">
+              <label>Dias de atendimento</label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px" id="profDiasCheck">
+                <label style="display:flex;align-items:center;gap:4px;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0"><input type="checkbox" value="1" checked> Seg</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0"><input type="checkbox" value="2" checked> Ter</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0"><input type="checkbox" value="3" checked> Qua</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0"><input type="checkbox" value="4" checked> Qui</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0"><input type="checkbox" value="5" checked> Sex</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0"><input type="checkbox" value="6"> Sáb</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0"><input type="checkbox" value="0"> Dom</label>
+              </div>
+            </div>
+            <div class="form-grid" style="margin-top:8px">
+              <div class="field"><label>Horário de início</label><input type="time" id="profHorarioInicio" value="08:00"></div>
+              <div class="field"><label>Horário de término</label><input type="time" id="profHorarioFim" value="19:00"></div>
             </div>
             <div class="btn-row">
               <button type="submit" class="btn">Salvar profissional</button>
@@ -1973,9 +1992,13 @@
     const especialidade = document.getElementById('profEspecialidade').value.trim();
     const senha = document.getElementById('profSenha').value.trim();
     const cadeiras = Math.max(1, parseInt(document.getElementById('profCadeiras').value, 10) || 1);
+    const diasDisp = Array.from(document.querySelectorAll('#profDiasCheck input[type=checkbox]')).filter(c => c.checked).map(c => Number(c.value));
+    const horarioInicio = document.getElementById('profHorarioInicio').value || '08:00';
+    const horarioFim = document.getElementById('profHorarioFim').value || '19:00';
     if (id) {
       const p = state.profissionais.find(x => x.id === id);
       p.nome = nome; p.especialidade = especialidade; p.senha = senha; p.cadeiras = cadeiras;
+      p.diasDisp = diasDisp; p.horarioInicio = horarioInicio; p.horarioFim = horarioFim;
       if (pendingProfFoto) p.foto = pendingProfFoto;
     } else {
       const lic = licencaAtualFresca();
@@ -1983,7 +2006,7 @@
         abrirModalLimite(lic);
         return;
       }
-      state.profissionais.push({ id: uid(), nome, especialidade, senha, cadeiras, foto: pendingProfFoto });
+      state.profissionais.push({ id: uid(), nome, especialidade, senha, cadeiras, diasDisp, horarioInicio, horarioFim, foto: pendingProfFoto });
     }
     save(STORAGE_KEYS.profissionais, state.profissionais);
     e.target.reset();
@@ -2017,6 +2040,7 @@
           <div class="name">${p.nome}</div>
           <div class="meta">${p.especialidade || 'Sem especialidade definida'}</div>
           <div class="meta">${p.cadeiras} cadeira(s) simultânea(s)</div>
+          <div class="meta" style="color:#059669;font-size:11px">${(() => { const nomes = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']; const dias = p.diasDisp || [1,2,3,4,5]; return '🗓 ' + dias.map(d => nomes[d]).join(', ') + ' · ' + (p.horarioInicio||'08:00') + '–' + (p.horarioFim||'19:00'); })()}</div>
           <div class="actions">
             <button class="btn secondary small" data-edit-prof="${p.id}">Editar</button>
             <button class="btn danger small" data-del-prof="${p.id}">Excluir</button>
@@ -2037,6 +2061,10 @@
       document.getElementById('profEspecialidade').value = p.especialidade;
       document.getElementById('profSenha').value = p.senha;
       document.getElementById('profCadeiras').value = p.cadeiras;
+      document.getElementById('profHorarioInicio').value = p.horarioInicio || '08:00';
+      document.getElementById('profHorarioFim').value = p.horarioFim || '19:00';
+      const diasSalvos = p.diasDisp || [1,2,3,4,5];
+      document.querySelectorAll('#profDiasCheck input[type=checkbox]').forEach(c => { c.checked = diasSalvos.includes(Number(c.value)); });
       pendingProfFoto = '';
       document.getElementById('btnCancelarEdicaoProf').style.display = 'inline-block';
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2540,13 +2568,30 @@
       html += `<div class="cal-day-header" style="${isHoje ? 'color:#059669;background:#f0fdf4' : ''}">${nomeDia[i]}<br><span style="font-size:14px;font-weight:800">${d.getDate()}/${d.getMonth() + 1}</span></div>`;
     });
 
+    // Profissional filtrado (para verificar disponibilidade)
+    const profFiltrado = filtro ? state.profissionais.find(p => p.id === filtro) : null;
+
     // Linhas por hora
     horas.forEach(hora => {
       const [hh, mm] = hora.split(':').map(Number);
+      const minHora = hh * 60 + mm;
       html += `<div class="cal-hora-label" style="grid-column:1">${hora}</div>`;
       dias.forEach(iso => {
         const passado = iso < hoje || (iso === hoje && hh * 60 + mm < agora.getHours() * 60 + agora.getMinutes());
         const isHoje = iso === hoje;
+
+        // Verificar disponibilidade do profissional selecionado
+        let foraDaDisp = false;
+        if (profFiltrado) {
+          const diaSemana = new Date(iso + 'T12:00:00').getDay(); // 0=Dom
+          const diasDisp = profFiltrado.diasDisp || [1,2,3,4,5];
+          const [ih, im] = (profFiltrado.horarioInicio || '08:00').split(':').map(Number);
+          const [fh, fm] = (profFiltrado.horarioFim || '19:00').split(':').map(Number);
+          const minInicio = ih * 60 + im;
+          const minFim = fh * 60 + fm;
+          foraDaDisp = !diasDisp.includes(diaSemana) || minHora < minInicio || minHora > minFim;
+        }
+
         // Agendamentos nesta célula
         let agendsDaCelula = state.agendamentos.filter(a => a.data === iso && a.hora === hora);
         if (filtro) agendsDaCelula = agendsDaCelula.filter(a => a.profissionalId === filtro);
@@ -2560,7 +2605,7 @@
           return `<div class="cal-evento${a.origem === 'online' ? ' online' : ''}" style="${a.origem !== 'online' ? 'background:' + cor : ''}" data-agenda-id="${a.id}" title="${label}${prof ? ' · ' + prof.nome : ''}">${label}</div>`;
         }).join('');
 
-        html += `<div class="cal-cell${isHoje ? ' hoje' : ''}${passado ? ' passado' : ''}" data-cal-data="${iso}" data-cal-hora="${hora}">${eventosHtml}</div>`;
+        html += `<div class="cal-cell${isHoje ? ' hoje' : ''}${passado ? ' passado' : ''}${foraDaDisp ? ' fora-disp' : ''}" data-cal-data="${iso}" data-cal-hora="${hora}"${foraDaDisp ? ' title="Fora do horário de atendimento"' : ''}>${eventosHtml}</div>`;
       });
     });
 
@@ -2580,7 +2625,7 @@
         return;
       }
       const cell = e.target.closest('[data-cal-data]');
-      if (!cell || cell.classList.contains('passado')) return;
+      if (!cell || cell.classList.contains('passado') || cell.classList.contains('fora-disp')) return;
       abrirModalNovoAgendamento(cell.dataset.calData, cell.dataset.calHora);
     });
   }
