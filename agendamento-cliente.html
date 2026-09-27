@@ -298,12 +298,28 @@
     const ocupados = new Set(
       agendamentos.filter(a => a.data === dataSel && (!profissionalId || a.profissionalId === profissionalId)).map(a => a.hora)
     );
+
+    // Calcular horários bloqueados pela disponibilidade do profissional
+    const prof = profissionalId ? profissionais.find(p => p.id === profissionalId) : null;
+    const diaSemana = dataSel ? new Date(dataSel + 'T12:00:00').getDay() : -1;
+    function foraDaDispProf(hora) {
+      if (!prof) return false;
+      const diasDisp = prof.diasDisp || [1,2,3,4,5];
+      if (!diasDisp.includes(diaSemana)) return true;
+      const [hh, mm] = hora.split(':').map(Number);
+      const [ih, im] = (prof.horarioInicio || abStr).split(':').map(Number);
+      const [fh, fm] = (prof.horarioFim || feStr).split(':').map(Number);
+      return hh * 60 + mm < ih * 60 + im || hh * 60 + mm > fh * 60 + fm;
+    }
+
     const grade = document.getElementById('gradeHorarios');
     grade.innerHTML = '';
     if (!slots.length) { grade.innerHTML = '<div class="empty-msg">Nenhum horário disponível.</div>'; return; }
+    let algumDisp = false;
     slots.forEach(hora => {
       const el = document.createElement('div');
-      const ocupado = ocupados.has(hora);
+      const ocupado = ocupados.has(hora) || foraDaDispProf(hora);
+      if (!ocupado) algumDisp = true;
       el.className = 'slot' + (ocupado ? ' ocupado' : '') + (hora === horaSel ? ' selecionado' : '');
       el.textContent = hora;
       if (!ocupado) {
@@ -317,6 +333,7 @@
       }
       grade.appendChild(el);
     });
+    if (!algumDisp) grade.innerHTML = '<div class="empty-msg">Nenhum horário disponível neste dia.</div>';
   }
 
   // ---------- Resumo e confirmação ----------
