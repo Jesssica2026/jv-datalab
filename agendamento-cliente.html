@@ -270,14 +270,21 @@
     const offset = primeiroDia.getDay(); // 0=dom
     for (let i = 0; i < offset; i++) { const el = document.createElement('div'); grade.appendChild(el); }
 
+    // Dias disponíveis do serviço selecionado
+    const servSel = servicos.find(s => s.id === servicoId);
+    const diasDispServ = servSel && servSel.diasDisp ? servSel.diasDisp : [0,1,2,3,4,5,6];
+
     for (let dia = 1; dia <= ultimoDia.getDate(); dia++) {
       const d = new Date(ref.getFullYear(), ref.getMonth(), dia);
       const iso = isoLocal(d);
       const passado = iso < isoHoje();
+      const diaIndisponivel = !diasDispServ.includes(d.getDay());
+      const bloqueado = passado || diaIndisponivel;
       const el = document.createElement('div');
-      el.className = 'dia' + (passado ? ' bloqueado' : '') + (iso === dataSel ? ' selecionado' : '');
+      el.className = 'dia' + (bloqueado ? ' bloqueado' : '') + (iso === dataSel ? ' selecionado' : '');
+      if (diaIndisponivel && !passado) el.title = 'Serviço não disponível neste dia';
       el.innerHTML = `<div class="dw">${DW[d.getDay()]}</div><div class="dd">${dia}</div>`;
-      if (!passado) {
+      if (!bloqueado) {
         el.addEventListener('click', () => {
           dataSel = iso;
           irParaPasso(3);
@@ -294,7 +301,25 @@
   // ---------- Horários ----------
   function renderHorarios() {
     document.getElementById('labelDataSelecionada').textContent = `Data: ${formatDateBR(dataSel)}`;
-    const slots = gerarSlots();
+
+    // Usar horário do serviço se configurado, senão horário geral do salão
+    const servSel = servicos.find(s => s.id === servicoId);
+    const inicioEfetivo = (servSel && servSel.horarioInicio) ? servSel.horarioInicio : abStr;
+    const fimEfetivo = (servSel && servSel.horarioFim) ? servSel.horarioFim : feStr;
+
+    function gerarSlotsServico() {
+      const [ah, am] = inicioEfetivo.split(':').map(Number);
+      const [fh, fm] = fimEfetivo.split(':').map(Number);
+      const slots = [];
+      let h = ah, m = am;
+      while (h * 60 + m <= fh * 60 + fm) {
+        slots.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+        m += intervalo; if (m >= 60) { h++; m -= 60; }
+      }
+      return slots;
+    }
+
+    const slots = gerarSlotsServico();
     const ocupados = new Set(
       agendamentos.filter(a => a.data === dataSel && (!profissionalId || a.profissionalId === profissionalId)).map(a => a.hora)
     );
@@ -307,8 +332,8 @@
       const diasDisp = prof.diasDisp || [1,2,3,4,5];
       if (!diasDisp.includes(diaSemana)) return true;
       const [hh, mm] = hora.split(':').map(Number);
-      const [ih, im] = (prof.horarioInicio || abStr).split(':').map(Number);
-      const [fh, fm] = (prof.horarioFim || feStr).split(':').map(Number);
+      const [ih, im] = (prof.horarioInicio || inicioEfetivo).split(':').map(Number);
+      const [fh, fm] = (prof.horarioFim || fimEfetivo).split(':').map(Number);
       return hh * 60 + mm < ih * 60 + im || hh * 60 + mm > fh * 60 + fm;
     }
 
