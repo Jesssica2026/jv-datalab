@@ -2833,10 +2833,43 @@
     }
     if (!clienteId) { alert('Cadastre ao menos um cliente antes de agendar.'); return; }
     if (!servicoId) { alert('Cadastre ao menos um serviço antes de agendar.'); return; }
+    const novaData = document.getElementById('agendaData').value;
+    const novaHora = document.getElementById('agendaHora').value;
+    if (!novaData || !novaHora) { alert('Informe a data e o horário.'); return; }
+
+    // Verificar conflito de horário com duração (mesmo profissional, mesmo dia)
+    function toMinP(h) { const [hh, mm] = h.split(':').map(Number); return hh * 60 + mm; }
+    const servNovo = state.servicos.find(s => s.id === servicoId);
+    const durNovo = servNovo ? (servNovo.duracao || state.config.intervaloGrade || 30) : (state.config.intervaloGrade || 30);
+    const minNovo = toMinP(novaHora);
+    const fimNovo = minNovo + durNovo;
+    const agendsDia = state.agendamentos.filter(a =>
+      a.data === novaData &&
+      a.profissionalId === profissionalId &&
+      !a.canceladoCliente
+    );
+    const conflito = agendsDia.some(a => {
+      const servA = state.servicos.find(s => s.id === a.servicoId);
+      const durA = servA ? (servA.duracao || state.config.intervaloGrade || 30) : (state.config.intervaloGrade || 30);
+      const inicioA = toMinP(a.hora);
+      const fimA = inicioA + durA;
+      return minNovo < fimA && fimNovo > inicioA;
+    });
+    if (conflito) {
+      const servConflito = agendsDia.find(a => {
+        const servA = state.servicos.find(s => s.id === a.servicoId);
+        const durA = servA ? (servA.duracao || 30) : 30;
+        return minNovo < toMinP(a.hora) + durA && fimNovo > toMinP(a.hora);
+      });
+      const nomeServ = servConflito ? (state.servicos.find(s => s.id === servConflito.servicoId) || {}).nome || '' : '';
+      alert(`Conflito de horário! Já existe um agendamento de "${nomeServ}" às ${servConflito ? servConflito.hora : novaHora} que ocupa este período.`);
+      return;
+    }
+
     state.agendamentos.push({
       id: uid(),
-      data: document.getElementById('agendaData').value,
-      hora: document.getElementById('agendaHora').value,
+      data: novaData,
+      hora: novaHora,
       clienteId, servicoId, profissionalId,
       origem: 'manual'
     });
