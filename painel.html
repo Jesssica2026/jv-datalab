@@ -2766,11 +2766,16 @@
       const serv = state.servicos.find(s => s.id === a.servicoId);
       const prof = state.profissionais.find(p => p.id === a.profissionalId);
       const profTxt = session.tipo === 'admin' ? ` · ${prof ? prof.nome : 'Não atribuído'}` : '';
-      return `<div class="list-row">
-        <span>${formatDateBR(a.data)} às ${a.hora} — ${cli ? cli.nome : 'Cliente'} (${serv ? serv.nome : 'Serviço'})${profTxt}${a.origem === 'online' ? '<span class="badge">Online</span>' : ''}</span>
+      const canceladoCli = a.canceladoCliente;
+      return `<div class="list-row" style="${canceladoCli ? 'opacity:.6;background:#fff5f5' : ''}">
+        <span style="${canceladoCli ? 'text-decoration:line-through' : ''}">
+          ${formatDateBR(a.data)} às ${a.hora} — ${cli ? cli.nome : 'Cliente'} (${serv ? serv.nome : 'Serviço'})${profTxt}
+          ${a.origem === 'online' ? '<span class="badge">Online</span>' : ''}
+          ${canceladoCli ? '<span class="badge" style="background:#fee2e2;color:#b91c1c">Cancelado pelo cliente</span>' : ''}
+        </span>
         <span style="display:flex;gap:6px;flex-shrink:0">
-          <button class="btn gold small" data-whats-agenda="${a.id}" title="Enviar WhatsApp">🟢</button>
-          <button class="btn danger small" data-cancel-list="${a.id}">Cancelar</button>
+          ${!canceladoCli ? `<button class="btn gold small" data-whats-agenda="${a.id}" title="Enviar WhatsApp">🟢</button>` : ''}
+          ${!canceladoCli ? `<button class="btn danger small" data-cancel-list="${a.id}">Cancelar</button>` : `<button class="btn secondary small" data-delete-agend="${a.id}">Remover</button>`}
         </span>
       </div>`;
     }).join('') : '<div class="empty-msg">Nenhum agendamento futuro.</div>';
@@ -2786,6 +2791,16 @@
     if (whatsBtn) {
       const a = state.agendamentos.find(x => x.id === whatsBtn.dataset.whatsAgenda);
       abrirModalWhatsapp(a);
+      return;
+    }
+    const delId = e.target.dataset.deleteAgend;
+    if (delId) {
+      if (confirm('Remover este agendamento cancelado?')) {
+        state.agendamentos = state.agendamentos.filter(a => a.id !== delId);
+        save(STORAGE_KEYS.agendamentos, state.agendamentos);
+        renderAgendamentos();
+        renderDashboard();
+      }
       return;
     }
     const id = e.target.dataset.cancelList;
