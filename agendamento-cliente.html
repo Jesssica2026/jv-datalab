@@ -53,10 +53,22 @@
   .resumo-linha { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--borda); font-size: 13px; }
   .resumo-linha:last-child { border-bottom: none; }
   .alert { background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 12px 14px; font-size: 13px; margin-bottom: 14px; }
-  #telaConfirmado { display: none; text-align: center; padding: 40px 20px; }
-  #telaConfirmado .icon { font-size: 56px; margin-bottom: 12px; }
-  #telaConfirmado h2 { color: #059669; margin-bottom: 8px; }
-  #telaConfirmado p { color: #6b7280; font-size: 14px; margin-bottom: 20px; }
+  #telaConfirmado { display: none; padding: 30px 0; }
+  .confirmado-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 14px; padding: 28px 20px; text-align: center; margin-bottom: 16px; }
+  .confirmado-box .icon { font-size: 52px; margin-bottom: 10px; }
+  .confirmado-box h2 { color: #059669; margin-bottom: 6px; font-size: 20px; }
+  .confirmado-box .num-agend { display: inline-block; background: #059669; color: #fff; border-radius: 999px; font-size: 12px; font-weight: 700; padding: 3px 12px; margin-bottom: 10px; }
+  .confirmado-box p { color: #374151; font-size: 14px; line-height: 1.6; }
+  /* Meus agendamentos */
+  .meus-agend-lista { margin-top: 12px; }
+  .agend-card { border: 1px solid var(--borda); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; background: var(--bg-card); }
+  .agend-card .agend-serv { font-weight: 700; font-size: 15px; color: var(--cor-primaria); margin-bottom: 4px; }
+  .agend-card .agend-meta { font-size: 13px; color: #6b7280; margin-bottom: 8px; }
+  .agend-card .agend-status { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; }
+  .status-confirmado { background: #d1fae5; color: #065f46; }
+  .status-cancelado { background: #fee2e2; color: #991b1b; }
+  .btn-cancelar { background: #fee2e2; color: #b91c1c; border: none; border-radius: 7px; padding: 7px 14px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px; }
+  .btn-cancelar:hover { background: #fecaca; }
 </style>
 </head>
 <body>
@@ -149,11 +161,31 @@
 </div>
 
 <!-- Tela de confirmado -->
-<div id="telaConfirmado">
-  <div class="icon">🎉</div>
-  <h2>Agendamento confirmado!</h2>
-  <p id="msgConfirmado"></p>
-  <button class="btn btn-gold" id="btnNovoAgendamento">Fazer outro agendamento</button>
+<div id="telaConfirmado" class="container">
+  <div class="confirmado-box">
+    <div class="icon">🎉</div>
+    <h2>Agendamento confirmado!</h2>
+    <div class="num-agend" id="numAgend"></div>
+    <p id="msgConfirmado"></p>
+  </div>
+  <div style="display:flex;gap:10px;flex-direction:column">
+    <button class="btn btn-gold" id="btnVerMeusAgendamentos">📋 Ver meus agendamentos</button>
+    <button class="btn" style="background:#f3f4f6;color:#374151" id="btnNovoAgendamento">+ Fazer outro agendamento</button>
+  </div>
+</div>
+
+<!-- Tela: Meus agendamentos -->
+<div id="telaMeusAgendamentos" style="display:none" class="container">
+  <div class="card" style="margin-top:4px">
+    <h2>📋 Meus agendamentos</h2>
+    <div class="field">
+      <label>Seu WhatsApp</label>
+      <input type="tel" id="buscarTelefone" placeholder="(11) 99999-9999">
+    </div>
+    <button class="btn btn-primary" id="btnBuscarAgendamentos">Buscar</button>
+  </div>
+  <div id="resultadoMeusAgend" class="meus-agend-lista"></div>
+  <button class="btn" style="background:#f3f4f6;color:#374151;margin-top:4px" id="btnVoltarConfirmado">← Voltar</button>
 </div>
 
 <!-- Erro / Salão não encontrado -->
@@ -461,6 +493,8 @@
 
     const serv = servicos.find(s => s.id === servicoId);
     const prof = profissionais.find(p => p.id === profId);
+    const numAgend = agendamentos.filter(a => a.origem === 'online').length;
+    document.getElementById('numAgend').textContent = `#${String(numAgend).padStart(4,'0')}`;
     document.getElementById('msgConfirmado').innerHTML = `
       <strong>${esc(serv ? serv.nome : 'Serviço')}</strong><br>
       ${prof ? `Profissional: <strong>${esc(prof.nome)}</strong><br>` : ''}
@@ -469,6 +503,8 @@
     `;
     document.getElementById('telaAgendamento').style.display = 'none';
     document.getElementById('telaConfirmado').style.display = '';
+    // Pré-preencher telefone para busca rápida
+    document.getElementById('buscarTelefone').value = tel;
   });
 
   document.getElementById('btnNovoAgendamento').addEventListener('click', () => {
@@ -482,6 +518,73 @@
     document.getElementById('telaAgendamento').style.display = '';
     irParaPasso(1);
   });
+
+  // ---------- Ver meus agendamentos ----------
+  document.getElementById('btnVerMeusAgendamentos').addEventListener('click', () => {
+    document.getElementById('telaConfirmado').style.display = 'none';
+    document.getElementById('telaMeusAgendamentos').style.display = '';
+    buscarMeusAgendamentos();
+  });
+
+  document.getElementById('btnVoltarConfirmado').addEventListener('click', () => {
+    document.getElementById('telaMeusAgendamentos').style.display = 'none';
+    document.getElementById('telaConfirmado').style.display = '';
+  });
+
+  document.getElementById('btnBuscarAgendamentos').addEventListener('click', buscarMeusAgendamentos);
+  document.getElementById('buscarTelefone').addEventListener('keydown', e => { if (e.key === 'Enter') buscarMeusAgendamentos(); });
+
+  function buscarMeusAgendamentos() {
+    const tel = document.getElementById('buscarTelefone').value.trim().replace(/\D/g,'');
+    const div = document.getElementById('resultadoMeusAgend');
+    if (!tel) { div.innerHTML = '<p style="color:#9ca3af;text-align:center;padding:16px">Digite seu WhatsApp para buscar.</p>'; return; }
+
+    const agendsFresh = load(STORAGE_KEY_AGENDAMENTOS, []);
+    const clientesFresh = load(STORAGE_KEY_CLIENTES, []);
+
+    const cli = clientesFresh.find(c => c.telefone && c.telefone.replace(/\D/g,'') === tel);
+    if (!cli) { div.innerHTML = '<p style="color:#9ca3af;text-align:center;padding:16px">Nenhum agendamento encontrado para este número.</p>'; return; }
+
+    const hoje = isoHoje();
+    // Ordenar: futuros primeiro, depois passados
+    const meus = agendsFresh
+      .filter(a => a.clienteId === cli.id)
+      .sort((a, b) => (a.data + a.hora) < (b.data + b.hora) ? 1 : -1);
+
+    if (!meus.length) { div.innerHTML = '<p style="color:#9ca3af;text-align:center;padding:16px">Nenhum agendamento encontrado.</p>'; return; }
+
+    const MESES_ABR = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+    div.innerHTML = meus.map(a => {
+      const serv = servicos.find(s => s.id === a.servicoId);
+      const prof = profissionais.find(p => p.id === a.profissionalId);
+      const cancelado = a.canceladoCliente;
+      const passado = a.data < hoje;
+      const podeCanc = !cancelado && !passado;
+      const [ay, am, ad] = a.data.split('-');
+      const dataFmt = `${parseInt(ad)} de ${MESES_ABR[parseInt(am)-1]} de ${ay}`;
+      return `<div class="agend-card">
+        <div class="agend-serv">${esc(serv ? serv.nome : 'Serviço')}</div>
+        <div class="agend-meta">
+          📅 ${dataFmt} às ${a.hora}
+          ${prof ? `· <span>👤 ${esc(prof.nome)}</span>` : ''}
+          ${serv && serv.duracao ? `· ⏱ ${serv.duracao} min` : ''}
+        </div>
+        <span class="agend-status ${cancelado ? 'status-cancelado' : 'status-confirmado'}">${cancelado ? '✗ Cancelado' : passado ? '✓ Realizado' : '✓ Confirmado'}</span>
+        ${podeCanc ? `<br><button class="btn-cancelar" data-cancel-id="${a.id}">Cancelar agendamento</button>` : ''}
+      </div>`;
+    }).join('');
+
+    // Listener de cancelamento
+    div.querySelectorAll('[data-cancel-id]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!confirm('Tem certeza que deseja cancelar este agendamento?')) return;
+        const agendsMut = load(STORAGE_KEY_AGENDAMENTOS, []);
+        const idx = agendsMut.findIndex(a => a.id === btn.dataset.cancelId);
+        if (idx !== -1) { agendsMut[idx].canceladoCliente = true; save(STORAGE_KEY_AGENDAMENTOS, agendsMut); agendamentos = agendsMut; }
+        buscarMeusAgendamentos();
+      });
+    });
+  }
 
   // Botões voltar
   document.getElementById('btnVoltarPasso1').addEventListener('click', () => irParaPasso(1));
