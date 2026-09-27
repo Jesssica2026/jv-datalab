@@ -373,6 +373,20 @@
   .ficha-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; border-bottom: 1px solid var(--cor-borda); padding-bottom: 10px; }
   .ficha-tab-btn { background: none; border: 1px solid var(--cor-borda); color: #4b5162; padding: 7px 13px; border-radius: 999px; font-size: 12.5px; cursor: pointer; font-weight: 600; font-family: inherit; }
   .ficha-tab-btn.active { background: var(--cor-primaria); color: #fff; border-color: var(--cor-primaria); }
+  /* ---- Grade de calendário ---- */
+  .cal-grid { display: grid; min-width: 600px; }
+  .cal-header { display: contents; }
+  .cal-hora-col { width: 52px; min-width: 52px; }
+  .cal-day-header { padding: 8px 4px; text-align: center; font-size: 12px; font-weight: 700; color: var(--cor-primaria); border-bottom: 2px solid var(--cor-borda); background: var(--bg-card); position: sticky; top: 0; z-index: 2; }
+  .cal-hora-label { font-size: 11px; color: #9ca3af; text-align: right; padding-right: 8px; padding-top: 4px; border-right: 1px solid var(--cor-borda); line-height: 1; white-space: nowrap; }
+  .cal-cell { border-bottom: 1px solid #f0f0f0; border-right: 1px solid var(--cor-borda); min-height: 36px; position: relative; cursor: pointer; transition: background 0.15s; }
+  .cal-cell:hover { background: #f0fdf4; }
+  .cal-cell.hoje { background: #fefce8; }
+  .cal-cell.passado { background: #fafafa; cursor: default; }
+  .cal-cell.passado:hover { background: #fafafa; }
+  .cal-evento { position: absolute; left: 2px; right: 2px; top: 2px; border-radius: 5px; padding: 2px 5px; font-size: 11px; font-weight: 600; color: #fff; background: var(--cor-primaria); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; z-index: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+  .cal-evento.online { background: #059669; }
+  .cal-evento:hover { opacity: 0.88; }
   .tabela-scroll { overflow-x: auto; }
   .diff-neg { color: #1a7d3a; font-weight: 700; }
   .diff-pos { color: #b3261e; font-weight: 700; }
@@ -637,50 +651,72 @@
 
       <!-- AGENDAMENTOS -->
       <section class="page" id="page-agendamentos">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:16px">
           <div>
             <h2 class="page-title" id="agendaPageTitle">Agendamentos</h2>
-            <p class="page-sub" id="agendaPageSub">Cadastre horários livremente e acompanhe os agendamentos de todos os profissionais</p>
+            <p class="page-sub" id="agendaPageSub">Visão semanal da agenda — clique num horário vazio para agendar</p>
           </div>
-          <button class="btn gold admin-only" id="btnCompartilharLink" type="button">🔗 Compartilhar link de agendamento</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn secondary small" id="btnListaAgendamentos" type="button">☰ Lista</button>
+            <button class="btn secondary small" id="btnCalendarioAgendamentos" type="button" style="font-weight:700">📅 Semana</button>
+            <button class="btn gold admin-only" id="btnCompartilharLink" type="button">🔗 Link do cliente</button>
+          </div>
         </div>
-        <div class="card">
-          <h3>Novo agendamento</h3>
-          <form id="formAgendamento">
-            <div class="form-grid">
-              <div class="field" id="campoAgendaProfissional">
-                <label>Profissional</label>
-                <select id="agendaProfissional" required></select>
-              </div>
-              <div class="field">
-                <label>Cliente</label>
-                <select id="agendaCliente" required></select>
-              </div>
-              <div class="field">
-                <label>Serviço</label>
-                <select id="agendaServico" required></select>
-              </div>
-              <div class="field">
-                <label>Data</label>
-                <input type="date" id="agendaData" required>
-              </div>
-              <div class="field">
-                <label>Horário</label>
-                <input type="time" id="agendaHora" required>
-              </div>
-            </div>
-            <div class="btn-row">
-              <button type="submit" class="btn">Adicionar agendamento</button>
-            </div>
-          </form>
+
+        <!-- Controles de semana + filtro profissional -->
+        <div class="card" style="padding:12px 16px;margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <button class="btn secondary small" id="btnSemanaAnterior">‹ Anterior</button>
+          <span id="labelSemana" style="font-weight:600;font-size:14px;min-width:200px;text-align:center"></span>
+          <button class="btn secondary small" id="btnProximaSemana">Próxima ›</button>
+          <button class="btn small" id="btnSemanaHoje" style="margin-left:8px">Hoje</button>
+          <div id="campoFiltroProfissional" class="admin-only" style="margin-left:auto">
+            <select id="filtroProfissional" style="max-width:220px;padding:6px 10px;border-radius:6px;border:1px solid var(--borda)">
+              <option value="">Todos os profissionais</option>
+            </select>
+          </div>
         </div>
-        <div class="card admin-only" style="margin-top:20px" id="campoFiltroProfissional">
-          <label>Filtrar por profissional</label>
-          <select id="filtroProfissional" style="max-width:280px"></select>
+
+        <!-- Vista CALENDÁRIO SEMANAL -->
+        <div id="vistaCalendario" class="card" style="overflow-x:auto;padding:0">
+          <div id="gradeCalendario"></div>
         </div>
-        <div class="card" style="margin-top:20px">
-          <h3>Todos os agendamentos futuros</h3>
-          <div id="listaAgendamentos"></div>
+
+        <!-- Vista LISTA (oculta por padrão) -->
+        <div id="vistaLista" style="display:none">
+          <div class="card" style="margin-bottom:16px">
+            <h3>Novo agendamento</h3>
+            <form id="formAgendamento">
+              <div class="form-grid">
+                <div class="field" id="campoAgendaProfissional">
+                  <label>Profissional</label>
+                  <select id="agendaProfissional" required></select>
+                </div>
+                <div class="field">
+                  <label>Cliente</label>
+                  <select id="agendaCliente" required></select>
+                </div>
+                <div class="field">
+                  <label>Serviço</label>
+                  <select id="agendaServico" required></select>
+                </div>
+                <div class="field">
+                  <label>Data</label>
+                  <input type="date" id="agendaData" required>
+                </div>
+                <div class="field">
+                  <label>Horário</label>
+                  <input type="time" id="agendaHora" required>
+                </div>
+              </div>
+              <div class="btn-row">
+                <button type="submit" class="btn">Adicionar agendamento</button>
+              </div>
+            </form>
+          </div>
+          <div class="card">
+            <h3>Agendamentos futuros</h3>
+            <div id="listaAgendamentos"></div>
+          </div>
         </div>
       </section>
 
@@ -1430,6 +1466,8 @@
   let licencaAtiva = null;
   let clienteSelecionadoId = null;
   let abaAtivaCliente = 'anamnese';
+  let calSemanaOffset = 0;
+  let agendaVistaAtual = 'calendario';
 
   // ---------- Navigation ----------
   document.getElementById('menuNav').addEventListener('click', (e) => {
@@ -1447,7 +1485,7 @@
     document.querySelectorAll('nav.menu button').forEach(b => b.classList.toggle('active', b.dataset.page === pageId));
     document.getElementById('topbarTitle').textContent = document.querySelector('#page-' + pageId + ' .page-title').textContent;
     if (pageId === 'dashboard') renderDashboard();
-    if (pageId === 'agendamentos') renderAgendamentos();
+    if (pageId === 'agendamentos') { if (agendaVistaAtual === 'calendario') renderGradeCalendario(); else renderAgendamentos(); }
     if (pageId === 'clientes') renderClientes();
     if (pageId === 'galeria') renderGaleria();
     if (pageId === 'profissionais') renderProfissionais();
@@ -2449,6 +2487,137 @@
   // ---------- Agendamentos ----------
   document.getElementById('agendaData').value = todayISO();
 
+  // ---------- Calendário semanal ----------
+
+  function segundaFeira(offset) {
+    const hoje = new Date();
+    const dow = hoje.getDay(); // 0=dom
+    const seg = new Date(hoje);
+    seg.setDate(hoje.getDate() - (dow === 0 ? 6 : dow - 1) + offset * 7);
+    seg.setHours(0, 0, 0, 0);
+    return seg;
+  }
+
+  function diasDaSemana(offset) {
+    const seg = segundaFeira(offset);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(seg);
+      d.setDate(seg.getDate() + i);
+      return isoLocal(d);
+    });
+  }
+
+  function horasGrade() {
+    const ab = (state.config.horarioAbertura || '08:00').split(':').map(Number);
+    const fe = (state.config.horarioFechamento || '19:00').split(':').map(Number);
+    const slots = [];
+    let h = ab[0], m = ab[1] || 0;
+    const intervalo = state.config.intervaloGrade || 30;
+    while (h * 60 + m <= fe[0] * 60 + (fe[1] || 0)) {
+      slots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+      m += intervalo;
+      if (m >= 60) { h++; m -= 60; }
+    }
+    return slots;
+  }
+
+  function renderGradeCalendario() {
+    const dias = diasDaSemana(calSemanaOffset);
+    const horas = horasGrade();
+    const hoje = todayISO();
+    const agora = new Date();
+    const filtro = session.tipo === 'profissional' ? session.profissionalId : (document.getElementById('filtroProfissional').value || null);
+
+    const nomeDia = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+    const numCols = 8; // hora + 7 dias
+    let html = `<div class="cal-grid" style="grid-template-columns:52px repeat(7,1fr)">`;
+
+    // Header
+    html += `<div class="cal-day-header cal-hora-col"></div>`;
+    dias.forEach((iso, i) => {
+      const d = new Date(iso + 'T12:00:00');
+      const isHoje = iso === hoje;
+      html += `<div class="cal-day-header" style="${isHoje ? 'color:#059669;background:#f0fdf4' : ''}">${nomeDia[i]}<br><span style="font-size:14px;font-weight:800">${d.getDate()}/${d.getMonth() + 1}</span></div>`;
+    });
+
+    // Linhas por hora
+    horas.forEach(hora => {
+      const [hh, mm] = hora.split(':').map(Number);
+      html += `<div class="cal-hora-label" style="grid-column:1">${hora}</div>`;
+      dias.forEach(iso => {
+        const passado = iso < hoje || (iso === hoje && hh * 60 + mm < agora.getHours() * 60 + agora.getMinutes());
+        const isHoje = iso === hoje;
+        // Agendamentos nesta célula
+        let agendsDaCelula = state.agendamentos.filter(a => a.data === iso && a.hora === hora);
+        if (filtro) agendsDaCelula = agendsDaCelula.filter(a => a.profissionalId === filtro);
+
+        const eventosHtml = agendsDaCelula.map(a => {
+          const cli = state.clientes.find(c => c.id === a.clienteId);
+          const serv = state.servicos.find(s => s.id === a.servicoId);
+          const prof = state.profissionais.find(p => p.id === a.profissionalId);
+          const label = [cli ? cli.nome.split(' ')[0] : '?', serv ? serv.nome : ''].filter(Boolean).join(' · ');
+          const cor = prof ? (hashCor(prof.id)) : 'var(--cor-primaria)';
+          return `<div class="cal-evento${a.origem === 'online' ? ' online' : ''}" style="${a.origem !== 'online' ? 'background:' + cor : ''}" data-agenda-id="${a.id}" title="${label}${prof ? ' · ' + prof.nome : ''}">${label}</div>`;
+        }).join('');
+
+        html += `<div class="cal-cell${isHoje ? ' hoje' : ''}${passado ? ' passado' : ''}" data-cal-data="${iso}" data-cal-hora="${hora}">${eventosHtml}</div>`;
+      });
+    });
+
+    html += `</div>`;
+    document.getElementById('gradeCalendario').innerHTML = html;
+
+    // Label da semana
+    const d0 = new Date(dias[0] + 'T12:00:00'), d6 = new Date(dias[6] + 'T12:00:00');
+    document.getElementById('labelSemana').textContent = `${d0.getDate()}/${d0.getMonth() + 1} — ${d6.getDate()}/${d6.getMonth() + 1}/${d6.getFullYear()}`;
+
+    // Clique em célula vazia → abre modal de novo agendamento pré-preenchido
+    document.getElementById('gradeCalendario').addEventListener('click', (e) => {
+      const evento = e.target.closest('[data-agenda-id]');
+      if (evento) {
+        const a = state.agendamentos.find(x => x.id === evento.dataset.agendaId);
+        if (a) abrirModalWhatsapp(a);
+        return;
+      }
+      const cell = e.target.closest('[data-cal-data]');
+      if (!cell || cell.classList.contains('passado')) return;
+      abrirModalNovoAgendamento(cell.dataset.calData, cell.dataset.calHora);
+    });
+  }
+
+  // Cores distintas por profissional
+  function hashCor(id) {
+    const CORES = ['#7c3aed','#0891b2','#be185d','#d97706','#16a34a','#2563eb','#9333ea','#0f766e'];
+    let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) & 0xffff;
+    return CORES[h % CORES.length];
+  }
+
+  // Modal rápido de novo agendamento (chamado ao clicar na grade)
+  function abrirModalNovoAgendamento(data, hora) {
+    // Preenche o form da lista e muda para vista lista
+    mudarVistaAgenda('lista');
+    document.getElementById('agendaData').value = data;
+    document.getElementById('agendaHora').value = hora;
+    document.getElementById('agendaData').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    showToast(`Data ${formatDateBR(data)} às ${hora} pré-selecionada`);
+  }
+
+  function mudarVistaAgenda(vista) {
+    agendaVistaAtual = vista;
+    document.getElementById('vistaCalendario').style.display = vista === 'calendario' ? '' : 'none';
+    document.getElementById('vistaLista').style.display = vista === 'lista' ? '' : 'none';
+    document.getElementById('btnCalendarioAgendamentos').style.fontWeight = vista === 'calendario' ? '800' : '';
+    document.getElementById('btnListaAgendamentos').style.fontWeight = vista === 'lista' ? '800' : '';
+    if (vista === 'calendario') renderGradeCalendario();
+    else renderAgendamentos();
+  }
+
+  document.getElementById('btnCalendarioAgendamentos').addEventListener('click', () => mudarVistaAgenda('calendario'));
+  document.getElementById('btnListaAgendamentos').addEventListener('click', () => mudarVistaAgenda('lista'));
+  document.getElementById('btnSemanaAnterior').addEventListener('click', () => { calSemanaOffset--; renderGradeCalendario(); });
+  document.getElementById('btnProximaSemana').addEventListener('click', () => { calSemanaOffset++; renderGradeCalendario(); });
+  document.getElementById('btnSemanaHoje').addEventListener('click', () => { calSemanaOffset = 0; renderGradeCalendario(); });
+
   function renderAgendamentos() {
     let lista = state.agendamentos.filter(a => a.data >= todayISO());
     if (session.tipo === 'profissional') {
@@ -2473,7 +2642,10 @@
     }).join('') : '<div class="empty-msg">Nenhum agendamento futuro.</div>';
   }
 
-  document.getElementById('filtroProfissional').addEventListener('change', renderAgendamentos);
+  document.getElementById('filtroProfissional').addEventListener('change', () => {
+    if (agendaVistaAtual === 'calendario') renderGradeCalendario();
+    else renderAgendamentos();
+  });
 
   document.getElementById('listaAgendamentos').addEventListener('click', (e) => {
     const whatsBtn = e.target.closest('[data-whats-agenda]');
@@ -2518,9 +2690,9 @@
     });
     save(STORAGE_KEYS.agendamentos, state.agendamentos);
     document.getElementById('agendaHora').value = '';
-    renderAgendamentos();
+    mudarVistaAgenda('calendario');
     renderDashboard();
-    showToast('Agendamento adicionado!');
+    showToast('Agendamento adicionado! 📅');
   });
 
   // ---------- Link de agendamento do cliente ----------
