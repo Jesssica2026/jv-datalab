@@ -73,11 +73,12 @@
 </head>
 <body>
 
-<header id="headerNegocio">
+<header id="headerNegocio" style="justify-content:space-between">
   <div>
     <div class="nome" id="headerNome">Carregando...</div>
     <div class="sub">Agendamento online</div>
   </div>
+  <button id="btnHeaderMeusAgend" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">📋 Meus agendamentos</button>
 </header>
 
 <div class="container" id="telaAgendamento">
@@ -520,15 +521,20 @@
   });
 
   // ---------- Ver meus agendamentos ----------
-  document.getElementById('btnVerMeusAgendamentos').addEventListener('click', () => {
+  function abrirTelaMeusAgendamentos() {
+    document.getElementById('telaAgendamento').style.display = 'none';
     document.getElementById('telaConfirmado').style.display = 'none';
     document.getElementById('telaMeusAgendamentos').style.display = '';
     buscarMeusAgendamentos();
-  });
+  }
+
+  document.getElementById('btnHeaderMeusAgend').addEventListener('click', abrirTelaMeusAgendamentos);
+
+  document.getElementById('btnVerMeusAgendamentos').addEventListener('click', abrirTelaMeusAgendamentos);
 
   document.getElementById('btnVoltarConfirmado').addEventListener('click', () => {
     document.getElementById('telaMeusAgendamentos').style.display = 'none';
-    document.getElementById('telaConfirmado').style.display = '';
+    document.getElementById('telaAgendamento').style.display = '';
   });
 
   document.getElementById('btnBuscarAgendamentos').addEventListener('click', buscarMeusAgendamentos);
