@@ -65,6 +65,18 @@
   .status-cancelado { background: #fee2e2; color: #991b1b; }
   .btn-cancelar { background: #fee2e2; color: #b91c1c; border: none; border-radius: 7px; padding: 7px 14px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px; }
   .btn-cancelar:hover { background: #fecaca; }
+  .aviso-reagendar { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 12px 14px; margin-top: 10px; font-size: 13px; color: #92400e; line-height: 1.5; }
+  .modal-overlay-cli { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); align-items: center; justify-content: center; z-index: 900; padding: 16px; }
+  .modal-overlay-cli.open { display: flex; }
+  .modal-cli { background: #fff; border-radius: 14px; padding: 24px 20px; width: 100%; max-width: 400px; box-shadow: 0 8px 30px rgba(0,0,0,0.18); }
+  .modal-cli h3 { font-size: 16px; color: var(--cor-primaria); margin-bottom: 8px; }
+  .modal-cli p { font-size: 13px; color: #6b7280; margin-bottom: 14px; line-height: 1.5; }
+  .modal-cli textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--borda); border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; min-height: 80px; }
+  .modal-cli textarea:focus { outline: 2px solid var(--cor-secundaria); border-color: transparent; }
+  .modal-cli .erro-campo { color: #b91c1c; font-size: 12px; margin-top: 5px; display: none; }
+  .modal-cli-btns { display: flex; gap: 10px; margin-top: 14px; }
+  .modal-cli-btns .btn-confirm { flex: 1; background: #b91c1c; color: #fff; border: none; border-radius: 8px; padding: 11px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .modal-cli-btns .btn-back { flex: 1; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; padding: 11px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
   input.campo-erro { border-color: #b91c1c !important; background: #fff5f5; }
   input.campo-ok { border-color: #059669 !important; }
 </style>
@@ -187,6 +199,20 @@
   </div>
   <div id="resultadoMeusAgend" class="meus-agend-lista"></div>
   <button class="btn" style="background:#f3f4f6;color:#374151;margin-top:4px" id="btnVoltarConfirmado">← Voltar</button>
+</div>
+
+<!-- Modal: motivo de cancelamento -->
+<div class="modal-overlay-cli" id="modalMotivoCancelCli">
+  <div class="modal-cli">
+    <h3>Cancelar agendamento</h3>
+    <p>Informe o motivo do cancelamento para continuar.</p>
+    <textarea id="motivoCancelCli" placeholder="Ex: Compromisso de última hora, viagem, questão de saúde..."></textarea>
+    <div class="erro-campo" id="erroMotivoCancelCli">Informe o motivo para cancelar.</div>
+    <div class="modal-cli-btns">
+      <button class="btn-confirm" id="btnConfirmarCancelCli">Confirmar cancelamento</button>
+      <button class="btn-back" id="btnVoltarCancelCli">Voltar</button>
+    </div>
+  </div>
 </div>
 
 <!-- Erro / Clínica não encontrada -->
@@ -625,24 +651,43 @@
           </div>
           <span class="agend-status ${statusClass}">${statusLabel}</span>
           ${podeCancelar ? `<br><button class="btn-cancelar" data-cancel-id="${a.id}">Cancelar agendamento</button>` : ''}
+          ${cancelado ? `<div class="aviso-reagendar">🔄 Para reagendar, entre em contato diretamente com a clínica.</div>` : ''}
         </div>
       `;
     }).join('');
 
+    let _cancelIdPendente = null;
     resultado.querySelectorAll('[data-cancel-id]').forEach(btn => {
       btn.addEventListener('click', () => {
-        if (!confirm('Deseja cancelar este agendamento?')) return;
-        const id       = btn.getAttribute('data-cancel-id');
-        const agendsMut = load(STORAGE_KEY_AGENDAMENTOS, []);
-        const idx = agendsMut.findIndex(a => a.id === id);
-        if (idx !== -1) {
-          agendsMut[idx].canceladoCliente = true;
-          agendsMut[idx].canceladoEm      = new Date().toISOString();
-          save(STORAGE_KEY_AGENDAMENTOS, agendsMut);
-        }
-        buscarMeusAgendamentos();
+        _cancelIdPendente = btn.getAttribute('data-cancel-id');
+        document.getElementById('motivoCancelCli').value = '';
+        document.getElementById('erroMotivoCancelCli').style.display = 'none';
+        document.getElementById('modalMotivoCancelCli').classList.add('open');
       });
     });
+    document.getElementById('btnVoltarCancelCli').onclick = () => {
+      document.getElementById('modalMotivoCancelCli').classList.remove('open');
+      _cancelIdPendente = null;
+    };
+    document.getElementById('btnConfirmarCancelCli').onclick = () => {
+      const motivo = document.getElementById('motivoCancelCli').value.trim();
+      if (!motivo) {
+        document.getElementById('erroMotivoCancelCli').style.display = '';
+        return;
+      }
+      const id = _cancelIdPendente;
+      const agendsMut = load(STORAGE_KEY_AGENDAMENTOS, []);
+      const idx = agendsMut.findIndex(a => a.id === id);
+      if (idx !== -1) {
+        agendsMut[idx].canceladoCliente  = true;
+        agendsMut[idx].canceladoEm       = new Date().toISOString();
+        agendsMut[idx].motivoCancelamento = motivo;
+        save(STORAGE_KEY_AGENDAMENTOS, agendsMut);
+      }
+      document.getElementById('modalMotivoCancelCli').classList.remove('open');
+      _cancelIdPendente = null;
+      buscarMeusAgendamentos();
+    };
   }
 
   // -------- Tela de erro --------
