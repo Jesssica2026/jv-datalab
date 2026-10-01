@@ -162,6 +162,10 @@
         <label>CPF *</label>
         <input type="text" id="cliCpf" placeholder="000.000.000-00" inputmode="numeric">
         <span id="erroCpf" style="display:none;color:#b91c1c;font-size:12px;margin-top:4px">⚠ CPF inválido. Verifique e tente novamente.</span>
+        <div id="avisoCpfBloqueado" style="display:none;margin-top:10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px 14px;font-size:13px;color:#92400e;line-height:1.5">
+          🚫 <strong>Agendamento temporariamente indisponível.</strong><br>
+          Você cancelou um agendamento recentemente. Para reagendar, entre em contato diretamente com a clínica.
+        </div>
       </div>
     </div>
     <div class="card">
@@ -308,12 +312,41 @@
   document.getElementById('cliTelefone').addEventListener('blur', function() {
     if (this.value) setFieldState(this, document.getElementById('erroTelefone'), validarTelefone(this.value));
   });
+  function checarBloqueioCancel(cpfVal) {
+    const cpfLimpo = cpfVal.replace(/\D/g,'');
+    if (cpfLimpo.length < 11) return false;
+    const clisFresh = load(STORAGE_KEY_CLIENTES, []);
+    const agFresh   = load(STORAGE_KEY_AGENDAMENTOS, []);
+    const cli = clisFresh.find(c => c.cpf && c.cpf.replace(/\D/g,'') === cpfLimpo);
+    if (!cli) return false;
+    const agora = Date.now();
+    return agFresh.some(a =>
+      a.clienteId === cli.id &&
+      a.canceladoCliente &&
+      a.canceladoEm &&
+      (agora - new Date(a.canceladoEm).getTime()) < 24 * 60 * 60 * 1000
+    );
+  }
+  function atualizarAvisoCpf() {
+    const bloqueado = checarBloqueioCancel(document.getElementById('cliCpf').value);
+    document.getElementById('avisoCpfBloqueado').style.display = bloqueado ? '' : 'none';
+    const btnConf = document.getElementById('btnConfirmar');
+    btnConf.disabled = bloqueado;
+    btnConf.style.opacity = bloqueado ? '.4' : '';
+    btnConf.style.cursor  = bloqueado ? 'not-allowed' : '';
+  }
   document.getElementById('cliCpf').addEventListener('input', function() {
     this.value = mascaraCpf(this.value);
-    if (this.value.replace(/\D/g,'').length === 11) setFieldState(this, document.getElementById('erroCpf'), validarCpf(this.value));
+    if (this.value.replace(/\D/g,'').length === 11) {
+      setFieldState(this, document.getElementById('erroCpf'), validarCpf(this.value));
+      atualizarAvisoCpf();
+    }
   });
   document.getElementById('cliCpf').addEventListener('blur', function() {
-    if (this.value) setFieldState(this, document.getElementById('erroCpf'), validarCpf(this.value));
+    if (this.value) {
+      setFieldState(this, document.getElementById('erroCpf'), validarCpf(this.value));
+      atualizarAvisoCpf();
+    }
   });
   document.getElementById('buscarCpf').addEventListener('input', function() {
     this.value = mascaraCpf(this.value);
@@ -524,6 +557,24 @@
     agendamentos = load(STORAGE_KEY_AGENDAMENTOS, []);
     clientes     = load(STORAGE_KEY_CLIENTES, []);
 
+    // Verificar bloqueio por cancelamento nas últimas 24h
+    const agendsTodos = load(STORAGE_KEY_AGENDAMENTOS, []);
+    const cpfLimpo = cpf.replace(/\D/g,'');
+    const cliExistente = clientes.find(c => c.cpf && c.cpf.replace(/\D/g,'') === cpfLimpo);
+    if (cliExistente) {
+      const agora = Date.now();
+      const cancelRecente = agendsTodos.find(a =>
+        a.clienteId === cliExistente.id &&
+        a.canceladoCliente &&
+        a.canceladoEm &&
+        (agora - new Date(a.canceladoEm).getTime()) < 24 * 60 * 60 * 1000
+      );
+      if (cancelRecente) {
+        alert('Você cancelou um agendamento recentemente.\nPara reagendar, entre em contato diretamente com a clínica. 😊');
+        return;
+      }
+    }
+
     // Verificar conflito
     const servConf = servicos.find(s => s.id === servicoId);
     const durConf  = servConf ? (servConf.duracao || intervalo) : intervalo;
@@ -591,6 +642,9 @@
     document.getElementById('cliNome').value       = '';
     document.getElementById('cliTelefone').value   = '';
     document.getElementById('cliCpf').value        = '';
+    document.getElementById('avisoCpfBloqueado').style.display = 'none';
+    document.getElementById('btnConfirmar').disabled = false;
+    document.getElementById('btnConfirmar').style.opacity = '';
     calMesOffset = 0;
     document.getElementById('telaConfirmado').style.display  = 'none';
     document.getElementById('telaAgendamento').style.display = '';
