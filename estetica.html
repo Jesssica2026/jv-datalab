@@ -1256,54 +1256,57 @@
 
       <!-- AGENDAMENTOS -->
       <section class="page" id="page-agendamentos">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:20px">
           <div>
             <h2 class="page-title" id="agendaPageTitle">Agendamentos</h2>
             <p class="page-sub" id="agendaPageSub">Cadastre horários livremente e acompanhe os agendamentos de todos os profissionais</p>
           </div>
-          <button class="btn gold admin-only" id="btnCompartilharLink" type="button">🔗 Compartilhar link de agendamento</button>
-        </div>
-        <div class="card">
-          <h3>Novo agendamento</h3>
-          <form id="formAgendamento">
-            <div class="form-grid">
-              <div class="field" id="campoAgendaProfissional"><label>Profissional</label><select id="agendaProfissional" required></select></div>
-              <div class="field"><label>Cliente</label><select id="agendaCliente" required></select></div>
-              <div class="field"><label>Serviço</label><select id="agendaServico" required></select></div>
-              <div class="field"><label>Data</label><input type="date" id="agendaData" required></div>
-              <div class="field"><label>Horário</label><input type="time" id="agendaHora" required></div>
-            </div>
-            <div class="btn-row"><button type="submit" class="btn">Adicionar agendamento</button></div>
-          </form>
-        </div>
-        <div class="card admin-only" style="margin-top:18px" id="campoFiltroProfissional">
-          <label>Filtrar por profissional</label>
-          <select id="filtroProfissional" style="max-width:280px"></select>
-        </div>
-        <div class="card" style="margin-top:18px">
-          <h3>Disponibilidade</h3>
-          <div id="disponibilidadeAlvoAviso"></div>
-          <div id="disponibilidadeConteudo"></div>
-        </div>
-        <div class="card" style="margin-top:18px">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px">
-            <h3 style="margin-bottom:0">Visão da Agenda</h3>
-            <div style="display:flex;gap:8px;align-items:center">
-              <button type="button" class="btn secondary small gold" id="btnModoDia">Dia</button>
-              <button type="button" class="btn secondary small" id="btnModoSemana">Semana</button>
-            </div>
-          </div>
-          <div id="timelineNav" style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap"></div>
-          <div id="timelineConteudo"></div>
-          <div style="display:flex;gap:16px;margin-top:14px;font-size:12.5px;color:#6b7280;flex-wrap:wrap">
-            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#1a7d3a;margin-right:5px"></span>Disponível</span>
-            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#c9701a;margin-right:5px"></span>Ocupado</span>
-            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#9aa0ab;margin-right:5px"></span>Bloqueado / Fechado</span>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button type="button" class="btn secondary small" id="btnModoLista">Lista</button>
+            <button type="button" class="btn secondary small" id="btnModoSemana">Semana</button>
+            <button class="btn gold small admin-only" id="btnCompartilharLink" type="button">🔗 Link do cliente</button>
           </div>
         </div>
-        <div class="card" style="margin-top:18px">
-          <h3>Todos os agendamentos futuros</h3>
-          <div id="listaAgendamentos"></div>
+
+        <!-- MODO LISTA -->
+        <div id="agendaVistaLista">
+          <div class="card">
+            <h3>Novo agendamento</h3>
+            <form id="formAgendamento">
+              <div class="form-grid">
+                <div class="field" id="campoAgendaProfissional"><label>Profissional</label><select id="agendaProfissional" required></select></div>
+                <div class="field"><label>Cliente</label><select id="agendaCliente" required></select></div>
+                <div class="field"><label>Serviço</label><select id="agendaServico" required></select></div>
+                <div class="field"><label>Data</label><input type="date" id="agendaData" required></div>
+                <div class="field"><label>Horário</label><input type="time" id="agendaHora" required></div>
+              </div>
+              <div class="btn-row"><button type="submit" class="btn">Adicionar agendamento</button></div>
+            </form>
+          </div>
+          <div class="card" style="margin-top:18px">
+            <h3>Agendamentos futuros</h3>
+            <div id="listaAgendamentos"></div>
+          </div>
+        </div>
+
+        <!-- MODO SEMANA -->
+        <div id="agendaVistaSemana" style="display:none">
+          <div class="card" style="margin-bottom:14px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <button type="button" class="btn secondary small" id="btnSemanaAnterior">‹ Anterior</button>
+              <span id="semanaLabel" style="font-size:13px;color:var(--cor-primaria);font-weight:600"></span>
+              <button type="button" class="btn secondary small" id="btnSemanaProxima">Próxima ›</button>
+              <button type="button" class="btn secondary small" id="btnSemanaHoje">Hoje</button>
+              <div class="admin-only" style="margin-left:auto">
+                <select id="filtroSemanaProf" style="max-width:200px;font-size:13px;padding:7px 10px;border:1px solid var(--cor-borda);border-radius:8px;background:#fbfbfd">
+                  <option value="">Todos os profissionais</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="card" style="overflow-x:auto">
+            <div id="gradeSemanaria"></div>
+          </div>
         </div>
       </section>
 
@@ -2162,7 +2165,7 @@
   let licencaAtiva = null;
   let clienteSelecionadoId = null;
   let regiaoAtivaMapa = null;
-  let timelineModo = 'dia';
+  let agendaModo = 'lista'; // 'lista' | 'semana'
   let timelineData = todayISO();
 
   // Quando o Supabase termina a carga inicial, recarrega o state e re-renderiza a tela ativa
@@ -2303,7 +2306,7 @@
     if (pageId === 'ia') iaRenderizarInativos();
     document.getElementById('topbarTitle').textContent = document.querySelector('#page-' + pageId + ' .page-title').textContent;
     if (pageId === 'dashboard') renderDashboard();
-    if (pageId === 'agendamentos') { populateSelectsSeLazyVisible(); renderAgendaCompleta(); }
+    if (pageId === 'agendamentos') { populateSelectsSeLazyVisible(); setAgendaModo(agendaModo); renderAgendaCompleta(); }
     if (pageId === 'clientes') renderClientes();
     if (pageId === 'galeria') renderGaleria();
     if (pageId === 'profissionais') renderProfissionais();
@@ -4043,13 +4046,25 @@
   // ---------- Agendamentos ----------
   document.getElementById('agendaData').value = todayISO();
 
+  function setAgendaModo(modo) {
+    agendaModo = modo;
+    document.getElementById('agendaVistaLista').style.display = modo === 'lista' ? '' : 'none';
+    document.getElementById('agendaVistaSemana').style.display = modo === 'semana' ? '' : 'none';
+    document.getElementById('btnModoLista').classList.toggle('gold', modo === 'lista');
+    document.getElementById('btnModoSemana').classList.toggle('gold', modo === 'semana');
+    if (modo === 'semana') renderGradeSemana();
+  }
+  document.getElementById('btnModoLista').addEventListener('click', () => setAgendaModo('lista'));
+  document.getElementById('btnModoSemana').addEventListener('click', () => setAgendaModo('semana'));
+  document.getElementById('btnSemanaAnterior').addEventListener('click', () => { timelineData = somarDias(timelineData, -7); renderGradeSemana(); });
+  document.getElementById('btnSemanaProxima').addEventListener('click', () => { timelineData = somarDias(timelineData, 7); renderGradeSemana(); });
+  document.getElementById('btnSemanaHoje').addEventListener('click', () => { timelineData = todayISO(); renderGradeSemana(); });
+  document.getElementById('filtroSemanaProf').addEventListener('change', renderGradeSemana);
+
   function renderAgendamentos() {
-    let lista = state.agendamentos.filter(a => a.data >= todayISO());
+    let lista = state.agendamentos.filter(a => a.data >= todayISO() && !a.canceladoCliente);
     if (session.tipo === 'profissional') {
       lista = lista.filter(a => a.profissionalId === session.profissionalId);
-    } else {
-      const filtro = document.getElementById('filtroProfissional').value;
-      if (filtro) lista = lista.filter(a => a.profissionalId === filtro);
     }
     lista.sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
     document.getElementById('listaAgendamentos').innerHTML = lista.length ? lista.map(a => {
@@ -4069,9 +4084,8 @@
   function renderAgendaCompleta() {
     renderAgendamentos();
     renderDisponibilidade();
-    renderTimeline();
+    if (agendaModo === 'semana') renderGradeSemana();
   }
-  document.getElementById('filtroProfissional').addEventListener('change', renderAgendaCompleta);
   document.getElementById('listaAgendamentos').addEventListener('click', (e) => {
     const whatsBtn = e.target.closest('[data-whats-agenda]');
     if (whatsBtn) {
@@ -4119,9 +4133,10 @@
 
   // ---------- Disponibilidade (bloqueios + exceção do dia) ----------
   function renderDisponibilidade() {
-    const alvo = profissionalAlvoAgenda();
     const avisoEl = document.getElementById('disponibilidadeAlvoAviso');
     const contEl = document.getElementById('disponibilidadeConteudo');
+    if (!avisoEl || !contEl) return; // elementos não existem nesta versão da agenda
+    const alvo = profissionalAlvoAgenda();
     if (!alvo) {
       avisoEl.innerHTML = '<div class="empty-msg">Selecione um profissional no filtro acima para gerenciar bloqueios e horários especiais.</div>';
       contEl.innerHTML = '';
@@ -4178,14 +4193,14 @@
       prof.bloqueios.push({ id: uid(), data: document.getElementById('bloqData').value, horaInicio: document.getElementById('bloqInicio').value, horaFim: document.getElementById('bloqFim').value, motivo: document.getElementById('bloqMotivo').value.trim() });
       save(STORAGE_KEYS.profissionais, state.profissionais);
       renderDisponibilidade();
-      renderTimeline();
+      if (agendaModo === 'semana') renderGradeSemana();
       showToast('Horário bloqueado!');
     });
     contEl.querySelectorAll('[data-del-bloqueio]').forEach(btn => btn.addEventListener('click', () => {
       prof.bloqueios = prof.bloqueios.filter(b => b.id !== btn.dataset.delBloqueio);
       save(STORAGE_KEYS.profissionais, state.profissionais);
       renderDisponibilidade();
-      renderTimeline();
+      if (agendaModo === 'semana') renderGradeSemana();
     }));
 
     document.getElementById('formExcecaoDia').addEventListener('submit', (e) => {
@@ -4200,103 +4215,117 @@
       prof.excecoesDia[data] = { ativo, inicio: document.getElementById('excInicio').value, fim: document.getElementById('excFim').value };
       save(STORAGE_KEYS.profissionais, state.profissionais);
       renderDisponibilidade();
-      renderTimeline();
+      if (agendaModo === 'semana') renderGradeSemana();
       showToast('Agenda do dia salva!');
     });
     contEl.querySelectorAll('[data-del-excecao]').forEach(btn => btn.addEventListener('click', () => {
       delete prof.excecoesDia[btn.dataset.delExcecao];
       save(STORAGE_KEYS.profissionais, state.profissionais);
       renderDisponibilidade();
-      renderTimeline();
+      if (agendaModo === 'semana') renderGradeSemana();
     }));
   }
 
-  // ---------- Visão da Agenda (timeline) ----------
-  document.getElementById('btnModoDia').addEventListener('click', () => { timelineModo = 'dia'; renderTimeline(); });
-  document.getElementById('btnModoSemana').addEventListener('click', () => { timelineModo = 'semana'; renderTimeline(); });
+  // ---------- Grade Semanal ----------
+  const CORES_PROF = ['#4f83cc','#e07b39','#6ab04c','#a855f7','#ec4899','#14b8a6','#f59e0b','#64748b'];
 
-  function renderTimelineNav() {
-    document.getElementById('btnModoDia').classList.toggle('gold', timelineModo === 'dia');
-    document.getElementById('btnModoSemana').classList.toggle('gold', timelineModo === 'semana');
-    const nav = document.getElementById('timelineNav');
-    if (timelineModo === 'dia') {
-      nav.innerHTML = `
-        <button type="button" class="btn secondary small" id="btnDiaAnterior">◀</button>
-        <input type="date" id="timelineDataInput" value="${timelineData}" style="max-width:170px">
-        <button type="button" class="btn secondary small" id="btnDiaProximo">▶</button>
-      `;
-      document.getElementById('btnDiaAnterior').addEventListener('click', () => { timelineData = somarDias(timelineData, -1); renderTimeline(); });
-      document.getElementById('btnDiaProximo').addEventListener('click', () => { timelineData = somarDias(timelineData, 1); renderTimeline(); });
-      document.getElementById('timelineDataInput').addEventListener('change', (e) => { timelineData = e.target.value; renderTimeline(); });
-    } else {
-      const inicioSemana = inicioDaSemana(timelineData);
-      const fimSemana = somarDias(inicioSemana, 6);
-      nav.innerHTML = `
-        <button type="button" class="btn secondary small" id="btnSemanaAnterior">◀</button>
-        <span style="font-size:13px;color:var(--cor-primaria);font-weight:600">${formatDateBR(inicioSemana)} — ${formatDateBR(fimSemana)}</span>
-        <button type="button" class="btn secondary small" id="btnSemanaProxima">▶</button>
-      `;
-      document.getElementById('btnSemanaAnterior').addEventListener('click', () => { timelineData = somarDias(timelineData, -7); renderTimeline(); });
-      document.getElementById('btnSemanaProxima').addEventListener('click', () => { timelineData = somarDias(timelineData, 7); renderTimeline(); });
-    }
-  }
+  function renderGradeSemana() {
+    const inicioSemana = inicioDaSemana(timelineData);
+    const fimSemana = somarDias(inicioSemana, 6);
+    document.getElementById('semanaLabel').textContent = formatDateBR(inicioSemana) + ' — ' + formatDateBR(fimSemana);
 
-  function renderTimelineDia(profissionalId, dataISO) {
-    const janelas = janelaDoDia(profissionalId, dataISO);
-    if (!janelas) return '<div class="empty-msg">Profissional não atende neste dia.</div>';
-    const intervalo = state.config.intervaloGrade || 30;
-    const linhas = [];
-    janelas.forEach(j => { for (let t = j.inicio; t < j.fim; t += intervalo) linhas.push(t); });
-    linhas.sort((a, b) => a - b);
-    if (!linhas.length) return '<div class="empty-msg">Nenhum horário configurado para este dia.</div>';
-    return linhas.map(t => {
-      const status = statusDoSlot(profissionalId, dataISO, t, intervalo);
-      const cor = status.tipo === 'ocupado' ? '#c9701a' : (status.tipo === 'bloqueado' ? '#9aa0ab' : '#1a7d3a');
-      const corFundo = status.tipo === 'ocupado' ? 'rgba(201,112,26,0.12)' : (status.tipo === 'bloqueado' ? 'rgba(154,160,171,0.15)' : 'rgba(26,125,58,0.1)');
-      return `
-        <div style="display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:6px;background:${corFundo};margin-bottom:4px">
-          <strong style="min-width:48px;color:var(--cor-primaria);font-size:12.5px">${minParaHora(t)}</strong>
-          <span style="width:8px;height:8px;border-radius:50%;background:${cor};flex-shrink:0"></span>
-          <span style="font-size:12.5px;color:#4b5162">${status.texto}</span>
+    const dias = [];
+    for (let i = 0; i < 7; i++) dias.push(somarDias(inicioSemana, i));
+    const nomesDias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    const hoje = todayISO();
+
+    // profissionais
+    const filtroProf = (document.getElementById('filtroSemanaProf') || {}).value || '';
+    let profs = state.profissionais.filter(p => p.ativo !== false);
+    if (session.tipo === 'profissional') profs = profs.filter(p => p.id === session.profissionalId);
+    else if (filtroProf) profs = profs.filter(p => p.id === filtroProf);
+
+    // Coletar todos agendamentos da semana
+    let agendSemana = state.agendamentos.filter(a => a.data >= inicioSemana && a.data <= fimSemana);
+    if (session.tipo === 'profissional') agendSemana = agendSemana.filter(a => a.profissionalId === session.profissionalId);
+    else if (filtroProf) agendSemana = agendSemana.filter(a => a.profissionalId === filtroProf);
+
+    // Determinar faixa de horas a mostrar
+    let minHora = 8 * 60, maxHora = 19 * 60;
+    agendSemana.forEach(a => {
+      const m = horaParaMin(a.hora);
+      if (m < minHora) minHora = m;
+      const serv = state.servicos.find(s => s.id === a.servicoId);
+      const dur = serv ? (serv.duracao || 60) : 60;
+      if (m + dur > maxHora) maxHora = m + dur;
+    });
+    minHora = Math.floor(minHora / 60) * 60;
+    maxHora = Math.ceil(maxHora / 60) * 60;
+    const totalMin = maxHora - minHora;
+    const PX_POR_MIN = 1.2;
+    const ALTURA = Math.max(320, totalMin * PX_POR_MIN);
+
+    // Mapa de cores por profissional
+    const corPorProf = {};
+    state.profissionais.forEach((p, i) => { corPorProf[p.id] = CORES_PROF[i % CORES_PROF.length]; });
+
+    // Renderizar grade
+    const horas = [];
+    for (let h = minHora; h <= maxHora; h += 60) horas.push(h);
+
+    const colDias = dias.map((d, di) => {
+      const diaAtual = d === hoje;
+      const nomeDia = nomesDias[new Date(d + 'T00:00:00').getDay()];
+      const diaBR = formatDateBR(d).slice(0, 5);
+
+      const agsDia = agendSemana.filter(a => a.data === d);
+
+      const blocos = agsDia.map(a => {
+        const cli = state.clientes.find(c => c.id === a.clienteId);
+        const serv = state.servicos.find(s => s.id === a.servicoId);
+        const prof = state.profissionais.find(p => p.id === a.profissionalId);
+        const dur = serv ? (serv.duracao || 60) : 60;
+        const inicioMin = horaParaMin(a.hora);
+        const top = (inicioMin - minHora) * PX_POR_MIN;
+        const altura = Math.max(22, dur * PX_POR_MIN);
+        const cor = corPorProf[a.profissionalId] || '#4f83cc';
+        const cancelado = a.canceladoCliente;
+        return `<div title="${a.hora} — ${cli ? cli.nome : 'Cliente'}${serv ? ' · ' + serv.nome : ''}" style="position:absolute;left:2px;right:2px;top:${top}px;height:${altura}px;background:${cancelado ? '#fee2e2' : cor};border-left:3px solid ${cancelado ? '#b3261e' : cor};border-radius:4px;padding:2px 5px;overflow:hidden;font-size:10px;color:${cancelado ? '#b3261e' : '#fff'};${cancelado ? 'text-decoration:line-through;opacity:.7' : ''}">
+          <strong>${a.hora}</strong> ${cli ? cli.nome.split(' ')[0] : ''}${serv ? '<br>' + serv.nome : ''}${prof && !filtroProf && session.tipo === 'admin' ? '<br><em>' + prof.nome.split(' ')[0] + '</em>' : ''}
+        </div>`;
+      }).join('');
+
+      return `<div style="flex:1;min-width:90px">
+        <div style="text-align:center;padding:6px 4px 8px;font-size:11.5px;font-weight:700;color:${diaAtual ? 'var(--cor-secundaria)' : 'var(--cor-primaria)'};border-bottom:2px solid ${diaAtual ? 'var(--cor-secundaria)' : 'var(--cor-borda)'}">
+          ${nomeDia}<br><span style="font-weight:400;color:#6b7280">${diaBR}</span>
         </div>
-      `;
-    }).join('');
-  }
-
-  function renderTimelineDiaCompacto(profissionalId, dataISO) {
-    const janelas = janelaDoDia(profissionalId, dataISO);
-    if (!janelas) return '<div style="font-size:10.5px;color:#9aa0ab;text-align:center;padding:6px 0">Fechado</div>';
-    const intervalo = state.config.intervaloGrade || 30;
-    const linhas = [];
-    janelas.forEach(j => { for (let t = j.inicio; t < j.fim; t += intervalo) linhas.push(t); });
-    linhas.sort((a, b) => a - b);
-    if (!linhas.length) return '<div style="font-size:10.5px;color:#9aa0ab;text-align:center;padding:6px 0">Fechado</div>';
-    return linhas.map(t => {
-      const status = statusDoSlot(profissionalId, dataISO, t, intervalo);
-      const cor = status.tipo === 'ocupado' ? '#c9701a' : (status.tipo === 'bloqueado' ? '#9aa0ab' : '#1a7d3a');
-      return `<div title="${minParaHora(t)} — ${status.texto}" style="height:14px;border-radius:3px;background:${cor};margin-bottom:2px"></div>`;
-    }).join('');
-  }
-
-  function renderTimeline() {
-    renderTimelineNav();
-    const alvo = profissionalAlvoAgenda();
-    const cont = document.getElementById('timelineConteudo');
-    if (!alvo) { cont.innerHTML = '<div class="empty-msg">Selecione um profissional para visualizar a agenda.</div>'; return; }
-    if (timelineModo === 'dia') {
-      cont.innerHTML = renderTimelineDia(alvo, timelineData);
-    } else {
-      const inicioSemana = inicioDaSemana(timelineData);
-      const dias = [];
-      for (let i = 0; i < 7; i++) dias.push(somarDias(inicioSemana, i));
-      const nomesDias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-      cont.innerHTML = `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;overflow-x:auto">${dias.map(d => `
-        <div>
-          <div style="font-size:11px;color:#6b7280;text-align:center;margin-bottom:6px;font-weight:600">${nomesDias[new Date(d + 'T00:00:00').getDay()]}<br>${formatDateBR(d).slice(0, 5)}</div>
-          ${renderTimelineDiaCompacto(alvo, d)}
+        <div style="position:relative;height:${ALTURA}px">
+          ${horas.filter(h => h < maxHora).map(h => `<div style="position:absolute;left:0;right:0;top:${(h - minHora) * PX_POR_MIN}px;border-top:1px dashed #e9eaf0;pointer-events:none"></div>`).join('')}
+          ${blocos}
         </div>
-      `).join('')}</div>`;
-    }
+      </div>`;
+    }).join('');
+
+    const horasLateral = horas.filter(h => h <= maxHora).map(h => {
+      const top = (h - minHora) * PX_POR_MIN;
+      return `<div style="position:absolute;top:${top}px;right:4px;font-size:10px;color:#9aa0ab;transform:translateY(-50%)">${minParaHora(h)}</div>`;
+    }).join('');
+
+    const grade = document.getElementById('gradeSemanaria');
+    grade.innerHTML = `
+      <div style="display:flex;min-width:660px">
+        <div style="width:44px;flex-shrink:0;padding-top:44px;position:relative;height:${ALTURA + 44}px">
+          ${horasLateral}
+        </div>
+        <div style="display:flex;flex:1;gap:0">
+          ${colDias}
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;margin-top:14px;flex-wrap:wrap">
+        ${profs.map((p, i) => `<span style="font-size:12px;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${corPorProf[p.id] || CORES_PROF[i % CORES_PROF.length]}"></span>${p.nome}</span>`).join('')}
+        <span style="font-size:12px;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#fee2e2;border:1px solid #b3261e"></span>Cancelado</span>
+      </div>
+    `;
   }
 
   function ensureNegocioId() { if (!state.config.negocioId) { state.config.negocioId = uid(); save(STORAGE_KEYS.config, state.config); } }
@@ -5361,7 +5390,8 @@
 
     const profissionaisOptions = state.profissionais.map(p => `<option value="${p.id}">${p.nome}</option>`).join('') || '<option value="">Cadastre um profissional</option>';
     document.getElementById('agendaProfissional').innerHTML = profissionaisOptions;
-    document.getElementById('filtroProfissional').innerHTML = '<option value="">Todos os profissionais</option>' + profissionaisOptions;
+    const filtroSemEl = document.getElementById('filtroSemanaProf');
+    if (filtroSemEl) filtroSemEl.innerHTML = '<option value="">Todos os profissionais</option>' + profissionaisOptions;
 
     let clientesGaleria = state.clientes;
     if (session && session.tipo === 'profissional') {
