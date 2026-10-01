@@ -896,6 +896,56 @@
           </form>
         </div>
         <div class="items-grid" id="servicosGrid"></div>
+
+        <!-- Pacotes de tratamento na aba Serviços -->
+        <div class="card" style="margin-top:24px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+            <div>
+              <h3 style="margin:0">Pacotes de tratamento</h3>
+              <p style="font-size:12.5px;color:#6b7280;margin:4px 0 0">Crie pacotes para preencher automaticamente o formulário de tratamento</p>
+            </div>
+            <button type="button" class="btn small" id="btnNovoPacoteServicos">+ Novo pacote</button>
+          </div>
+          <div id="tratPacotesListaServicos"><div class="empty-msg">Nenhum pacote cadastrado.</div></div>
+        </div>
+        <!-- Form pacote inline (Serviços) -->
+        <div class="card" id="tratPacoteFormServicos" style="display:none;margin-top:14px">
+          <h3 id="tratPacoteFormTituloServicos">Novo pacote</h3>
+          <input type="hidden" id="pacoteIdServicos">
+          <div class="form-grid">
+            <div class="field"><label>Nome do pacote</label><input type="text" id="pacoteNomeServicos" required placeholder="Ex: Pacote Corporal 10 sessões"></div>
+            <div class="field"><label>Categoria</label>
+              <select id="pacoteCategoriaServicos">
+                <option value="">— Selecionar —</option>
+                <option value="estetica">Estética</option>
+                <option value="harmonizacao_facial">Harmonização Facial</option>
+                <option value="harmonizacao_corporal">Harmonização Corporal</option>
+                <option value="sobrancelha">Sobrancelhas</option>
+                <option value="cilios">Cílios</option>
+                <option value="depilacao">Depilação</option>
+              </select>
+            </div>
+            <div class="field"><label>Nº de sessões</label><input type="number" id="pacoteSessoesServicos" min="1" step="1" placeholder="Ex: 10"></div>
+            <div class="field"><label>Frequência</label>
+              <select id="pacoteFrequenciaServicos">
+                <option value="">Selecione</option>
+                <option value="1x por semana">1x por semana</option>
+                <option value="2x por semana">2x por semana</option>
+                <option value="3x por semana">3x por semana</option>
+                <option value="Quinzenal">Quinzenal</option>
+                <option value="Mensal">Mensal</option>
+                <option value="Sessão única">Sessão única</option>
+              </select>
+            </div>
+            <div class="field"><label>Valor sugerido (R$)</label><input type="number" id="pacoteValorServicos" min="0" step="0.01" placeholder="0,00"></div>
+          </div>
+          <div class="field"><label>Objetivo / Descrição</label><textarea id="pacoteObjetivoServicos" placeholder="Ex: Redução de medidas com drenagem + ultrassom..."></textarea></div>
+          <div class="field"><label>Procedimentos incluídos</label><textarea id="pacoteProcedimentosServicos" placeholder="Liste os procedimentos separados por vírgula"></textarea></div>
+          <div class="btn-row">
+            <button type="button" class="btn" id="btnSalvarPacoteServicos">Salvar pacote</button>
+            <button type="button" class="btn secondary" id="btnCancelarPacoteServicos">Cancelar</button>
+          </div>
+        </div>
       </section>
 
       <!-- PROFISSIONAIS -->
@@ -1102,8 +1152,9 @@
                 <h3>Valor do tratamento</h3>
                 <div class="form-grid">
                   <div class="field">
-                    <label>Valor total (R$) <span style="font-size:11px;color:#6b7280">— aparece no orçamento do cliente</span></label>
+                    <label>Valor total (R$) <span style="font-size:11px;color:#6b7280">— calculado automaticamente ou edite manualmente</span></label>
                     <input type="number" id="tratValor" min="0" step="0.01" placeholder="0,00">
+                    <div style="font-size:11.5px;color:#6b7280;margin-top:4px" id="tratValorOrigen"></div>
                   </div>
                   <div class="field">
                     <label>Forma de pagamento</label>
@@ -1119,6 +1170,13 @@
                   </div>
                 </div>
                 <div id="tratMargemInfo" style="font-size:12.5px;color:#6b7280;margin-top:6px"></div>
+                <!-- Preview financeiro do tratamento -->
+                <div id="tratFinanceiroPreview" style="display:none;margin-top:12px;padding:12px;background:#f4f5f8;border-radius:8px;font-size:13px">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Valor bruto</span><span id="fpvBruto">—</span></div>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#9aa0ab"><span id="fpvTaxaLabel">Taxa da maquininha</span><span id="fpvTaxa">—</span></div>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#9aa0ab"><span>Custo dos produtos</span><span id="fpvCusto">—</span></div>
+                  <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid #d1d5db;font-weight:700"><span>Lucro real</span><span id="fpvLucro">—</span></div>
+                </div>
               </div>
 
               <!-- Botões de ação -->
@@ -2520,6 +2578,8 @@
     showToast('Serviço cadastrado!');
   });
   function renderServicos() {
+    initPacotesServicos();
+    pacotesRenderListaServicos();
     const grid = document.getElementById('servicosGrid');
     if (!state.servicos.length) { grid.innerHTML = '<div class="empty-msg">Nenhum serviço cadastrado ainda.</div>'; return; }
     grid.innerHTML = state.servicos.map(s => {
@@ -6656,6 +6716,105 @@
       state_pacotes.map(p => `<option value="${p.id}">${esc(p.nome)}${p.categoria ? ' ('+( TRAT_CATEGORIAS[p.categoria]?.label || p.categoria)+')' : ''}</option>`).join('');
   }
 
+  // ---- Pacotes de tratamento na página Serviços ----
+  function pacotesRenderListaServicos() {
+    const el = document.getElementById('tratPacotesListaServicos');
+    if (!el) return;
+    if (!state_pacotes.length) { el.innerHTML = '<div class="empty-msg">Nenhum pacote cadastrado.</div>'; return; }
+    el.innerHTML = state_pacotes.map(p => {
+      const cat = TRAT_CATEGORIAS[p.categoria];
+      return `<div class="trat-hist-item" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px">
+          <div>
+            <strong>${esc(p.nome)}</strong>
+            <span style="font-size:12.5px;color:#6b7280"> · ${esc(cat?.label || p.categoria || '')}${p.sessoes ? ' · '+p.sessoes+' sessões' : ''}${p.frequencia ? ' · '+esc(p.frequencia) : ''}</span>
+            ${p.valor ? `<span style="font-size:12.5px;color:var(--cor-secundaria);font-weight:600"> · R$ ${parseFloat(p.valor).toFixed(2).replace('.',',')}</span>` : ''}
+          </div>
+          <div style="display:flex;gap:6px">
+            <button type="button" class="btn secondary small" data-edit-pac-sv="${p.id}">Editar</button>
+            <button type="button" class="btn danger small" data-del-pac-sv="${p.id}">Excluir</button>
+          </div>
+        </div>
+        ${p.objetivo ? `<div style="font-size:12.5px;color:#4b5162;margin-top:4px">${esc(p.objetivo)}</div>` : ''}
+        ${p.procedimentos ? `<div style="font-size:12px;color:#6b7280;margin-top:3px">📋 ${esc(p.procedimentos)}</div>` : ''}
+      </div>`;
+    }).join('');
+    el.querySelectorAll('[data-edit-pac-sv]').forEach(btn => {
+      const p = state_pacotes.find(x => x.id === btn.dataset.editPacSv);
+      if (!p) return;
+      btn.addEventListener('click', () => {
+        document.getElementById('pacoteIdServicos').value = p.id;
+        document.getElementById('pacoteNomeServicos').value = p.nome || '';
+        document.getElementById('pacoteCategoriaServicos').value = p.categoria || '';
+        document.getElementById('pacoteSessoesServicos').value = p.sessoes || '';
+        document.getElementById('pacoteFrequenciaServicos').value = p.frequencia || '';
+        document.getElementById('pacoteValorServicos').value = p.valor || '';
+        document.getElementById('pacoteObjetivoServicos').value = p.objetivo || '';
+        document.getElementById('pacoteProcedimentosServicos').value = p.procedimentos || '';
+        document.getElementById('tratPacoteFormTituloServicos').textContent = 'Editar pacote';
+        document.getElementById('tratPacoteFormServicos').style.display = 'block';
+        document.getElementById('tratPacoteFormServicos').scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+    el.querySelectorAll('[data-del-pac-sv]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!confirm('Excluir este pacote?')) return;
+        state_pacotes = state_pacotes.filter(x => x.id !== btn.dataset.delPacSv);
+        save(PACOTES_STORAGE, state_pacotes);
+        pacotesRenderListaServicos();
+        pacotesRenderLista(); pacotesPopularSelect(); // sync
+      });
+    });
+  }
+
+  function initPacotesServicos() {
+    if (document.getElementById('btnNovoPacoteServicos')?._pacInited) return;
+    const btnNovo = document.getElementById('btnNovoPacoteServicos');
+    if (!btnNovo) return;
+    btnNovo._pacInited = true;
+    btnNovo.addEventListener('click', () => {
+      document.getElementById('pacoteIdServicos').value = '';
+      document.getElementById('pacoteNomeServicos').value = '';
+      document.getElementById('pacoteCategoriaServicos').value = '';
+      document.getElementById('pacoteSessoesServicos').value = '';
+      document.getElementById('pacoteFrequenciaServicos').value = '';
+      document.getElementById('pacoteValorServicos').value = '';
+      document.getElementById('pacoteObjetivoServicos').value = '';
+      document.getElementById('pacoteProcedimentosServicos').value = '';
+      document.getElementById('tratPacoteFormTituloServicos').textContent = 'Novo pacote';
+      document.getElementById('tratPacoteFormServicos').style.display = 'block';
+      document.getElementById('tratPacoteFormServicos').scrollIntoView({ behavior: 'smooth' });
+    });
+    document.getElementById('btnCancelarPacoteServicos')?.addEventListener('click', () => {
+      document.getElementById('tratPacoteFormServicos').style.display = 'none';
+    });
+    document.getElementById('btnSalvarPacoteServicos')?.addEventListener('click', () => {
+      const nome = document.getElementById('pacoteNomeServicos').value.trim();
+      if (!nome) { showToast('Informe o nome do pacote.'); return; }
+      const id = document.getElementById('pacoteIdServicos').value;
+      const dados = {
+        nome,
+        categoria: document.getElementById('pacoteCategoriaServicos').value,
+        sessoes: document.getElementById('pacoteSessoesServicos').value,
+        frequencia: document.getElementById('pacoteFrequenciaServicos').value,
+        valor: document.getElementById('pacoteValorServicos').value,
+        objetivo: document.getElementById('pacoteObjetivoServicos').value.trim(),
+        procedimentos: document.getElementById('pacoteProcedimentosServicos').value.trim()
+      };
+      if (id) {
+        Object.assign(state_pacotes.find(x => x.id === id), dados);
+      } else {
+        state_pacotes.push(Object.assign({ id: uid() }, dados));
+      }
+      save(PACOTES_STORAGE, state_pacotes);
+      document.getElementById('tratPacoteFormServicos').style.display = 'none';
+      pacotesRenderListaServicos();
+      pacotesRenderLista(); pacotesPopularSelect(); // sync
+      showToast('Pacote salvo!');
+    });
+    pacotesRenderListaServicos();
+  }
+
   // ---- Link de anamnese para o cliente preencher ----
   function gerarLinkAnamnese(clienteId, tipoAnamnese) {
     const base = window.location.origin + window.location.pathname;
@@ -6901,14 +7060,19 @@
       sel.value = tratProcedimentos[sel.dataset.procIdx]?.servicoId || '';
       sel.addEventListener('change', e => {
         tratProcedimentos[e.target.dataset.procIdx].servicoId = e.target.value;
+        tratAutoCalcValor();
         tratAtualizarMargem();
       });
     });
     el.querySelectorAll('[data-proc-qtd]').forEach(inp => {
-      inp.addEventListener('change', e => { tratProcedimentos[e.target.dataset.procQtd].qtd = parseInt(e.target.value)||1; });
+      inp.addEventListener('change', e => {
+        tratProcedimentos[e.target.dataset.procQtd].qtd = parseInt(e.target.value)||1;
+        tratAutoCalcValor();
+        tratAtualizarMargem();
+      });
     });
     el.querySelectorAll('[data-proc-del]').forEach(btn => {
-      btn.addEventListener('click', e => { tratProcedimentos.splice(parseInt(e.target.dataset.procDel),1); tratRenderProcedimentos(); });
+      btn.addEventListener('click', e => { tratProcedimentos.splice(parseInt(e.target.dataset.procDel),1); tratRenderProcedimentos(); tratAutoCalcValor(); tratAtualizarMargem(); });
     });
   }
 
@@ -6942,6 +7106,23 @@
     return (p.valor / p.usos);
   }
 
+  function tratAutoCalcValor() {
+    // Auto-calcula valor total: soma dos preços dos serviços selecionados × qtd × nº de sessões
+    const sessoes = parseInt(document.getElementById('tratSessoes')?.value) || 1;
+    let total = 0;
+    let temServico = false;
+    tratProcedimentos.forEach(p => {
+      if (!p.servicoId) return;
+      const s = state.servicos.find(x => x.id === p.servicoId);
+      if (s && s.preco) { total += (parseFloat(s.preco) || 0) * (p.qtd || 1) * sessoes; temServico = true; }
+    });
+    if (temServico) {
+      document.getElementById('tratValor').value = total.toFixed(2);
+      const origemEl = document.getElementById('tratValorOrigen');
+      if (origemEl) origemEl.textContent = `Calculado automaticamente: ${tratProcedimentos.filter(p => p.servicoId).length} serviço(s) × ${sessoes} sessão(ões)`;
+    }
+  }
+
   function tratAtualizarMargem() {
     const custo = tratInsumos.reduce((acc, ins) => {
       const p = state.produtos.find(x => x.id === ins.produtoId);
@@ -6956,6 +7137,29 @@
       info.style.color = margem > 0 ? '#1a7d3a' : '#b3261e';
     } else {
       info.textContent = '';
+    }
+    // Preview financeiro: mostra dedução de taxa cartão + custo insumos
+    const formaPag = document.getElementById('tratFormaPag')?.value || '';
+    const forma = formaPag ? formasPagamento().find(f => f.key === formaPag) : null;
+    const taxaPct = forma ? (forma.taxa || 0) : 0;
+    const taxa = r2(valor * taxaPct / 100);
+    const liquido = r2(valor - taxa);
+    const lucro = r2(liquido - custo);
+    const prev = document.getElementById('tratFinanceiroPreview');
+    if (prev) {
+      if (valor > 0) {
+        prev.style.display = 'block';
+        document.getElementById('fpvBruto').textContent = formatMoney(valor);
+        const taxaLabel = document.getElementById('fpvTaxaLabel');
+        if (taxaLabel) taxaLabel.textContent = forma ? `Taxa ${forma.label} (${taxaPct}%)` : 'Taxa da maquininha (0%)';
+        document.getElementById('fpvTaxa').textContent = '-' + formatMoney(taxa);
+        document.getElementById('fpvCusto').textContent = '-' + formatMoney(custo);
+        const lucroEl = document.getElementById('fpvLucro');
+        lucroEl.textContent = formatMoney(lucro);
+        lucroEl.style.color = lucro < 0 ? '#b3261e' : '#1a7d3a';
+      } else {
+        prev.style.display = 'none';
+      }
     }
   }
 
@@ -7201,13 +7405,20 @@
         const p = state.produtos.find(x => x.id === ins.produtoId);
         return acc + (p ? custoPorUso(p) * ins.usos : 0);
       }, 0);
+      // Calcular taxa do cartão
+      const forma = formasPagamento().find(f => f.key === (t.formaPag || ''));
+      const taxaPct = forma ? (forma.taxa || 0) : 0;
+      const taxa = r2(t.valor * taxaPct / 100);
+      const liquido = r2(t.valor - taxa);
+      const lucro = r2(liquido - custo);
       state.financeiro.push({
         id: uid(), data: todayISO(), tipo: 'receita',
-        descricao: `${cat?.label || t.categoria}${t.regioes.length ? ' — '+t.regioes.slice(0,2).join(', ') : ''}`,
+        descricao: `${cat?.label || t.categoria}${t.regioes && t.regioes.length ? ' — '+t.regioes.slice(0,2).join(', ') : ''}`,
         clienteId: t.clienteId, clienteNome: c?.nome || '',
         valor: t.valor, custoInsumos: custo,
         formaPagamento: t.formaPag || 'outros',
-        origem: 'tratamento', tratamentoId: t.id
+        origem: 'tratamento', tratamentoId: t.id,
+        lucro
       });
       save(STORAGE_KEYS.financeiro, state.financeiro);
     }
@@ -7369,7 +7580,13 @@
       if (p.sessoes) document.getElementById('tratSessoes').value = p.sessoes;
       if (p.frequencia) document.getElementById('tratFrequencia').value = p.frequencia;
       if (p.objetivo) document.getElementById('tratObjetivo').value = p.objetivo;
-      if (p.valor) document.getElementById('tratValor').value = p.valor;
+      if (p.valor) {
+        document.getElementById('tratValor').value = p.valor;
+        const origemEl = document.getElementById('tratValorOrigen');
+        if (origemEl) origemEl.textContent = `Valor do pacote "${p.nome}"`;
+      } else {
+        tratAutoCalcValor();
+      }
       showToast(`Pacote "${p.nome}" aplicado!`);
       tratAtualizarMargem();
     });
@@ -7384,6 +7601,7 @@
       document.querySelectorAll('.trat-aba').forEach(a => a.classList.remove('active'));
       e.target.classList.add('active');
       document.getElementById('tratAba-'+aba)?.classList.add('active');
+      if (aba === 'novo') pacotesPopularSelect();
       if (aba === 'historico') tratRenderHistorico();
       if (aba === 'protocolos-pacotes') { pacotesRenderLista(); pacotesPopularSelect(); tratRenderProtocolo(); }
       if (aba === 'mapa') tratRenderMapaCorporal();
@@ -7418,8 +7636,18 @@
       tratInsumos.push({ produtoId: '', usos: 1 }); tratRenderInsumos();
     });
 
-    // Valor → atualiza margem
-    document.getElementById('tratValor')?.addEventListener('input', tratAtualizarMargem);
+    // Sessões → recalcula valor automaticamente
+    document.getElementById('tratSessoes')?.addEventListener('input', () => { tratAutoCalcValor(); tratAtualizarMargem(); });
+
+    // Forma de pagamento → atualiza preview financeiro
+    document.getElementById('tratFormaPag')?.addEventListener('change', tratAtualizarMargem);
+
+    // Valor → atualiza margem (quando editado manualmente)
+    document.getElementById('tratValor')?.addEventListener('input', () => {
+      const origemEl = document.getElementById('tratValorOrigen');
+      if (origemEl) origemEl.textContent = 'Valor editado manualmente';
+      tratAtualizarMargem();
+    });
 
     // Gerar PDF
     document.getElementById('btnTratGerarPdf')?.addEventListener('click', () => {
