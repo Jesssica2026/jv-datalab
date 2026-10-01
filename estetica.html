@@ -1790,6 +1790,43 @@
   </div>
 </div>
 
+<!-- Modal: cancelar agendamento com motivo -->
+<div class="modal-overlay" id="modalCancelarAgend">
+  <div class="modal" style="max-width:420px">
+    <h3>Cancelar agendamento</h3>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:14px">Informe o motivo do cancelamento. Isso será registrado no histórico da cliente.</p>
+    <div class="field">
+      <label>Motivo do cancelamento <span style="color:#b3261e">*</span></label>
+      <textarea id="motivoCancelamento" rows="3" placeholder="Ex: Cliente solicitou, encaixe de emergência, procedimento incompatível..."></textarea>
+    </div>
+    <div class="error-msg" id="motivoCancelamentoErro" style="color:#b3261e;font-size:12.5px;margin-bottom:10px;display:none">Informe o motivo do cancelamento.</div>
+    <div class="btn-row">
+      <button type="button" class="btn danger" id="btnConfirmarCancelAgend">Confirmar cancelamento</button>
+      <button type="button" class="btn secondary" id="btnFecharModalCancelAgend">Voltar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: reagendar (somente admin) -->
+<div class="modal-overlay" id="modalReagendar">
+  <div class="modal" style="max-width:440px">
+    <h3>Reagendar</h3>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:14px" id="reagendarInfoCliente"></p>
+    <div class="form-grid">
+      <div class="field"><label>Nova data</label><input type="date" id="reagendarData"></div>
+      <div class="field"><label>Novo horário</label><input type="time" id="reagendarHora"></div>
+    </div>
+    <div class="field">
+      <label>Profissional</label>
+      <select id="reagendarProfissional"></select>
+    </div>
+    <div class="btn-row">
+      <button type="button" class="btn" id="btnConfirmarReagendar">Salvar novo horário</button>
+      <button type="button" class="btn secondary" id="btnFecharReagendar">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: esqueci a senha -->
 <div class="modal-overlay" id="modalEsqueciSenha">
   <div class="modal">
@@ -4062,7 +4099,7 @@
   document.getElementById('filtroSemanaProf').addEventListener('change', renderGradeSemana);
 
   function renderAgendamentos() {
-    let lista = state.agendamentos.filter(a => a.data >= todayISO() && !a.canceladoCliente);
+    let lista = state.agendamentos.filter(a => a.data >= todayISO());
     if (session.tipo === 'profissional') {
       lista = lista.filter(a => a.profissionalId === session.profissionalId);
     }
@@ -4072,11 +4109,13 @@
       const serv = state.servicos.find(s => s.id === a.servicoId);
       const prof = state.profissionais.find(p => p.id === a.profissionalId);
       const profTxt = session.tipo === 'admin' ? ` · ${prof ? prof.nome : 'Não atribuído'}` : '';
-      return `<div class="list-row">
-        <span>${formatDateBR(a.data)} às ${a.hora} — ${cli ? cli.nome : 'Cliente'} (${serv ? serv.nome : 'Serviço'})${profTxt}${a.origem === 'online' ? '<span class="badge">Online</span>' : ''}</span>
+      const motivoCanc = a.motivoCancelamento ? `<span title="Motivo: ${a.motivoCancelamento}" style="font-size:11px;color:#b3261e;margin-left:6px">⚠ ${a.motivoCancelamento.slice(0,40)}${a.motivoCancelamento.length > 40 ? '…' : ''}</span>` : '';
+      return `<div class="list-row" style="${a.canceladoCliente ? 'opacity:.6;text-decoration:line-through' : ''}">
+        <span>${formatDateBR(a.data)} às ${a.hora} — ${cli ? cli.nome : 'Cliente'} (${serv ? serv.nome : 'Serviço'})${profTxt}${a.origem === 'online' ? '<span class="badge">Online</span>' : ''}${a.canceladoCliente ? motivoCanc : ''}</span>
         <span style="display:flex;gap:6px;flex-shrink:0">
-          <button class="btn gold small" data-whats-agenda="${a.id}" title="Enviar WhatsApp">🟢</button>
-          <button class="btn danger small" data-cancel-list="${a.id}">Cancelar</button>
+          ${!a.canceladoCliente ? `<button class="btn gold small" data-whats-agenda="${a.id}" title="Enviar WhatsApp">🟢</button>` : ''}
+          ${!a.canceladoCliente ? `<button class="btn danger small" data-cancel-list="${a.id}">Cancelar</button>` : ''}
+          ${session.tipo === 'admin' ? `<button class="btn secondary small" data-reagendar-id="${a.id}">Reagendar</button>` : ''}
         </span>
       </div>`;
     }).join('') : '<div class="empty-msg">Nenhum agendamento futuro.</div>';
@@ -4086,6 +4125,8 @@
     renderDisponibilidade();
     if (agendaModo === 'semana') renderGradeSemana();
   }
+  // -- Modal cancelamento com motivo --
+  let _cancelandoId = null;
   document.getElementById('listaAgendamentos').addEventListener('click', (e) => {
     const whatsBtn = e.target.closest('[data-whats-agenda]');
     if (whatsBtn) {
@@ -4093,23 +4134,81 @@
       abrirModalWhatsapp(a);
       return;
     }
-    const id = e.target.dataset.cancelList;
-    if (!id) return;
-    if (confirm('Deseja cancelar este agendamento?')) {
-      const cancelado = state.agendamentos.find(a => a.id === id);
-      if (window._supaExcluirAgendamento) window._supaExcluirAgendamento(id);
-      state.agendamentos = state.agendamentos.filter(a => a.id !== id);
-      save(STORAGE_KEYS.agendamentos, state.agendamentos);
-      if (cancelado) {
-        state.cancelamentos.push({ id: uid(), data: cancelado.data, hora: cancelado.hora, clienteId: cancelado.clienteId, servicoId: cancelado.servicoId, profissionalId: cancelado.profissionalId, canceladoEm: todayISO() });
-        save(STORAGE_KEYS.cancelamentos, state.cancelamentos);
-      }
-      renderAgendaCompleta();
-      renderDashboard();
-      if (cancelado && confirm('Deseja avisar a cliente pelo WhatsApp sobre o cancelamento?')) {
-        abrirModalWhatsapp(cancelado, 'cancelamento');
-      }
+    const cancelBtn = e.target.closest('[data-cancel-list]');
+    if (cancelBtn) {
+      _cancelandoId = cancelBtn.dataset.cancelList;
+      document.getElementById('motivoCancelamento').value = '';
+      document.getElementById('motivoCancelamentoErro').style.display = 'none';
+      document.getElementById('modalCancelarAgend').classList.add('open');
+      return;
     }
+    const reagBtn = e.target.closest('[data-reagendar-id]');
+    if (reagBtn && session.tipo === 'admin') {
+      const id = reagBtn.dataset.reagendarId;
+      const ag = state.agendamentos.find(a => a.id === id);
+      if (!ag) return;
+      const cli = state.clientes.find(c => c.id === ag.clienteId);
+      const serv = state.servicos.find(s => s.id === ag.servicoId);
+      document.getElementById('reagendarInfoCliente').textContent =
+        `${cli ? cli.nome : 'Cliente'} — ${serv ? serv.nome : 'Serviço'} (atual: ${formatDateBR(ag.data)} às ${ag.hora})`;
+      document.getElementById('reagendarData').value = ag.data;
+      document.getElementById('reagendarHora').value = ag.hora;
+      document.getElementById('reagendarProfissional').innerHTML =
+        state.profissionais.map(p => `<option value="${p.id}"${p.id === ag.profissionalId ? ' selected' : ''}>${p.nome}</option>`).join('');
+      document.getElementById('modalReagendar').dataset.reagendarId = id;
+      document.getElementById('modalReagendar').classList.add('open');
+    }
+  });
+  document.getElementById('btnFecharModalCancelAgend').addEventListener('click', () => {
+    document.getElementById('modalCancelarAgend').classList.remove('open');
+    _cancelandoId = null;
+  });
+  document.getElementById('btnConfirmarCancelAgend').addEventListener('click', () => {
+    const motivo = document.getElementById('motivoCancelamento').value.trim();
+    if (!motivo) {
+      document.getElementById('motivoCancelamentoErro').style.display = '';
+      return;
+    }
+    const id = _cancelandoId;
+    const cancelado = state.agendamentos.find(a => a.id === id);
+    if (cancelado) {
+      cancelado.canceladoCliente = true;
+      cancelado.canceladoEm = todayISO();
+      cancelado.motivoCancelamento = motivo;
+      save(STORAGE_KEYS.agendamentos, state.agendamentos);
+      state.cancelamentos.push({ id: uid(), data: cancelado.data, hora: cancelado.hora, clienteId: cancelado.clienteId, servicoId: cancelado.servicoId, profissionalId: cancelado.profissionalId, canceladoEm: todayISO(), motivo });
+      save(STORAGE_KEYS.cancelamentos, state.cancelamentos);
+    }
+    document.getElementById('modalCancelarAgend').classList.remove('open');
+    _cancelandoId = null;
+    renderAgendaCompleta();
+    renderDashboard();
+    if (cancelado && confirm('Deseja avisar a cliente pelo WhatsApp sobre o cancelamento?')) {
+      abrirModalWhatsapp(cancelado, 'cancelamento');
+    }
+  });
+  // -- Modal reagendar (só admin) --
+  document.getElementById('btnFecharReagendar').addEventListener('click', () => document.getElementById('modalReagendar').classList.remove('open'));
+  document.getElementById('btnConfirmarReagendar').addEventListener('click', () => {
+    const id = document.getElementById('modalReagendar').dataset.reagendarId;
+    const novaData = document.getElementById('reagendarData').value;
+    const novaHora = document.getElementById('reagendarHora').value;
+    const novaProfId = document.getElementById('reagendarProfissional').value;
+    if (!novaData || !novaHora) { alert('Informe a nova data e horário.'); return; }
+    const ag = state.agendamentos.find(a => a.id === id);
+    if (ag) {
+      ag.data = novaData;
+      ag.hora = novaHora;
+      ag.profissionalId = novaProfId;
+      ag.canceladoCliente = false;
+      delete ag.canceladoEm;
+      delete ag.motivoCancelamento;
+      save(STORAGE_KEYS.agendamentos, state.agendamentos);
+    }
+    document.getElementById('modalReagendar').classList.remove('open');
+    renderAgendaCompleta();
+    renderDashboard();
+    showToast('Agendamento reagendado!');
   });
   document.getElementById('formAgendamento').addEventListener('submit', (e) => {
     e.preventDefault();
