@@ -3544,314 +3544,505 @@
   }
 
   function renderAbaTratamentos(el, c) {
-    const tratamentos = c.tratamentos || [];
     const hoje = todayISO();
-    const produtosOpts = (state.produtos || []).map(p => `<option value="${p.id}">${esc(p.nome)} — ${formatMoney(custoPorUso(p))}/uso</option>`).join('');
+    const _st = window.state || state;
+    const _sk = window._STORAGE_KEYS || STORAGE_KEYS;
+    const _uid = window._uid || uid;
+    const _save = window._save || save;
+    const _esc = window._esc || esc;
+    const _fmt = window._formatMoney || formatMoney;
+    const _date = window._formatDateBR || formatDateBR;
+    const _toast = window._showToast || showToast;
+    const _num = window._num || num;
+    const _r2 = window._r2 || r2;
 
-    // ── Montar histórico unificado ──
-    // 1) Atendimentos registrados manualmente
-    const evAtend = tratamentos.map(t => ({
-      _tipo: 'atendimento', id: t.id, data: t.data,
-      titulo: esc(nomeServicoPorId(t.servicoId)) || esc(t.procedimento) || 'Atendimento',
-      subtitulo: t.regiao ? esc(t.regiao) : '',
-      valor: t.valor || 0, custo: t.custoMateriais || 0,
-      profissional: t.profissionalId ? esc(nomeProfissionalPorId(t.profissionalId)) : '',
-      materiais: t.materiais || [], obs: t.observacoes || '',
-      status: '', _raw: t
-    }));
-    // 2) Procedimentos do plano de tratamento (concluídos)
-    const plano = c.planoTratamento || {};
-    const evPlano = (plano.itens || []).filter(i => i.status === 'concluido' || (i.dataConclusao && i.dataConclusao !== '')).map(i => ({
-      _tipo: 'plano', id: i.id, data: i.dataConclusao && i.dataConclusao !== '' ? i.dataConclusao : hoje,
-      titulo: esc(i.procedimento) || 'Procedimento',
-      subtitulo: i.dente ? `Dente ${esc(i.dente)}` : '',
-      valor: i.valor || 0,
-      custo: (i.materiais||[]).reduce((s,m)=>s+(m.custo||m.custoUnit||0)*(m.qty||m.qtd||1),0),
-      profissional: '', materiais: i.materiais || [], obs: '',
-      status: i.aceiteCliente ? '✅ Aceito' : '', _raw: i
-    }));
-    // 3) Orçamentos formais (aceitos)
-    const orcamentos = (c.orcamentos || []).filter(o => o.status === 'aceito');
-    const evOrc = orcamentos.map(o => ({
-      _tipo: 'orcamento', id: o.id, data: o.data,
-      titulo: 'Orçamento aceito',
-      subtitulo: o.itens && o.itens.length ? o.itens.map(i=>esc(i.nome||i.procedimento||'')).filter(Boolean).join(', ') : esc(o.descricao||''),
-      valor: o.valor || 0, custo: 0,
-      profissional: '', materiais: [], obs: o.obs || '',
-      status: '📄 Orçamento', _raw: o
-    }));
+    // Formas de pagamento com taxas
+    function _formas() {
+      const t = _st.taxas || {};
+      const lista = [
+        { key: 'dinheiro', label: 'Dinheiro', taxa: 0 },
+        { key: 'pix', label: 'PIX', taxa: 0 },
+        { key: 'debito', label: 'Débito', taxa: _num(t.debito) },
+        { key: 'credito1x', label: 'Crédito 1x', taxa: _num(t.credito1x) },
+        { key: 'credito2a6', label: 'Crédito 2x–6x', taxa: _num(t.credito2a6) },
+        { key: 'credito7a12', label: 'Crédito 7x–12x', taxa: _num(t.credito7a12) }
+      ];
+      ((t.outros)||[]).forEach(o => { if (o.nome) lista.push({ key: 'outro:'+o.id, label: o.nome, taxa: _num(o.taxa) }); });
+      return lista;
+    }
+    function _formaByKey(key) { return _formas().find(f => f.key === key) || { key:'dinheiro', label:'Dinheiro', taxa:0 }; }
+    function _calcLucro(bruto, formaKey, custoMat) {
+      const f = _formaByKey(formaKey); const taxa = _r2(bruto * f.taxa / 100);
+      return { bruto: _r2(bruto), taxa, taxaPct: f.taxa, liquido: _r2(bruto - taxa), custo: _r2(custoMat), lucro: _r2(bruto - taxa - custoMat) };
+    }
+    function _custoPorUso(p) {
+      if (!p) return 0;
+      if (p.custoUsoOverride != null) return Number(p.custoUsoOverride);
+      const u = Number(p.usosPorEmbalagem); return u > 0 ? Number(p.valorCompra||0)/u : Number(p.custo||0);
+    }
 
-    let todosEventos = [...evAtend, ...evPlano, ...evOrc].sort((a,b) => b.data.localeCompare(a.data));
+    // Lista de tratamentos salvos (histórico resumido no topo)
+    const tratamentos = c.tratamentos || [];
+    const temTratamentos = tratamentos.length > 0;
+    const historicoHtml = temTratamentos ? tratamentos.slice().sort((a,b)=>b.data.localeCompare(a.data)).slice(0,5).map(t => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--cor-surface);border:1px solid var(--cor-borda);border-radius:6px;margin-bottom:6px;flex-wrap:wrap;gap:6px">
+        <div>
+          <span style="font-size:11px;font-weight:600;color:var(--cor-primaria)">${_date(t.data)}</span>
+          <span style="font-size:12px;color:#6b7280;margin-left:8px">${_esc(t.categoria||'')}</span>
+          <br><span style="font-size:13px">${_esc(t.procedimento||nomeServicoPorId(t.servicoId)||'—')}</span>
+          ${t.sessoes > 1 ? `<span style="font-size:11px;color:#6b7280"> · ${t.sessoes} sessões</span>` : ''}
+          ${t.valor > 0 ? `<span style="font-size:13px;font-weight:700;color:var(--cor-secundaria)"> · ${_fmt(t.valor)}</span>` : ''}
+          ${t.statusAceite === 'aceito' ? '<span style="font-size:11px;background:#e8f5e9;color:#1a7d3a;padding:2px 8px;border-radius:10px;margin-left:6px">✅ Aceito</span>' :
+            t.statusAceite === 'recusado' ? '<span style="font-size:11px;background:#fdecea;color:#b3261e;padding:2px 8px;border-radius:10px;margin-left:6px">❌ Recusado</span>' :
+            t.statusAceite === 'aguardando' ? '<span style="font-size:11px;background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:10px;margin-left:6px">⏳ Aguardando</span>' : ''}
+          ${t.lancadoFinanceiro ? '<span style="font-size:11px;background:#e8f5e9;color:#1a7d3a;padding:2px 8px;border-radius:10px;margin-left:4px">💰 Financeiro</span>' : ''}
+        </div>
+        <button class="btn danger small" data-del-trat="${t.id}">🗑️</button>
+      </div>`).join('') + (tratamentos.length > 5 ? `<div style="font-size:12px;color:#6b7280;text-align:center;padding:4px">+${tratamentos.length-5} tratamentos anteriores</div>` : '') : '';
 
-    // Stats sobre atendimentos registrados
-    const comValor = tratamentos.filter(t => t.valor > 0);
-    const ticketMedio = comValor.length ? comValor.reduce((s,t)=>s+t.valor,0)/comValor.length : 0;
-    const custoTotal = tratamentos.reduce((s,t)=>s+(t.custoMateriais||0),0);
-    const totalReceita = tratamentos.reduce((s,t)=>s+(t.valor||0),0);
+    // Odontograma simplificado (numeração FDI)
+    const DENTES_SUP = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
+    const DENTES_INF = [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+    function _odontogramaHtml(prefixo) {
+      const denteSel = (c.tratamentoRascunho||{}).dentes || [];
+      function _row(nums) {
+        return nums.map(n => {
+          const sel = denteSel.includes(String(n));
+          return `<button type="button" class="dente-btn${sel?' selected':''}" data-dente="${n}" data-pref="${prefixo}" style="width:28px;height:28px;border:2px solid ${sel?'var(--cor-primaria)':'var(--cor-borda)'};border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;background:${sel?'var(--cor-primaria)':'var(--cor-surface)'};color:${sel?'#fff':'inherit'};padding:0;transition:all .15s">${n}</button>`;
+        }).join('');
+      }
+      return `
+        <div style="overflow-x:auto">
+          <div style="display:flex;gap:3px;justify-content:center;flex-wrap:nowrap;margin-bottom:4px">${_row(DENTES_SUP)}</div>
+          <div style="text-align:center;font-size:10px;color:#9ca3af;letter-spacing:.05em;margin:2px 0">SUPERIOR ────── INFERIOR</div>
+          <div style="display:flex;gap:3px;justify-content:center;flex-wrap:nowrap;margin-top:4px">${_row(DENTES_INF)}</div>
+        </div>
+        <div style="margin-top:8px;font-size:12px;color:#6b7280" id="${prefixo}DentesSel">
+          ${denteSel.length ? '🦷 Dentes selecionados: '+denteSel.join(', ') : 'Clique nos dentes para selecionar'}
+        </div>`;
+    }
+
+    const formasOpts = _formas().map(f => `<option value="${f.key}">${_esc(f.label)}${f.taxa > 0 ? ' ('+f.taxa+'%)' : ''}</option>`).join('');
+    const servOpts = (_st.servicos||[]).map(s => `<option value="${s.id}" data-preco="${s.preco||0}">${_esc(s.nome)}${s.preco ? ' — '+_fmt(s.preco) : ''}</option>`).join('');
+    const profOpts = (_st.profissionais||[]).map(p => `<option value="${p.id}">${_esc(p.nome)}</option>`).join('');
+    const prodOpts = (_st.produtos||[]).map(p => { const cu = _custoPorUso(p); return `<option value="${p.id}" data-custo="${cu}">${_esc(p.nome)}${cu > 0 ? ' — '+_fmt(cu)+'/uso' : ''}</option>`; }).join('');
 
     el.innerHTML = `
       <div style="margin-top:10px">
-        ${todosEventos.length > 0 ? `
-        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
-          <div class="card" style="flex:1;min-width:120px;text-align:center;padding:10px 14px">
-            <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em">Total registrado</div>
-            <div style="font-size:18px;font-weight:700;color:var(--cor-secundaria)">${formatMoney(totalReceita)}</div>
-          </div>
-          <div class="card" style="flex:1;min-width:120px;text-align:center;padding:10px 14px">
-            <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em">Ticket médio</div>
-            <div style="font-size:18px;font-weight:700;color:var(--cor-primaria)">${formatMoney(ticketMedio)}</div>
-          </div>
-          <div class="card" style="flex:1;min-width:120px;text-align:center;padding:10px 14px">
-            <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em">Custo materiais</div>
-            <div style="font-size:18px;font-weight:700;color:#e65100">${formatMoney(custoTotal)}</div>
-          </div>
-          <div class="card" style="flex:1;min-width:120px;text-align:center;padding:10px 14px">
-            <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em">Eventos</div>
-            <div style="font-size:18px;font-weight:700;color:#4b5162">${todosEventos.length}</div>
-          </div>
-        </div>` : ''}
 
-        <!-- Filtros e exportar -->
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;background:var(--cor-surface);padding:10px 12px;border-radius:8px;border:1px solid var(--cor-borda)">
-          <input type="text" id="histFiltroNome" placeholder="🔍 Buscar procedimento…" style="flex:1;min-width:150px;border:1px solid var(--cor-borda);border-radius:6px;padding:5px 8px;font-size:13px">
-          <input type="date" id="histFiltroDe" style="border:1px solid var(--cor-borda);border-radius:6px;padding:5px 8px;font-size:13px" title="De">
-          <span style="font-size:12px;color:#6b7280">até</span>
-          <input type="date" id="histFiltroAte" style="border:1px solid var(--cor-borda);border-radius:6px;padding:5px 8px;font-size:13px" title="Até">
-          <select id="histFiltroTipo" style="border:1px solid var(--cor-borda);border-radius:6px;padding:5px 8px;font-size:13px">
-            <option value="">Todos os tipos</option>
-            <option value="atendimento">Atendimentos</option>
-            <option value="plano">Plano concluído</option>
-            <option value="orcamento">Orçamentos aceitos</option>
-          </select>
-          <button type="button" class="btn secondary small" id="histLimparFiltros">✕ Limpar</button>
-          <button type="button" class="btn small" id="histExportar" style="background:var(--cor-primaria);color:#fff">⬇️ Exportar CSV</button>
+        ${temTratamentos ? `
+        <!-- Histórico rápido -->
+        <div style="margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h4 style="font-size:13px;color:var(--cor-primaria);margin:0">📋 Últimos tratamentos</h4>
+            <span style="font-size:11px;color:#6b7280">${tratamentos.length} no total</span>
+          </div>
+          ${historicoHtml}
+        </div>
+        <hr style="border:none;border-top:1px solid var(--cor-borda);margin:0 0 20px">
+        ` : ''}
+
+        <!-- Formulário Novo Tratamento -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="color:var(--cor-primaria);margin:0;font-size:16px">✨ Novo tratamento</h3>
         </div>
 
-        <!-- Registrar atendimento -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-          <h4 style="color:var(--cor-primaria);margin:0">📋 Histórico completo</h4>
-          <button type="button" class="btn small" id="btnNovoTrat">+ Registrar atendimento</button>
-        </div>
-        <div id="formNovoTrat" style="display:none" class="card" style="margin-bottom:14px">
-          <h4 style="color:var(--cor-primaria);margin-bottom:12px">Novo atendimento</h4>
-          <form id="formTratDados">
-            <div class="form-grid">
-              <div class="field"><label>Data</label><input type="date" id="tratData" value="${hoje}" required></div>
-              <div class="field"><label>Dentista</label><select id="tratProf"><option value="">Selecione</option>${state.profissionais.map(p=>`<option value="${p.id}" ${p.id===(session.tipo==='profissional'?session.profissionalId:'') ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select></div>
-              <div class="field"><label>Procedimento</label><select id="tratServico"><option value="">Selecione</option>${(state.servicos||[]).map(s=>`<option value="${s.id}">${esc(s.nome)}${s.preco ? ' — ' + formatMoney(s.preco) : ''}</option>`).join('')}</select></div>
-              <div class="field"><label>Dente(s) / Região</label><input type="text" id="tratRegiao" placeholder="Ex: 36, 21, Superior esquerdo"></div>
-              <div class="field"><label>Valor cobrado (R$)</label><input type="number" id="tratValor" min="0" step="0.01"></div>
+        <form id="formNovoTratamento">
+
+          <!-- ① CATEGORIA -->
+          <div style="margin-bottom:20px">
+            <label style="font-weight:700;font-size:13px;color:#374151;display:block;margin-bottom:8px">① Categoria do tratamento</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap" id="catBtns">
+              <button type="button" class="cat-btn" data-cat="odonto" style="padding:8px 16px;border:2px solid var(--cor-borda);border-radius:8px;background:var(--cor-surface);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">🦷 Odontológico</button>
+              <button type="button" class="cat-btn" data-cat="botox" style="padding:8px 16px;border:2px solid var(--cor-borda);border-radius:8px;background:var(--cor-surface);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">💉 Botox</button>
+              <button type="button" class="cat-btn" data-cat="harmonizacao" style="padding:8px 16px;border:2px solid var(--cor-borda);border-radius:8px;background:var(--cor-surface);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">✨ Harmonização Facial</button>
+            </div>
+          </div>
+
+          <!-- ② ÁREA TRATADA (odontograma ou região) -->
+          <div id="secaoAreaTratada" style="margin-bottom:20px;display:none">
+            <label style="font-weight:700;font-size:13px;color:#374151;display:block;margin-bottom:8px">② Área tratada</label>
+
+            <!-- Odontograma -->
+            <div id="blocoOdontograma" style="display:none;background:var(--cor-surface);border:1px solid var(--cor-borda);border-radius:8px;padding:14px">
+              <div style="font-size:12px;color:#6b7280;margin-bottom:10px">Clique nos dentes envolvidos no tratamento</div>
+              ${_odontogramaHtml('novo')}
+            </div>
+
+            <!-- Região (botox / harmonização) -->
+            <div id="blocoRegiao" style="display:none">
+              <div style="display:flex;gap:8px;flex-wrap:wrap" id="regioesBtns">
+                ${['Testa','Glabela','Olhos/Pálpebras','Nariz','Lábios','Queixo','Mandíbula/Masseter','Pescoço','Face completa','Outra'].map(r =>
+                  `<button type="button" class="regiao-btn" data-regiao="${r}" style="padding:6px 12px;border:2px solid var(--cor-borda);border-radius:20px;background:var(--cor-surface);font-size:12px;cursor:pointer;transition:all .15s">${r}</button>`
+                ).join('')}
+              </div>
+              <input type="text" id="regiaoLivre" placeholder="Ou descreva a região…" style="margin-top:10px;width:100%;border:1px solid var(--cor-borda);border-radius:6px;padding:7px 10px;font-size:13px">
+            </div>
+          </div>
+
+          <!-- ③ PROCEDIMENTO E SESSÕES -->
+          <div id="secaoProcedimento" style="margin-bottom:20px;display:none">
+            <label style="font-weight:700;font-size:13px;color:#374151;display:block;margin-bottom:8px">③ Procedimento e sessões</label>
+            <div class="form-grid" style="grid-template-columns:2fr 1fr 1fr">
+              <div class="field" style="margin:0">
+                <label>Procedimento</label>
+                <select id="tNovoServico" style="width:100%">
+                  <option value="">Selecione ou descreva abaixo</option>${servOpts}
+                </select>
+              </div>
+              <div class="field" style="margin:0">
+                <label>Dentista / profissional</label>
+                <select id="tNovoProf" style="width:100%">
+                  <option value="">Selecione</option>${profOpts}
+                </select>
+              </div>
+              <div class="field" style="margin:0">
+                <label>N° de sessões</label>
+                <input type="number" id="tNovoSessoes" min="1" step="1" value="1" style="width:100%">
+              </div>
             </div>
             <div class="field" style="margin-top:8px">
-              <label style="font-weight:600">Materiais utilizados</label>
-              <div id="tratMateriaisLista" style="margin-top:8px"></div>
-              ${produtosOpts ? `<button type="button" class="btn secondary small" id="btnAddMaterial" style="margin-top:6px">+ Adicionar material</button>` : '<span style="font-size:12px;color:#6b7280">Cadastre produtos no Estoque para vincular materiais.</span>'}
+              <label>Descrição livre do procedimento</label>
+              <input type="text" id="tNovoDescricao" placeholder="Ex: Restauração resina composta, Canal dente 36…">
             </div>
-            <div class="field" style="margin-top:4px"><label>Custo materiais (R$) <span style="font-size:11px;color:#6b7280">(calculado automaticamente)</span></label><input type="text" id="tratCustoMat" readonly style="background:var(--cor-fundo);font-weight:600" value="R$ 0,00"></div>
-            <div class="field"><label>Observações clínicas</label><textarea id="tratObs" rows="3"></textarea></div>
-            <div class="btn-row">
-              <button type="submit" class="btn">Salvar atendimento</button>
-              <button type="button" class="btn secondary" id="btnCancelarTrat">Cancelar</button>
-            </div>
-          </form>
-        </div>
+          </div>
 
-        <!-- Lista de eventos -->
-        <div id="listaHistorico">
-          ${_renderHistoricoItems(todosEventos)}
-        </div>
+          <!-- ④ PRODUTOS / MATERIAIS -->
+          <div id="secaoProdutos" style="margin-bottom:20px;display:none">
+            <label style="font-weight:700;font-size:13px;color:#374151;display:block;margin-bottom:8px">④ Produtos / materiais utilizados</label>
+            <div id="tNovoMatsLista"></div>
+            <button type="button" class="btn secondary small" id="btnTNovoAddMat" style="margin-top:4px">${prodOpts ? '+ Adicionar material' : '⚠️ Nenhum produto cadastrado'}</button>
+            ${prodOpts ? '' : '<span style="font-size:11px;color:#6b7280;margin-left:8px">Cadastre produtos no Estoque primeiro</span>'}
+            <div style="margin-top:8px;font-size:13px;color:#e65100;font-weight:600" id="tNovoCustoMatDiv" style="display:none">
+              Custo total dos materiais: <span id="tNovoCustoMat">R$ 0,00</span>
+            </div>
+          </div>
+
+          <!-- ⑤ FREQUÊNCIA E OBJETIVO -->
+          <div id="secaoObjetivo" style="margin-bottom:20px;display:none">
+            <label style="font-weight:700;font-size:13px;color:#374151;display:block;margin-bottom:8px">⑤ Frequência e objetivo</label>
+            <div class="form-grid" style="grid-template-columns:1fr 1fr">
+              <div class="field" style="margin:0">
+                <label>Data de início</label>
+                <input type="date" id="tNovoData" value="${hoje}">
+              </div>
+              <div class="field" style="margin:0">
+                <label>Frequência de retorno</label>
+                <select id="tNovoFreq" style="width:100%">
+                  <option value="">Sem frequência definida</option>
+                  <option value="semanal">Semanal</option>
+                  <option value="quinzenal">Quinzenal</option>
+                  <option value="mensal">Mensal</option>
+                  <option value="bimestral">Bimestral</option>
+                  <option value="trimestral">Trimestral</option>
+                  <option value="semestral">Semestral</option>
+                  <option value="anual">Anual</option>
+                </select>
+              </div>
+            </div>
+            <div class="field" style="margin-top:8px">
+              <label>Objetivo do tratamento</label>
+              <textarea id="tNovoObjetivo" rows="2" placeholder="Ex: Restaurar função mastigatória, eliminar dor, estética do sorriso, definição de contorno facial…"></textarea>
+            </div>
+            <div class="field" style="margin-top:4px">
+              <label>Observações clínicas</label>
+              <textarea id="tNovoObs" rows="2" placeholder="Informações adicionais para prontuário…"></textarea>
+            </div>
+          </div>
+
+          <!-- ⑥ VALOR E PAGAMENTO -->
+          <div id="secaoValor" style="margin-bottom:20px;display:none">
+            <label style="font-weight:700;font-size:13px;color:#374151;display:block;margin-bottom:8px">⑥ Valor e forma de pagamento</label>
+            <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr">
+              <div class="field" style="margin:0">
+                <label>Valor do tratamento (R$)</label>
+                <input type="number" id="tNovoValor" min="0" step="0.01" placeholder="0,00" style="font-size:16px;font-weight:700">
+              </div>
+              <div class="field" style="margin:0">
+                <label>Forma de pagamento</label>
+                <select id="tNovoForma" style="width:100%">
+                  ${formasOpts}
+                </select>
+              </div>
+              <div class="field" style="margin:0">
+                <label>N° de parcelas</label>
+                <input type="number" id="tNovoParcelas" min="1" step="1" value="1" style="width:100%">
+              </div>
+            </div>
+            <!-- Preview financeiro -->
+            <div id="tNovoPreviewFin" style="display:none;margin-top:12px;background:var(--cor-surface);border:1px solid var(--cor-borda);border-radius:8px;padding:12px 14px">
+              <div style="font-size:12px;font-weight:600;color:var(--cor-primaria);margin-bottom:8px;text-transform:uppercase;letter-spacing:.03em">📊 Resumo financeiro</div>
+              <div id="tNovoPreviewLinhas"></div>
+            </div>
+          </div>
+
+          <!-- ⑦ DECISÃO DO CLIENTE -->
+          <div id="secaoDecisao" style="margin-bottom:24px;display:none">
+            <label style="font-weight:700;font-size:13px;color:#374151;display:block;margin-bottom:8px">⑦ Decisão do paciente</label>
+            <div style="display:flex;gap:10px;flex-wrap:wrap" id="decisaoBtns">
+              <button type="button" class="decisao-btn" data-decisao="aguardando" style="padding:8px 18px;border:2px solid #e65100;border-radius:8px;background:#fff3e0;color:#e65100;font-size:13px;font-weight:600;cursor:pointer">⏳ Aguardando resposta</button>
+              <button type="button" class="decisao-btn" data-decisao="aceito" style="padding:8px 18px;border:2px solid var(--cor-borda);border-radius:8px;background:var(--cor-surface);font-size:13px;font-weight:600;cursor:pointer">✅ Paciente aceitou</button>
+              <button type="button" class="decisao-btn" data-decisao="recusado" style="padding:8px 18px;border:2px solid var(--cor-borda);border-radius:8px;background:var(--cor-surface);font-size:13px;font-weight:600;cursor:pointer">❌ Paciente recusou</button>
+            </div>
+            <!-- Aviso de lançamento no financeiro quando aceito -->
+            <div id="avisoPgto" style="display:none;margin-top:10px;padding:10px 12px;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;font-size:13px;color:#1a7d3a">
+              ✅ Ao salvar, o valor será <strong>lançado automaticamente no financeiro</strong> com desconto da taxa e do custo de materiais.
+            </div>
+            <div id="avisoRecusado" style="display:none;margin-top:10px;padding:10px 12px;background:#fdecea;border:1px solid #ef9a9a;border-radius:8px;font-size:13px;color:#b3261e">
+              ❌ Será salvo como orçamento recusado. Nenhum lançamento no financeiro.
+            </div>
+          </div>
+
+          <!-- BOTÕES DE AÇÃO -->
+          <div id="secaoBotoes" style="display:none">
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button type="button" class="btn secondary" id="btnGerarOrcamento">📄 Gerar orçamento</button>
+              <button type="submit" class="btn" id="btnSalvarTratamento" style="background:var(--cor-primaria)">💾 Salvar tratamento</button>
+            </div>
+          </div>
+
+        </form>
       </div>
     `;
 
-    function _renderHistoricoItems(items) {
-      if (!items.length) return '<div class="empty-msg">Nenhum evento encontrado.</div>';
-      const tipoLabel = { atendimento: '🦷 Atendimento', plano: '📋 Plano', orcamento: '📄 Orçamento' };
-      const tipoColor = { atendimento: '#1565C0', plano: '#1a7d3a', orcamento: '#e65100' };
-      return items.map(ev => `
-        <div class="card" style="margin-bottom:10px;border-left:3px solid ${tipoColor[ev._tipo]||'var(--cor-borda)'}">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
-            <div>
-              <span style="font-size:10px;font-weight:600;color:${tipoColor[ev._tipo]||'#6b7280'};text-transform:uppercase;letter-spacing:.04em">${tipoLabel[ev._tipo]||ev._tipo}</span>
-              ${ev.status ? `<span style="font-size:10px;color:#6b7280;margin-left:8px">${ev.status}</span>` : ''}
-              <br><strong style="color:var(--cor-primaria)">${formatDateBR(ev.data)}</strong>
-              ${ev.subtitulo ? `<span style="font-size:12px;color:#6b7280;margin-left:6px">${ev.subtitulo}</span>` : ''}
-              <br><span style="font-size:13px">${ev.titulo}</span>
-              ${ev.profissional ? `<span style="font-size:12px;color:#6b7280"> · ${ev.profissional}</span>` : ''}
-              ${ev.valor > 0 ? `<span style="font-size:13px;font-weight:600;color:var(--cor-secundaria)"> · ${formatMoney(ev.valor)}</span>` : ''}
-              ${ev.custo > 0 ? `<span style="font-size:12px;color:#e65100"> · Mat: ${formatMoney(ev.custo)}</span>` : ''}
-            </div>
-            ${ev._tipo === 'atendimento' ? `<button class="btn danger small" data-del-trat="${ev.id}">🗑️</button>` : ''}
-          </div>
-          ${ev.materiais && ev.materiais.length ? `<div style="font-size:12px;color:#6b7280;margin-top:6px">${ev.materiais.map(m=>`${esc(m.nome||m.prodId||'')} ×${m.qtd||m.qty||1}`).join(', ')}</div>` : ''}
-          ${ev.obs ? `<div style="font-size:13px;color:#4b5162;margin-top:8px;padding-top:8px;border-top:1px solid var(--cor-borda)">${esc(ev.obs)}</div>` : ''}
-        </div>`).join('');
-    }
+    // ── Estado interno do formulário ──
+    let _cat = '';
+    let _decisao = 'aguardando';
+    let _dentesSel = [];
+    let _regioesSel = [];
+    let _matsItens = [];
 
-    // ── Filtros interativos ──
-    function _aplicarFiltros() {
-      const busca = (el.querySelector('#histFiltroNome')?.value||'').toLowerCase().trim();
-      const de = el.querySelector('#histFiltroDe')?.value || '';
-      const ate = el.querySelector('#histFiltroAte')?.value || '';
-      const tipo = el.querySelector('#histFiltroTipo')?.value || '';
-      const filtrado = todosEventos.filter(ev => {
-        if (tipo && ev._tipo !== tipo) return false;
-        if (de && ev.data < de) return false;
-        if (ate && ev.data > ate) return false;
-        if (busca && !(ev.titulo.toLowerCase().includes(busca) || ev.subtitulo.toLowerCase().includes(busca))) return false;
-        return true;
+    // ── Categoria ──
+    el.querySelectorAll('.cat-btn').forEach(btn => btn.addEventListener('click', () => {
+      _cat = btn.dataset.cat;
+      el.querySelectorAll('.cat-btn').forEach(b => {
+        b.style.borderColor = 'var(--cor-borda)'; b.style.background = 'var(--cor-surface)'; b.style.color = 'inherit';
       });
-      const div = el.querySelector('#listaHistorico');
-      if (div) div.innerHTML = _renderHistoricoItems(filtrado);
-      _bindDelTrat();
-    }
-    el.querySelector('#histFiltroNome')?.addEventListener('input', _aplicarFiltros);
-    el.querySelector('#histFiltroDe')?.addEventListener('change', _aplicarFiltros);
-    el.querySelector('#histFiltroAte')?.addEventListener('change', _aplicarFiltros);
-    el.querySelector('#histFiltroTipo')?.addEventListener('change', _aplicarFiltros);
-    el.querySelector('#histLimparFiltros')?.addEventListener('click', () => {
-      el.querySelector('#histFiltroNome').value = '';
-      el.querySelector('#histFiltroDe').value = '';
-      el.querySelector('#histFiltroAte').value = '';
-      el.querySelector('#histFiltroTipo').value = '';
-      _aplicarFiltros();
+      btn.style.borderColor = 'var(--cor-primaria)'; btn.style.background = 'var(--cor-primaria)'; btn.style.color = '#fff';
+      // Mostrar seção área tratada
+      el.querySelector('#secaoAreaTratada').style.display = 'block';
+      el.querySelector('#blocoOdontograma').style.display = _cat === 'odonto' ? 'block' : 'none';
+      el.querySelector('#blocoRegiao').style.display = _cat !== 'odonto' ? 'block' : 'none';
+      // Mostrar demais seções
+      ['#secaoProcedimento','#secaoProdutos','#secaoObjetivo','#secaoValor','#secaoDecisao','#secaoBotoes'].forEach(s => {
+        el.querySelector(s).style.display = 'block';
+      });
+    }));
+
+    // ── Odontograma — seleção de dentes ──
+    el.querySelectorAll('.dente-btn').forEach(btn => btn.addEventListener('click', () => {
+      const d = btn.dataset.dente;
+      const idx = _dentesSel.indexOf(d);
+      if (idx >= 0) _dentesSel.splice(idx, 1); else _dentesSel.push(d);
+      btn.style.borderColor = _dentesSel.includes(d) ? 'var(--cor-primaria)' : 'var(--cor-borda)';
+      btn.style.background = _dentesSel.includes(d) ? 'var(--cor-primaria)' : 'var(--cor-surface)';
+      btn.style.color = _dentesSel.includes(d) ? '#fff' : 'inherit';
+      const sel = el.querySelector('#novoDentesSel');
+      if (sel) sel.textContent = _dentesSel.length ? '🦷 Dentes selecionados: '+_dentesSel.join(', ') : 'Clique nos dentes para selecionar';
+    }));
+
+    // ── Regiões (botox/harmonização) ──
+    el.querySelectorAll('.regiao-btn').forEach(btn => btn.addEventListener('click', () => {
+      const r = btn.dataset.regiao;
+      const idx = _regioesSel.indexOf(r);
+      if (idx >= 0) { _regioesSel.splice(idx, 1); btn.style.borderColor='var(--cor-borda)'; btn.style.background='var(--cor-surface)'; btn.style.color='inherit'; }
+      else { _regioesSel.push(r); btn.style.borderColor='var(--cor-primaria)'; btn.style.background='var(--cor-primaria)'; btn.style.color='#fff'; }
+    }));
+
+    // ── Procedimento: ao selecionar serviço, preenche valor ──
+    el.querySelector('#tNovoServico')?.addEventListener('change', function() {
+      const opt = this.options[this.selectedIndex];
+      const preco = parseFloat(opt.dataset.preco) || 0;
+      const valInp = el.querySelector('#tNovoValor');
+      if (valInp && !valInp.value && preco > 0) valInp.value = preco.toFixed(2);
+      // pré-carrega materiais do serviço
+      const serv = (_st.servicos||[]).find(s => s.id === this.value);
+      if (serv && serv.insumos && serv.insumos.length && _matsItens.length === 0) {
+        _matsItens = serv.insumos.map(i => ({ prodId: i.produtoId||i.id||'', qtd: i.usos||i.qtd||1 }));
+        _renderMats(); _recalcCustoMat();
+      }
+      _atualizarPreview();
     });
 
-    // ── Exportar CSV ──
-    el.querySelector('#histExportar')?.addEventListener('click', () => {
-      const busca = (el.querySelector('#histFiltroNome')?.value||'').toLowerCase().trim();
-      const de = el.querySelector('#histFiltroDe')?.value || '';
-      const ate = el.querySelector('#histFiltroAte')?.value || '';
-      const tipo = el.querySelector('#histFiltroTipo')?.value || '';
-      const filtrado = todosEventos.filter(ev => {
-        if (tipo && ev._tipo !== tipo) return false;
-        if (de && ev.data < de) return false;
-        if (ate && ev.data > ate) return false;
-        if (busca && !(ev.titulo.toLowerCase().includes(busca) || ev.subtitulo.toLowerCase().includes(busca))) return false;
-        return true;
-      });
-      const linhas = [['Data','Tipo','Procedimento','Dente/Região','Profissional','Valor (R$)','Custo Mat (R$)','Materiais','Observações','Status']];
-      filtrado.forEach(ev => {
-        const mats = (ev.materiais||[]).map(m=>`${m.nome||m.prodId||''} x${m.qtd||m.qty||1}`).join(' | ');
-        linhas.push([
-          ev.data, ev._tipo === 'atendimento' ? 'Atendimento' : ev._tipo === 'plano' ? 'Plano' : 'Orçamento',
-          ev.titulo.replace(/[&<>]/g,''), ev.subtitulo.replace(/[&<>]/g,''),
-          ev.profissional, (ev.valor||0).toFixed(2).replace('.',','),
-          (ev.custo||0).toFixed(2).replace('.',','), mats, ev.obs.replace(/\n/g,' '), ev.status
-        ]);
-      });
-      const csv = linhas.map(r => r.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(';')).join('\r\n');
-      const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `historico_${c.nome.replace(/\s+/g,'_')}_${hoje}.csv`;
-      a.click();
-    });
-
-    // ── Materiais dinâmicos ──
-    let _matItens = [];
-    function _recalcCusto() {
-      const total = _matItens.reduce((s,m) => {
-        const prod = (state.produtos||[]).find(p=>p.id===m.prodId);
-        return s + (prod ? custoPorUso(prod) * (m.qtd||1) : 0);
+    // ── Materiais ──
+    function _recalcCustoMat() {
+      const total = _matsItens.reduce((s, m) => {
+        const p = (_st.produtos||[]).find(x => x.id === m.prodId);
+        return s + (p ? _custoPorUso(p) * (m.qtd||1) : 0);
       }, 0);
-      const inp = el.querySelector('#tratCustoMat');
-      if (inp) inp.value = formatMoney(total);
+      const span = el.querySelector('#tNovoCustoMat');
+      if (span) span.textContent = _fmt(total);
+      const div = el.querySelector('#tNovoCustoMatDiv');
+      if (div) div.style.display = total > 0 ? 'block' : 'none';
+      _atualizarPreview();
+      return total;
     }
-    function _renderMatLista() {
-      const div = el.querySelector('#tratMateriaisLista');
-      if (!div) return;
-      div.innerHTML = _matItens.map((m, idx) => `
+    function _renderMats() {
+      const wrap = el.querySelector('#tNovoMatsLista');
+      if (!wrap) return;
+      wrap.innerHTML = _matsItens.map((m, i) => `
         <div style="display:grid;grid-template-columns:1fr 70px 28px;gap:6px;align-items:center;margin-bottom:6px">
-          <select data-mat-prod="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 6px;font-size:13px">
-            <option value="">Selecione</option>${(state.produtos||[]).map(p=>`<option value="${p.id}" ${p.id===m.prodId ? 'selected' : ''}>${esc(p.nome)} — ${formatMoney(custoPorUso(p))}/uso</option>`).join('')}
+          <select data-mat-prod="${i}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:5px 7px;font-size:13px">
+            <option value="">Selecione o produto</option>${prodOpts ? (_st.produtos||[]).map(p => { const cu=_custoPorUso(p); return `<option value="${p.id}" data-custo="${cu}" ${p.id===m.prodId?'selected':''}>${_esc(p.nome)}${cu>0?' — '+_fmt(cu)+'/uso':''}</option>`; }).join('') : ''}
           </select>
-          <input type="number" min="1" step="1" value="${m.qtd||1}" data-mat-qtd="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 6px;font-size:13px;width:100%">
-          <button type="button" data-mat-del="${idx}" style="background:#fee2e2;color:#b3261e;border:none;border-radius:5px;cursor:pointer;font-size:16px;line-height:1;padding:4px 6px">×</button>
+          <input type="number" min="1" step="1" value="${m.qtd||1}" data-mat-qtd="${i}" placeholder="Qtd" style="border:1px solid var(--cor-borda);border-radius:5px;padding:5px 7px;font-size:13px;width:100%">
+          <button type="button" data-mat-del="${i}" style="background:#fee2e2;color:#b3261e;border:none;border-radius:5px;cursor:pointer;font-size:16px;padding:4px 6px">×</button>
         </div>`).join('');
-      div.querySelectorAll('[data-mat-prod]').forEach(sel => {
-        sel.onchange = () => { _matItens[+sel.dataset.matProd].prodId = sel.value; _renderMatLista(); _recalcCusto(); };
+      wrap.querySelectorAll('[data-mat-prod]').forEach(s => {
+        s.onchange = () => { _matsItens[+s.dataset.matProd].prodId = s.value; _renderMats(); _recalcCustoMat(); };
       });
-      div.querySelectorAll('[data-mat-qtd]').forEach(inp => {
-        inp.oninput = () => { _matItens[+inp.dataset.matQtd].qtd = parseFloat(inp.value)||1; _recalcCusto(); };
+      wrap.querySelectorAll('[data-mat-qtd]').forEach(inp => {
+        inp.oninput = () => { _matsItens[+inp.dataset.matQtd].qtd = parseFloat(inp.value)||1; _recalcCustoMat(); };
       });
-      div.querySelectorAll('[data-mat-del]').forEach(btn => {
-        btn.onclick = () => { _matItens.splice(+btn.dataset.matDel, 1); _renderMatLista(); _recalcCusto(); };
+      wrap.querySelectorAll('[data-mat-del]').forEach(btn => {
+        btn.onclick = () => { _matsItens.splice(+btn.dataset.matDel, 1); _renderMats(); _recalcCustoMat(); };
       });
     }
-    el.querySelector('#btnAddMaterial')?.addEventListener('click', () => {
-      _matItens.push({prodId:'', qtd:1}); _renderMatLista(); _recalcCusto();
+    el.querySelector('#btnTNovoAddMat')?.addEventListener('click', () => {
+      if (!prodOpts) return;
+      _matsItens.push({ prodId: '', qtd: 1 }); _renderMats(); _recalcCustoMat();
     });
-    el.querySelector('#btnNovoTrat').addEventListener('click', () => {
-      el.querySelector('#formNovoTrat').style.display = 'block';
-      el.querySelector('#formNovoTrat').scrollIntoView({behavior:'smooth',block:'nearest'});
-    });
-    el.querySelector('#btnCancelarTrat').addEventListener('click', () => {
-      el.querySelector('#formNovoTrat').style.display = 'none'; _matItens = [];
-    });
-    // ao selecionar serviço, pré-preenche valor e materiais
-    el.querySelector('#tratServico')?.addEventListener('change', function() {
-      const serv = (state.servicos||[]).find(s=>s.id===this.value);
-      if (!serv) return;
-      const valInp = el.querySelector('#tratValor');
-      if (valInp && !valInp.value && serv.preco) valInp.value = serv.preco;
-      if (serv.insumos && serv.insumos.length && _matItens.length === 0) {
-        _matItens = serv.insumos.map(i=>({prodId:i.produtoId||i.id||'', qtd:i.usos||i.qtd||1}));
-        _renderMatLista(); _recalcCusto();
-      }
-    });
-    el.querySelector('#formTratDados').addEventListener('submit', e => {
-      e.preventDefault();
-      if (!c.tratamentos) c.tratamentos = [];
-      const servId = el.querySelector('#tratServico').value;
-      const materiais = _matItens.filter(m=>m.prodId).map(m=>{
-        const prod = (state.produtos||[]).find(p=>p.id===m.prodId);
-        return { prodId:m.prodId, nome:prod?prod.nome:'', qtd:m.qtd||1, custoUnit: prod?custoPorUso(prod):0 };
+
+    // ── Preview financeiro ──
+    function _atualizarPreview() {
+      const bruto = parseFloat(el.querySelector('#tNovoValor')?.value) || 0;
+      const formaKey = el.querySelector('#tNovoForma')?.value || 'dinheiro';
+      const custoMat = _matsItens.reduce((s,m) => {
+        const p = (_st.produtos||[]).find(x => x.id === m.prodId);
+        return s + (p ? _custoPorUso(p)*(m.qtd||1) : 0);
+      }, 0);
+      const previewDiv = el.querySelector('#tNovoPreviewFin');
+      const linhasDiv = el.querySelector('#tNovoPreviewLinhas');
+      if (!previewDiv || !linhasDiv) return;
+      if (bruto <= 0) { previewDiv.style.display = 'none'; return; }
+      const c2 = _calcLucro(bruto, formaKey, custoMat);
+      const f = _formaByKey(formaKey);
+      previewDiv.style.display = 'block';
+      linhasDiv.innerHTML = `
+        <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0"><span>Valor bruto</span><span style="font-weight:600">${_fmt(c2.bruto)}</span></div>
+        ${c2.taxa > 0 ? `<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:#6b7280"><span>Taxa maquininha (${f.taxa}%)</span><span>-${_fmt(c2.taxa)}</span></div>` : ''}
+        <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0"><span>Valor líquido</span><span>${_fmt(c2.liquido)}</span></div>
+        ${c2.custo > 0 ? `<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:#e65100"><span>Custo materiais</span><span>-${_fmt(c2.custo)}</span></div>` : ''}
+        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;padding:5px 0;border-top:1px solid var(--cor-borda);margin-top:4px">
+          <span>Lucro real</span>
+          <span style="color:${c2.lucro < 0 ? '#b3261e' : '#1a7d3a'}">${_fmt(c2.lucro)}</span>
+        </div>`;
+    }
+    el.querySelector('#tNovoValor')?.addEventListener('input', _atualizarPreview);
+    el.querySelector('#tNovoForma')?.addEventListener('change', _atualizarPreview);
+
+    // ── Decisão do cliente ──
+    el.querySelectorAll('.decisao-btn').forEach(btn => btn.addEventListener('click', () => {
+      _decisao = btn.dataset.decisao;
+      el.querySelectorAll('.decisao-btn').forEach(b => {
+        b.style.borderColor = 'var(--cor-borda)'; b.style.background = 'var(--cor-surface)'; b.style.color = 'inherit';
       });
-      const custoMateriais = materiais.reduce((s,m)=>s+m.custoUnit*(m.qtd||1),0);
-      const dataTrat = el.querySelector('#tratData').value || todayISO();
-      const profId = el.querySelector('#tratProf').value;
-      const novoTrat = {
-        id: uid(), data: dataTrat,
-        profissionalId: profId,
-        servicoId: servId,
-        procedimento: nomeServicoPorId(servId) || '',
-        regiao: el.querySelector('#tratRegiao').value.trim(),
-        valor: num(el.querySelector('#tratValor').value),
-        materiais, custoMateriais,
-        observacoes: el.querySelector('#tratObs').value.trim()
+      const cores = { aguardando: ['#e65100','#fff3e0','#e65100'], aceito: ['#1a7d3a','#e8f5e9','#1a7d3a'], recusado: ['#b3261e','#fdecea','#b3261e'] };
+      const [bc, bg, tc] = cores[_decisao] || cores.aguardando;
+      btn.style.borderColor = bc; btn.style.background = bg; btn.style.color = tc;
+      el.querySelector('#avisoPgto').style.display = _decisao === 'aceito' ? 'block' : 'none';
+      el.querySelector('#avisoRecusado').style.display = _decisao === 'recusado' ? 'block' : 'none';
+    }));
+    // Pré-selecionar "aguardando"
+    el.querySelector('[data-decisao="aguardando"]')?.click();
+
+    // ── Gerar orçamento ──
+    el.querySelector('#btnGerarOrcamento')?.addEventListener('click', () => {
+      const bruto = parseFloat(el.querySelector('#tNovoValor')?.value) || 0;
+      const proc = el.querySelector('#tNovoDescricao')?.value.trim() || (el.querySelector('#tNovoServico')?.options[el.querySelector('#tNovoServico').selectedIndex]?.text.split(' — ')[0] || '');
+      if (!proc && !bruto) { _toast('Preencha o procedimento e o valor antes de gerar o orçamento.'); return; }
+      const orc = {
+        id: _uid(), data: el.querySelector('#tNovoData')?.value || hoje, validade: '',
+        itens: proc ? [{ id: _uid(), nome: proc, regiao: [..._dentesSel.map(d=>'Dente '+d), ..._regioesSel, el.querySelector('#regiaoLivre')?.value||''].filter(Boolean).join(', '), valor: bruto }] : [],
+        valor: bruto, obs: el.querySelector('#tNovoObs')?.value.trim() || '', status: 'aguardando', financeiroPago: ''
       };
+      if (!c.orcamentos) c.orcamentos = [];
+      c.orcamentos.push(orc);
+      _save(_sk.clientes, _st.clientes);
+      _toast('📄 Orçamento gerado! Acesse a aba Plano & Orçamento para ver.');
+    });
+
+    // ── Salvar tratamento ──
+    el.querySelector('#formNovoTratamento')?.addEventListener('submit', e => {
+      e.preventDefault();
+      if (!_cat) { _toast('Selecione a categoria do tratamento.'); return; }
+      const bruto = parseFloat(el.querySelector('#tNovoValor')?.value) || 0;
+      const formaKey = el.querySelector('#tNovoForma')?.value || 'dinheiro';
+      const servId = el.querySelector('#tNovoServico')?.value || '';
+      const descricao = el.querySelector('#tNovoDescricao')?.value.trim() || (el.querySelector('#tNovoServico')?.options[el.querySelector('#tNovoServico').selectedIndex]?.text.split(' — ')[0] || '');
+      const profId = el.querySelector('#tNovoProf')?.value || '';
+      const regiaoLivre = el.querySelector('#regiaoLivre')?.value.trim() || '';
+      const areaTratada = _cat === 'odonto'
+        ? (_dentesSel.length ? 'Dentes: '+_dentesSel.join(', ') : '')
+        : ([..._regioesSel, regiaoLivre].filter(Boolean).join(', '));
+      const materiais = _matsItens.filter(m => m.prodId).map(m => {
+        const p = (_st.produtos||[]).find(x => x.id === m.prodId);
+        return { prodId: m.prodId, nome: p ? p.nome : '', qtd: m.qtd||1, custoUnit: p ? _custoPorUso(p) : 0 };
+      });
+      const custoMateriais = materiais.reduce((s,m) => s + m.custoUnit*(m.qtd||1), 0);
+      const calc = _calcLucro(bruto, formaKey, custoMateriais);
+      const dataT = el.querySelector('#tNovoData')?.value || hoje;
+      const novoTrat = {
+        id: _uid(), data: dataT, categoria: _cat, categoriaLabel: { odonto:'Odontológico', botox:'Botox', harmonizacao:'Harmonização Facial' }[_cat] || _cat,
+        servicoId: servId, procedimento: descricao, profissionalId: profId,
+        areaTratada, dentes: [..._dentesSel], regioes: [..._regioesSel, regiaoLivre].filter(Boolean),
+        sessoes: parseInt(el.querySelector('#tNovoSessoes')?.value)||1,
+        frequencia: el.querySelector('#tNovoFreq')?.value || '',
+        objetivo: el.querySelector('#tNovoObjetivo')?.value.trim() || '',
+        observacoes: el.querySelector('#tNovoObs')?.value.trim() || '',
+        materiais, custoMateriais,
+        valor: bruto, formaPagamento: formaKey, formaPagamentoLabel: _formaByKey(formaKey).label,
+        parcelas: parseInt(el.querySelector('#tNovoParcelas')?.value)||1,
+        statusAceite: _decisao, lancadoFinanceiro: ''
+      };
+      if (!c.tratamentos) c.tratamentos = [];
       c.tratamentos.push(novoTrat);
-      // Lançar custo de materiais no financeiro como despesa
-      if (custoMateriais > 0) {
-        const matDesc = materiais.map(m=>`${m.nome} ×${m.qtd||1}`).join(', ');
+
+      // Lançar no financeiro se aceito
+      if (_decisao === 'aceito' && bruto > 0) {
         state.financeiro = state.financeiro || [];
+        const f = _formaByKey(formaKey);
+        const matDesc = materiais.map(m=>`${m.nome} ×${m.qtd}`).join(', ');
+        // Receita
         state.financeiro.push({
-          id: uid(), tipo: 'despesa', origem: 'materiais', categoria: 'materiais',
-          descricao: `Materiais — ${novoTrat.procedimento||'Atendimento'}${novoTrat.regiao ? ' ('+novoTrat.regiao+')' : ''}: ${matDesc}`,
-          valor: custoMateriais, data: dataTrat,
+          id: _uid(), tipo: 'receita', atendimento: true, origem: 'particular',
+          descricao: `${novoTrat.categoriaLabel} — ${descricao||'Tratamento'}${areaTratada?' ('+areaTratada+')':''}`,
+          valor: bruto, data: dataT,
           clienteId: c.id, clienteNome: c.nome,
-          procedimentoNome: novoTrat.procedimento, tratamentoId: novoTrat.id,
           profissionalId: profId, profissionalNome: nomeProfissionalPorId(profId)||'',
-          formaPagamento: '', taxaPercentual: 0, taxaValor: 0,
-          custoInsumos: custoMateriais, valorLiquido: -custoMateriais, lucro: -custoMateriais, baixas: []
+          servicoId: servId, servicoNome: descricao, procedimentoNome: descricao,
+          formaPagamento: f.label, taxaPercentual: calc.taxaPct, taxaValor: calc.taxa,
+          custoInsumos: custoMateriais, valorLiquido: calc.liquido, lucro: calc.lucro, baixas: []
         });
-        save(STORAGE_KEYS.financeiro, state.financeiro);
-        showToast(`🔩 Custo de materiais (${formatMoney(custoMateriais)}) lançado no financeiro!`);
+        // Despesa de materiais (se houver)
+        if (custoMateriais > 0) {
+          state.financeiro.push({
+            id: _uid(), tipo: 'despesa', origem: 'materiais', categoria: 'materiais',
+            descricao: `Materiais — ${descricao||'Tratamento'}: ${matDesc}`,
+            valor: custoMateriais, data: dataT,
+            clienteId: c.id, clienteNome: c.nome, procedimentoNome: descricao,
+            profissionalId: profId, profissionalNome: nomeProfissionalPorId(profId)||'',
+            formaPagamento: '', taxaPercentual: 0, taxaValor: 0,
+            custoInsumos: custoMateriais, valorLiquido: -custoMateriais, lucro: -custoMateriais, baixas: []
+          });
+        }
+        _save(_sk.financeiro, state.financeiro);
+        novoTrat.lancadoFinanceiro = dataT;
+        if (typeof renderFinanceiro === 'function') renderFinanceiro();
+        if (typeof renderDashboard === 'function') renderDashboard();
       }
-      save(STORAGE_KEYS.clientes, state.clientes);
-      if (!custoMateriais) showToast('Atendimento registrado!');
+      _save(_sk.clientes, _st.clientes);
+      _toast(_decisao === 'aceito' ? '✅ Tratamento salvo e lançado no financeiro!' : _decisao === 'recusado' ? '❌ Tratamento salvo como recusado.' : '💾 Tratamento salvo!');
       renderAbaTratamentos(el, c);
     });
 
-    function _bindDelTrat() {
-      el.querySelectorAll('[data-del-trat]').forEach(btn => btn.addEventListener('click', () => {
-        if (!confirm('Excluir este atendimento?')) return;
-        c.tratamentos = c.tratamentos.filter(x => x.id !== btn.dataset.delTrat);
-        save(STORAGE_KEYS.clientes, state.clientes);
-        renderAbaTratamentos(el, c);
-      }));
-    }
-    _bindDelTrat();
+    // ── Excluir tratamento do histórico ──
+    el.querySelectorAll('[data-del-trat]').forEach(btn => btn.addEventListener('click', () => {
+      if (!confirm('Excluir este tratamento?')) return;
+      c.tratamentos = (c.tratamentos||[]).filter(x => x.id !== btn.dataset.delTrat);
+      _save(_sk.clientes, _st.clientes);
+      renderAbaTratamentos(el, c);
+    }));
   }
 
   function imprimirReceita(r, p) {
