@@ -3402,17 +3402,51 @@
   }
   function renderTimelineDiaCompacto(profissionalId, dataISO) {
     const janelas = janelaDoDia(profissionalId, dataISO);
-    if (!janelas) return '<div style="font-size:10.5px;color:#9aa0ab;text-align:center;padding:6px 0">Fechado</div>';
-    const intervalo = state.config.intervaloGrade || 30;
-    const linhas = [];
-    janelas.forEach(j => { for (let t = j.inicio; t < j.fim; t += intervalo) linhas.push(t); });
-    linhas.sort((a, b) => a - b);
-    if (!linhas.length) return '<div style="font-size:10.5px;color:#9aa0ab;text-align:center;padding:6px 0">Fechado</div>';
-    return linhas.map(t => {
-      const status = statusDoSlot(profissionalId, dataISO, t, intervalo);
-      const cor = status.tipo === 'ocupado' ? '#c9701a' : (status.tipo === 'bloqueado' ? '#9aa0ab' : '#1a7d3a');
-      return `<div title="${minParaHora(t)} — ${status.texto}" style="height:14px;border-radius:3px;background:${cor};margin-bottom:2px"></div>`;
-    }).join('');
+    if (!janelas) return '<div style="font-size:10.5px;color:#9aa0ab;text-align:center;padding:8px 0">Fechado</div>';
+    const hoje = todayISO();
+    const isHoje = dataISO === hoje;
+    // Agendamentos do dia (todos, incluindo cancelados)
+    const agendDia = state.agendamentos.filter(a => a.profissionalId === profissionalId && a.data === dataISO);
+    agendDia.sort((a, b) => a.hora.localeCompare(b.hora));
+    // Bloqueios do dia
+    const prof = state.profissionais.find(p => p.id === profissionalId);
+    const bloqueiosDia = (prof ? prof.bloqueios || [] : []).filter(b => b.data === dataISO);
+    if (!agendDia.length && !bloqueiosDia.length) {
+      // Mostra barras de disponibilidade simples
+      const intervalo = state.config.intervaloGrade || 30;
+      const linhas = [];
+      janelas.forEach(j => { for (let t = j.inicio; t < j.fim; t += intervalo) linhas.push(t); });
+      linhas.sort((a, b) => a - b);
+      if (!linhas.length) return '<div style="font-size:10.5px;color:#9aa0ab;text-align:center;padding:8px 0">Sem horários</div>';
+      return '<div style="font-size:10px;color:#1a7d3a;text-align:center;padding:6px 0">✓ Disponível</div>' +
+        linhas.slice(0, 6).map(() => '<div style="height:6px;border-radius:3px;background:#d1fae5;margin-bottom:2px"></div>').join('') +
+        (linhas.length > 6 ? `<div style="font-size:9px;color:#9aa0ab;text-align:center">+${linhas.length - 6} horários</div>` : '');
+    }
+    let html = '';
+    // Bloqueios
+    bloqueiosDia.forEach(b => {
+      html += `<div style="background:#f3f4f6;border-left:3px solid #9aa0ab;border-radius:4px;padding:3px 5px;margin-bottom:3px;font-size:10px;color:#6b7280">
+        <strong>${b.horaInicio}–${b.horaFim}</strong><br>🔒 ${b.motivo || 'Bloqueado'}
+      </div>`;
+    });
+    // Agendamentos
+    agendDia.forEach(a => {
+      const cancelado = !!a.canceladoCliente;
+      const cli = state.clientes.find(c => c.id === a.clienteId);
+      const serv = state.servicos.find(s => s.id === a.servicoId);
+      const nomeCliente = cli ? cli.nome.split(' ')[0] : 'Paciente';
+      const nomeServ = serv ? serv.nome : '';
+      if (cancelado) {
+        html += `<div style="background:#fee2e2;border-left:3px solid #b3261e;border-radius:4px;padding:3px 5px;margin-bottom:3px;font-size:10px;color:#b3261e;text-decoration:line-through;opacity:.8">
+          <strong>${a.hora}</strong> ${nomeCliente}${nomeServ ? '<br>' + nomeServ : ''}
+        </div>`;
+      } else {
+        html += `<div style="background:#fff7ed;border-left:3px solid #c9701a;border-radius:4px;padding:3px 5px;margin-bottom:3px;font-size:10px;color:#92400e">
+          <strong>${a.hora}</strong> ${nomeCliente}${nomeServ ? '<br><span style="font-size:9px;opacity:.8">' + nomeServ + '</span>' : ''}
+        </div>`;
+      }
+    });
+    return html || '<div style="font-size:10px;color:#9aa0ab;text-align:center;padding:6px 0">—</div>';
   }
   function renderTimeline() {
     renderTimelineNav();
@@ -3423,7 +3457,24 @@
     const inicioSemana = inicioDaSemana(timelineData);
     const dias = []; for (let i = 0; i < 7; i++) dias.push(somarDias(inicioSemana, i));
     const nomesDias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    cont.innerHTML = `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;overflow-x:auto">${dias.map(d => `<div><div style="font-size:11px;color:#6b7280;text-align:center;margin-bottom:6px;font-weight:600">${nomesDias[new Date(d + 'T00:00:00').getDay()]}<br>${formatDateBR(d).slice(0, 5)}</div>${renderTimelineDiaCompacto(alvo, d)}</div>`).join('')}</div>`;
+    const hoje = todayISO();
+    const colunas = dias.map(d => {
+      const isHoje = d === hoje;
+      const fechado = !janelaDoDia(alvo, d);
+      return `<div style="min-width:120px">
+        <div style="font-size:11px;text-align:center;margin-bottom:6px;font-weight:600;padding:4px 2px;border-radius:6px;background:${isHoje ? 'var(--cor-primaria)' : 'transparent'};color:${isHoje ? '#fff' : '#6b7280'}">
+          ${nomesDias[new Date(d + 'T00:00:00').getDay()]}<br>${formatDateBR(d).slice(0, 5)}
+        </div>
+        ${fechado ? '<div style="font-size:10px;color:#9aa0ab;text-align:center;padding:8px 0;background:#f9fafb;border-radius:6px">Fechado</div>' : renderTimelineDiaCompacto(alvo, d)}
+      </div>`;
+    }).join('');
+    // Legenda
+    const legenda = `<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid #f0f0f0;font-size:11px;color:#6b7280">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#fff7ed;border:2px solid #c9701a;margin-right:4px"></span>Confirmado</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#fee2e2;border:2px solid #b3261e;margin-right:4px"></span>Cancelado</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#f3f4f6;border:2px solid #9aa0ab;margin-right:4px"></span>Bloqueado</span>
+    </div>`;
+    cont.innerHTML = `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;overflow-x:auto;min-width:700px">${colunas}</div>${legenda}`;
   }
 
   // ---------- Status de pacientes, retenção e evolução ----------
