@@ -390,7 +390,13 @@
 
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js">
+  function iaAtualizarBadge() {
+    const el = document.getElementById('iaRestantesNum');
+    if (el) el.textContent = iaMensagensRestantes();
+  }
+
+</script>
 <script>
 // ============================================================
 //  JV Datalab — Camada de dados Supabase (fonte de verdade)
@@ -1776,6 +1782,9 @@
             <textarea class="ia-textarea" id="iaPromptPromo" placeholder="Ex: Black Friday 50% de desconto em todos os serviços este fim de semana"></textarea>
             <br><br>
             <button class="ia-btn ia-btn-primary" onclick="iaGerarPromocao()">✨ Gerar mensagem</button>
+            <div id="iaMsgBadge" style="margin-top:10px;font-size:12px;color:#6b7280;padding:6px 10px;background:#f3f4f6;border-radius:6px;display:inline-block">
+              🤖 Mensagens IA restantes este mês: <strong id="iaRestantesNum">—</strong>/10
+            </div>
             <div class="ia-loading" id="iaLoadingPromo">⏳ Gerando...</div>
             <div class="ia-resultado" id="iaResultadoPromo" style="display:none"></div>
             <div id="iaBotoesPromo" style="display:none;margin-top:8px;display:none;gap:8px;flex-wrap:wrap">
@@ -7679,6 +7688,39 @@
   }
 
   // ===== IA GEMINI =====
+  // ===== CONTADOR IA (limite 10 mensagens/mês) =====
+  const IA_LIMITE_MES = 10;
+  const IA_STORAGE_USO = 'estetica_ia_uso';
+
+  function iaGetUsoMes() {
+    const agora = new Date();
+    const chave = agora.getFullYear() + '-' + String(agora.getMonth()+1).padStart(2,'0');
+    const raw = localStorage.getItem(IA_STORAGE_USO);
+    if (!raw) return { chave, count: 0 };
+    try {
+      const obj = JSON.parse(raw);
+      if (obj.chave !== chave) return { chave, count: 0 }; // novo mês, zera
+      return obj;
+    } catch(e) { return { chave, count: 0 }; }
+  }
+
+  function iaIncrementarUso() {
+    const uso = iaGetUsoMes();
+    uso.count++;
+    localStorage.setItem(IA_STORAGE_USO, JSON.stringify(uso));
+  }
+
+  function iaVerificarLimite() {
+    const uso = iaGetUsoMes();
+    return uso.count < IA_LIMITE_MES;
+  }
+
+  function iaMensagensRestantes() {
+    const uso = iaGetUsoMes();
+    return Math.max(0, IA_LIMITE_MES - uso.count);
+  }
+
+
   function geminiGetKey() {
     return localStorage.getItem('estetica_gemini_key') || '';
   }
@@ -7701,11 +7743,14 @@
       inp.value = saved;
       if (status) { status.textContent = '✅ Chave configurada.'; status.style.color = '#1a7d3a'; }
     }
+    iaAtualizarBadge();
   }, 500);
   const IA_SEGMENTO = 'clínica de estética';
 
   async function geminiGerarTexto(prompt) {
     if (!geminiGetKey()) throw new Error('Configure a chave Gemini API no topo da página IA & Promoções.');
+    if (!iaVerificarLimite()) throw new Error(`Limite de ${IA_LIMITE_MES} mensagens IA atingido este mês. Renova no próximo mês! 🔄`);
+    iaIncrementarUso();
     const resp = await fetch(geminiGetUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
