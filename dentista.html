@@ -2073,7 +2073,8 @@
 
   const ABAS_CLIENTE = [
     { id: 'anamnese', label: '🦷 Anamnese Dental' },
-    { id: 'harmonizacao', label: '✨ Anamnese Harmonização' }
+    { id: 'harmonizacao', label: '✨ Anamnese Harmonização' },
+    { id: 'plano', label: '📋 Plano & Orçamento' }
   ];
 
   function renderClienteDetalhe() {
@@ -2138,6 +2139,7 @@
     const el = document.getElementById('fichaAbaConteudo');
     if (!abaAtivaCliente || abaAtivaCliente === 'anamnese') return renderAbaAnamnese(el, c);
     if (abaAtivaCliente === 'harmonizacao') return renderAbaHarmonizacao(el, c);
+    if (abaAtivaCliente === 'plano') return renderAbaPlanoOrcamento(el, c);
     renderAbaAnamnese(el, c);
   }
 
@@ -2765,6 +2767,487 @@
     </body></html>`;
     const win = window.open('','_blank');
     if (win) { win.document.write(html); win.document.close(); }
+  }
+
+  // ─── ABA UNIFICADA: PLANO & ORÇAMENTO ────────────────────────────────────────
+  function renderAbaPlanoOrcamento(el, c) {
+    if (!c.planoTratamento) c.planoTratamento = { itens: [], parcelas: [], aceite: {} };
+    if (!c.orcamentos) c.orcamentos = [];
+    const plano = c.planoTratamento;
+    const orcamentos = c.orcamentos;
+    const total = plano.itens.reduce((s, i) => s + Number(i.valor || 0), 0);
+    const custoTotal = r2(plano.itens.reduce((s, i) => s + custoMateriaisItem(i), 0));
+    const nomeStatus = { pendente: 'Pendente', andamento: 'Em andamento', concluido: 'Concluído' };
+    const conv = convenioDoPaciente(c);
+    const servOpts = (state.servicos||[]).map(s=>`<option value="${s.id}" data-preco="${s.preco||0}">${esc(s.nome)}${s.preco?' — '+formatMoney(s.preco):''}</option>`).join('');
+
+    el.innerHTML = `
+      <!-- ═══ SEÇÃO 1: PROCEDIMENTOS DO PLANO ═══ -->
+      <div style="margin-top:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <h4 style="font-size:14px;color:var(--cor-primaria);margin:0">📋 Procedimentos do Plano</h4>
+          <button type="button" class="btn small secondary" id="btnToggleAddProc">+ Adicionar procedimento</button>
+        </div>
+        <div id="formAddProcWrap" style="display:none;background:var(--cor-surface);border:1px solid var(--cor-borda);border-radius:10px;padding:14px;margin-bottom:14px">
+          <form id="formItemPlano">
+            <div class="form-grid">
+              <div class="field"><label>Procedimento cadastrado</label>
+                <select id="itemServico"><option value="">Outro (digitar abaixo)</option>${state.servicos.map(s => `<option value="${s.id}">${esc(s.nome)} — ${formatMoney(s.preco)}</option>`).join('')}</select>
+              </div>
+              <div class="field"><label>Dente / Região</label><input type="text" id="itemDente" placeholder="Ex: 26 ou Geral"></div>
+              <div class="field"><label>Procedimento</label><input type="text" id="itemProcedimento" required placeholder="Descreva o procedimento"></div>
+              <div class="field"><label>Valor cobrado (R$)</label><input type="number" id="itemValor" min="0" step="0.01" required placeholder="0,00"></div>
+            </div>
+            <!-- Materiais/produtos por procedimento -->
+            <div style="margin-top:8px">
+              <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px">🔩 Materiais / Produtos utilizados</label>
+              <div id="materiaisNovoItemWrap" style="display:flex;flex-direction:column;gap:6px"></div>
+              <button type="button" class="btn secondary small" id="btnAddMaterialNovoItem" style="margin-top:6px">+ Material</button>
+            </div>
+            <div class="btn-row" style="margin-top:12px">
+              <button type="submit" class="btn small">Adicionar ao plano</button>
+              <button type="button" class="btn secondary small" id="btnCancelarAddProc">Cancelar</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Tabela de procedimentos -->
+        <div class="tabela-scroll">
+          <table>
+            <thead><tr><th>Dente</th><th>Procedimento</th><th>Valor</th><th>Materiais</th><th>Status</th><th>Concluído em</th><th></th></tr></thead>
+            <tbody>
+              ${plano.itens.length ? plano.itens.map(i => {
+                const custoItem = custoMateriaisItem(i);
+                const matLabel = i.materiais && i.materiais.length
+                  ? i.materiais.map(m => `${esc(m.nome)} ${m.qty > 1 ? '×'+m.qty : ''}`).join(', ')
+                  : '—';
+                return `
+                <tr>
+                  <td>${esc(i.dente) || 'Geral'}</td>
+                  <td>${esc(i.procedimento)}</td>
+                  <td>${formatMoney(i.valor)}</td>
+                  <td style="font-size:12px;max-width:180px">
+                    <span title="${matLabel}">${matLabel.length > 35 ? matLabel.slice(0,33)+'…' : matLabel}</span>
+                    ${custoItem > 0 ? `<br><span style="color:#6b7280;font-size:11px">custo: ${formatMoney(custoItem)}</span>` : ''}
+                    <button class="btn secondary small" data-edit-mat="${i.id}" style="margin-top:3px;font-size:11px;padding:2px 6px">✏️</button>
+                  </td>
+                  <td>
+                    <select class="status-item" data-item="${i.id}" style="font-size:12px;padding:3px 4px">
+                      ${Object.keys(nomeStatus).map(k => `<option value="${k}" ${i.status === k ? 'selected' : ''}>${nomeStatus[k]}</option>`).join('')}
+                    </select>
+                  </td>
+                  <td>${i.status === 'concluido' ? `<input type="date" class="data-item" data-item="${i.id}" value="${esc(i.dataConclusao)}" style="width:140px;font-size:12px">` : '—'}</td>
+                  <td><button class="btn danger small" data-del-item="${i.id}" style="font-size:11px;padding:3px 7px">🗑️</button></td>
+                </tr>`;
+              }).join('') : '<tr><td colspan="7" class="empty-msg">Nenhum procedimento adicionado.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+        <div style="text-align:right;font-weight:700;color:var(--cor-primaria);margin-top:10px;font-size:15px">Total do plano: ${formatMoney(total)}</div>
+        ${custoTotal > 0 ? `<div style="text-align:right;font-size:12px;color:#6b7280;margin-top:4px">Custo estimado de materiais: ${formatMoney(custoTotal)} · margem estimada: ${fmtMargem(total > 0 ? ((total - custoTotal) / total) * 100 : 0)}</div>` : ''}
+      </div>
+
+      <!-- ═══ MODAL EDIÇÃO DE MATERIAIS ═══ -->
+      <div id="modalEditMat" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center">
+        <div class="card" style="width:min(500px,94vw);padding:20px;max-height:85vh;overflow-y:auto">
+          <h4 style="color:var(--cor-primaria);margin-bottom:14px">🔩 Materiais do procedimento</h4>
+          <div id="modalMatProcNome" style="font-size:13px;color:#6b7280;margin-bottom:12px"></div>
+          <div id="modalMatItens" style="display:flex;flex-direction:column;gap:8px"></div>
+          <button type="button" class="btn secondary small" id="btnModalAddMat" style="margin-top:8px">+ Material</button>
+          <div class="btn-row" style="margin-top:14px">
+            <button type="button" class="btn" id="btnSalvarMat">💾 Salvar materiais</button>
+            <button type="button" class="btn secondary" id="btnFecharModalMat">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--cor-borda);margin:20px 0">
+
+      <!-- ═══ SEÇÃO 2: ACEITE E PARCELAMENTO ═══ -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;flex-wrap:wrap" id="secaoAceiteParc">
+        <div>
+          <h4 style="font-size:13px;color:var(--cor-primaria);margin-bottom:10px">✅ Aceite do paciente</h4>
+          <label class="checkbox-item"><input type="checkbox" id="planoAceite" ${plano.aceite.aceito ? 'checked' : ''}> Paciente aceitou o plano de tratamento</label>
+          ${plano.aceite.aceito ? `<div style="font-size:12px;color:#6b7280;margin-top:6px">Aceito em ${formatDateBR(plano.aceite.data)}</div>` : ''}
+        </div>
+        <div>
+          <h4 style="font-size:13px;color:var(--cor-primaria);margin-bottom:10px">💳 Parcelamento</h4>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <input type="number" id="qtdParcelas" min="1" step="1" value="${plano.parcelas.length || 1}" style="width:80px;border:1px solid var(--cor-borda);border-radius:6px;padding:5px 8px;font-size:13px">
+            <span style="font-size:13px">parcela(s)</span>
+            <button type="button" class="btn small" id="btnGerarParcelas">Gerar</button>
+          </div>
+          ${plano.parcelas.length ? `<div style="font-size:12px;color:#6b7280;margin-top:6px">${plano.parcelas.length} parcela(s) gerada(s) · ${plano.parcelas.filter(p=>p.pago).length} paga(s)</div>` : ''}
+        </div>
+      </div>
+
+      ${plano.parcelas.length ? `
+      <div class="tabela-scroll" style="margin-top:14px">
+        <table>
+          <thead><tr><th>Parcela</th><th>Valor</th><th>Status</th><th>Data pagamento</th><th></th></tr></thead>
+          <tbody>
+            ${plano.parcelas.map(pc => `
+              <tr>
+                <td>${pc.numero}/${plano.parcelas.length}</td>
+                <td>${formatMoney(pc.valor)}</td>
+                <td>${pc.pago ? `<span style="color:#1a7d3a;font-weight:600">Paga</span>${pc.forma ? `<br><span style="font-size:11px;color:#6b7280">${pc.origem === 'convenio' ? 'Convênio' : 'Particular'} · ${esc(pc.forma)}</span>` : ''}` : '<span style="color:#b3261e;font-weight:600">Pendente</span>'}</td>
+                <td>${pc.dataPagamento ? formatDateBR(pc.dataPagamento) : '—'}</td>
+                <td><button class="btn ${pc.pago ? 'secondary' : 'gold'} small" data-parcela="${pc.pago ? 'desfazer' : 'pagar'}" data-numero="${pc.numero}">${pc.pago ? 'Desfazer' : 'Registrar pgto'}</button></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size:11.5px;color:#6b7280;margin-top:6px">${conv ? `Convênio: ${esc(conv)} (sem taxa de maquininha).` : 'Paciente particular — taxa conforme forma de pagamento.'}</div>
+      ` : ''}
+
+      <hr style="border:none;border-top:1px solid var(--cor-borda);margin:20px 0">
+
+      <!-- ═══ SEÇÃO 3: ORÇAMENTOS FORMAIS ═══ -->
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <h4 style="font-size:14px;color:var(--cor-primaria);margin:0">📄 Orçamentos formais</h4>
+          <button type="button" class="btn small" id="btnNovoOrcamento">+ Novo orçamento</button>
+        </div>
+        <div id="formNovoOrcamento" style="display:none;background:var(--cor-surface);border:1px solid var(--cor-borda);border-radius:10px;padding:16px;margin-bottom:16px">
+          <h4 style="color:var(--cor-primaria);margin-bottom:12px">Novo orçamento</h4>
+          <form id="formOrcDados">
+            <div class="form-grid">
+              <div class="field"><label>Data</label><input type="date" id="orcData" value="${todayISO()}"></div>
+              <div class="field"><label>Válido até</label><input type="date" id="orcValidade"></div>
+            </div>
+            <div class="field" style="margin-top:4px">
+              <label style="font-weight:600">Procedimentos</label>
+              <div id="orcItensLista" style="margin-top:8px"></div>
+              <button type="button" class="btn secondary small" id="btnAddItemOrc" style="margin-top:6px">+ Adicionar procedimento</button>
+            </div>
+            <div class="field"><label>Valor total (R$)</label><input type="number" id="orcValor" min="0" step="0.01" placeholder="0,00"></div>
+            <div class="field"><label>Observações</label><textarea id="orcObs" rows="2" placeholder="Condições de pagamento, materiais, etc."></textarea></div>
+            <div class="btn-row">
+              <button type="submit" class="btn">Salvar orçamento</button>
+              <button type="button" class="btn secondary" id="btnCancelarOrc">Cancelar</button>
+            </div>
+          </form>
+        </div>
+        <div id="listaOrcamentos">
+          ${!orcamentos.length ? '<div class="empty-msg">Nenhum orçamento cadastrado ainda.</div>' : orcamentos.slice().reverse().map(o => `
+            <div class="card" style="margin-bottom:12px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+                <div>
+                  <strong style="color:var(--cor-primaria)">${formatDateBR(o.data)}</strong>
+                  ${o.validade ? `<span style="font-size:12px;color:#6b7280;margin-left:8px">Válido até ${formatDateBR(o.validade)}</span>` : ''}
+                  <br><span style="font-size:15px;font-weight:700;color:var(--cor-secundaria)">${formatMoney(o.valor)}</span>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                  ${o.status === 'aceito' ? '<span style="background:#e8f5e9;color:#1a7d3a;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Aceito</span>' :
+                    o.status === 'recusado' ? '<span style="background:#fdecea;color:#b3261e;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">❌ Recusado</span>' :
+                    '<span style="background:#fff3e0;color:#e65100;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">⏳ Aguardando</span>'}
+                  ${!o.status || o.status === 'aguardando' ? `
+                    <button class="btn small" style="background:#1a7d3a;color:#fff" data-orc-aceitar="${o.id}">✅ Aceito</button>
+                    <button class="btn small danger" data-orc-recusar="${o.id}">❌ Recusado</button>
+                  ` : o.status === 'aceito' && !o.financeiroPago ? `
+                    <button class="btn small gold" data-orc-financeiro="${o.id}">💰 Lançar no financeiro</button>
+                  ` : ''}
+                  <button class="btn secondary small" data-orc-pdf="${o.id}">🖨️ PDF</button>
+                  <button class="btn danger small" data-orc-del="${o.id}">🗑️</button>
+                </div>
+              </div>
+              ${o.itens && o.itens.length ? `<div style="font-size:13px">${o.itens.map(i=>`<span style="margin-right:10px">${esc(i.nome)}${i.regiao?' ('+esc(i.regiao)+')':''} — ${formatMoney(i.valor||0)}</span>`).join('')}</div>` : o.descricao ? `<div style="font-size:13px;margin-bottom:4px">${esc(o.descricao)}</div>` : ''}
+              ${o.obs ? `<div style="font-size:12px;color:#6b7280;margin-top:4px">${esc(o.obs)}</div>` : ''}
+              ${o.financeiroPago ? `<div style="font-size:11px;color:#1a7d3a;margin-top:4px">✅ Lançado no financeiro em ${formatDateBR(o.financeiroPago)}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    // ── Toggle form adicionar procedimento ──
+    el.querySelector('#btnToggleAddProc').addEventListener('click', () => {
+      const w = el.querySelector('#formAddProcWrap');
+      w.style.display = w.style.display === 'none' ? 'block' : 'none';
+    });
+    el.querySelector('#btnCancelarAddProc').addEventListener('click', () => {
+      el.querySelector('#formAddProcWrap').style.display = 'none';
+    });
+
+    // ── Materiais no form de NOVO procedimento ──
+    let _novosMateriaisItem = [];
+    function _renderNovosMateriaisItem() {
+      const wrap = el.querySelector('#materiaisNovoItemWrap');
+      if (!wrap) return;
+      wrap.innerHTML = _novosMateriaisItem.map((m, idx) => `
+        <div style="display:grid;grid-template-columns:1fr 70px 90px 26px;gap:6px;align-items:center">
+          <input type="text" placeholder="Nome do material/produto" value="${esc(m.nome||'')}" data-mnome="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px">
+          <input type="number" placeholder="Qtd" min="0" step="0.01" value="${m.qty||''}" data-mqty="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px;width:100%">
+          <input type="number" placeholder="Custo un." min="0" step="0.01" value="${m.custo||''}" data-mcusto="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px;width:100%">
+          <button type="button" data-mdel="${idx}" style="background:#fee2e2;color:#b3261e;border:none;border-radius:5px;cursor:pointer;font-size:14px;padding:3px 6px">×</button>
+        </div>`).join('');
+      wrap.querySelectorAll('[data-mnome]').forEach(inp => inp.addEventListener('input', () => { _novosMateriaisItem[inp.dataset.mnome].nome = inp.value; }));
+      wrap.querySelectorAll('[data-mqty]').forEach(inp => inp.addEventListener('input', () => { _novosMateriaisItem[inp.dataset.mqty].qty = parseFloat(inp.value)||0; }));
+      wrap.querySelectorAll('[data-mcusto]').forEach(inp => inp.addEventListener('input', () => { _novosMateriaisItem[inp.dataset.mcusto].custo = parseFloat(inp.value)||0; }));
+      wrap.querySelectorAll('[data-mdel]').forEach(btn => btn.addEventListener('click', () => { _novosMateriaisItem.splice(parseInt(btn.dataset.mdel),1); _renderNovosMateriaisItem(); }));
+    }
+    el.querySelector('#btnAddMaterialNovoItem').addEventListener('click', () => {
+      _novosMateriaisItem.push({nome:'',qty:1,custo:0}); _renderNovosMateriaisItem();
+    });
+
+    // ── Auto-preencher ao selecionar serviço ──
+    el.querySelector('#itemServico').addEventListener('change', (e) => {
+      const s = state.servicos.find(x => x.id === e.target.value);
+      if (!s) return;
+      el.querySelector('#itemProcedimento').value = s.nome;
+      el.querySelector('#itemValor').value = s.preco;
+    });
+
+    // ── Submit: adicionar procedimento ao plano ──
+    el.querySelector('#formItemPlano').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const item = {
+        id: uid(),
+        dente: el.querySelector('#itemDente').value.trim(),
+        procedimento: el.querySelector('#itemProcedimento').value.trim(),
+        valor: parseFloat(el.querySelector('#itemValor').value) || 0,
+        status: 'pendente',
+        servicoId: el.querySelector('#itemServico').value,
+        dataConclusao: '',
+        baixas: [],
+        materiais: _novosMateriaisItem.filter(m => m.nome).map(m => ({nome:m.nome, qty:m.qty||1, custo:m.custo||0}))
+      };
+      plano.itens.push(item);
+      definirStatusItem(item, 'pendente');
+      save(STORAGE_KEYS.clientes, state.clientes);
+      aposMudancaPlano(c);
+      _novosMateriaisItem = [];
+      renderAbaPlanoOrcamento(el, c);
+      showToast('✅ Procedimento adicionado ao plano!');
+    });
+
+    // ── Status e data de cada procedimento ──
+    el.querySelectorAll('.status-item').forEach(sel => sel.addEventListener('change', () => {
+      const item = plano.itens.find(i => i.id === sel.dataset.item);
+      if (!item) return;
+      const aviso = definirStatusItem(item, sel.value);
+      // Se concluiu: gera ticket financeiro automático se tiver materiais
+      if (sel.value === 'concluido') _gerarTicketMateriais(c, item);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      aposMudancaPlano(c);
+      renderAbaPlanoOrcamento(el, c);
+      showToast('Status atualizado!' + (aviso||''));
+    }));
+    el.querySelectorAll('.data-item').forEach(inp => inp.addEventListener('change', () => {
+      const item = plano.itens.find(i => i.id === inp.dataset.item);
+      if (!item) return;
+      item.dataConclusao = inp.value;
+      save(STORAGE_KEYS.clientes, state.clientes);
+      aposMudancaPlano(c);
+    }));
+    el.querySelectorAll('[data-del-item]').forEach(btn => btn.addEventListener('click', () => {
+      if (!confirm('Excluir este procedimento do plano?')) return;
+      const item = plano.itens.find(i => i.id === btn.dataset.delItem);
+      if (item) devolverMateriais(item.baixas || []);
+      plano.itens = plano.itens.filter(i => i.id !== btn.dataset.delItem);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      aposMudancaPlano(c);
+      renderAbaPlanoOrcamento(el, c);
+    }));
+
+    // ── Modal de edição de materiais por procedimento ──
+    let _editMatItemId = null;
+    let _editMatItens = [];
+    const modalMat = el.querySelector('#modalEditMat');
+    function _abrirModalMat(itemId) {
+      _editMatItemId = itemId;
+      const item = plano.itens.find(i => i.id === itemId);
+      if (!item) return;
+      _editMatItens = JSON.parse(JSON.stringify(item.materiais || []));
+      el.querySelector('#modalMatProcNome').textContent = item.procedimento + (item.dente ? ' — ' + item.dente : '');
+      _renderModalMatItens();
+      modalMat.style.display = 'flex';
+    }
+    function _renderModalMatItens() {
+      const div = el.querySelector('#modalMatItens');
+      if (!div) return;
+      if (!_editMatItens.length) { div.innerHTML = '<div style="font-size:13px;color:#6b7280">Nenhum material adicionado.</div>'; return; }
+      div.innerHTML = _editMatItens.map((m, idx) => `
+        <div style="display:grid;grid-template-columns:1fr 70px 100px 26px;gap:6px;align-items:center">
+          <input type="text" placeholder="Nome do material" value="${esc(m.nome||'')}" data-em-nome="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px">
+          <input type="number" placeholder="Qtd" min="0" step="0.01" value="${m.qty||''}" data-em-qty="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px;width:100%">
+          <input type="number" placeholder="Custo un." min="0" step="0.01" value="${m.custo||''}" data-em-custo="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px;width:100%">
+          <button type="button" data-em-del="${idx}" style="background:#fee2e2;color:#b3261e;border:none;border-radius:5px;cursor:pointer;font-size:14px;padding:3px 6px">×</button>
+        </div>`).join('');
+      div.querySelectorAll('[data-em-nome]').forEach(inp => inp.addEventListener('input', () => { _editMatItens[inp.dataset.emNome].nome = inp.value; }));
+      div.querySelectorAll('[data-em-qty]').forEach(inp => inp.addEventListener('input', () => { _editMatItens[inp.dataset.emQty].qty = parseFloat(inp.value)||0; }));
+      div.querySelectorAll('[data-em-custo]').forEach(inp => inp.addEventListener('input', () => { _editMatItens[inp.dataset.emCusto].custo = parseFloat(inp.value)||0; }));
+      div.querySelectorAll('[data-em-del]').forEach(btn => btn.addEventListener('click', () => { _editMatItens.splice(parseInt(btn.dataset.emDel),1); _renderModalMatItens(); }));
+    }
+    el.querySelector('#btnModalAddMat').addEventListener('click', () => { _editMatItens.push({nome:'',qty:1,custo:0}); _renderModalMatItens(); });
+    el.querySelector('#btnSalvarMat').addEventListener('click', () => {
+      const item = plano.itens.find(i => i.id === _editMatItemId);
+      if (item) {
+        item.materiais = _editMatItens.filter(m => m.nome);
+        save(STORAGE_KEYS.clientes, state.clientes);
+        aposMudancaPlano(c);
+        showToast('Materiais salvos!');
+      }
+      modalMat.style.display = 'none';
+      renderAbaPlanoOrcamento(el, c);
+    });
+    el.querySelector('#btnFecharModalMat').addEventListener('click', () => { modalMat.style.display = 'none'; });
+    el.querySelectorAll('[data-edit-mat]').forEach(btn => btn.addEventListener('click', () => _abrirModalMat(btn.dataset.editMat)));
+
+    // ── Aceite do paciente ──
+    el.querySelector('#planoAceite').addEventListener('change', (e) => {
+      plano.aceite.aceito = e.target.checked;
+      plano.aceite.data = e.target.checked ? todayISO() : '';
+      save(STORAGE_KEYS.clientes, state.clientes);
+      aposMudancaPlano(c);
+      renderAbaPlanoOrcamento(el, c);
+    });
+
+    // ── Gerar parcelas ──
+    el.querySelector('#btnGerarParcelas').addEventListener('click', () => {
+      const qtd = Math.max(1, parseInt(el.querySelector('#qtdParcelas').value, 10) || 1);
+      const totalAtual = plano.itens.reduce((s, i) => s + Number(i.valor || 0), 0);
+      const valorBase = Math.floor((totalAtual / qtd) * 100) / 100;
+      const parcelas = [];
+      let soma = 0;
+      for (let n = 1; n <= qtd; n++) {
+        const valor = n === qtd ? Math.round((totalAtual - soma) * 100) / 100 : valorBase;
+        soma += valor;
+        parcelas.push({ numero: n, valor, pago: false, dataPagamento: '', lancamentos: [] });
+      }
+      const idsAntigos = new Set(plano.parcelas.flatMap(pc => pc.lancamentos || []));
+      if (idsAntigos.size && !confirm('Já existem parcelas pagas. Refazer remove os pagamentos registrados. Continuar?')) return;
+      if (idsAntigos.size) { state.financeiro = state.financeiro.filter(f => !idsAntigos.has(f.id)); save(STORAGE_KEYS.financeiro, state.financeiro); }
+      plano.parcelas = parcelas;
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderAbaPlanoOrcamento(el, c);
+      renderParcelasGlobais && renderParcelasGlobais();
+      showToast('Parcelas geradas!');
+    });
+    el.querySelectorAll('[data-parcela]').forEach(btn => btn.addEventListener('click', () => {
+      if (btn.dataset.parcela === 'pagar') abrirPagamentoParcela(c.id, btn.dataset.numero);
+      else if (confirm('Desfazer este pagamento? Os lançamentos gerados serão removidos.')) desfazerPagamentoParcela(c.id, btn.dataset.numero);
+    }));
+
+    // ── Seção de Orçamentos formais ──
+    let _orcItens = [];
+    function _recalcOrcTotal() {
+      const t = _orcItens.reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
+      const inp = el.querySelector('#orcValor');
+      if (inp) inp.value = t > 0 ? t.toFixed(2) : '';
+    }
+    function _renderOrcItens() {
+      const div = el.querySelector('#orcItensLista');
+      if (!div) return;
+      div.innerHTML = _orcItens.map((item, idx) => `
+        <div style="display:grid;grid-template-columns:1fr 140px 80px 28px;gap:6px;align-items:center;margin-bottom:6px">
+          <select data-orc-serv="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 6px;font-size:13px">
+            <option value="">Procedimento</option>${servOpts}
+          </select>
+          <input type="text" value="${esc(item.regiao||'')}" placeholder="Dente/região" data-orc-reg="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 6px;font-size:13px">
+          <input type="number" min="0" step="0.01" value="${item.valor||''}" placeholder="Valor" data-orc-val="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 6px;font-size:13px;width:100%">
+          <button type="button" data-orc-del-item="${idx}" style="background:#fee2e2;color:#b3261e;border:none;border-radius:5px;cursor:pointer;font-size:16px;line-height:1;padding:4px 6px">×</button>
+        </div>`).join('');
+      _orcItens.forEach((item, idx) => {
+        const sel = div.querySelector(`[data-orc-serv="${idx}"]`);
+        if (sel && item.servicoId) sel.value = item.servicoId;
+        sel && (sel.onchange = () => {
+          const opt = sel.options[sel.selectedIndex];
+          _orcItens[idx].servicoId = sel.value;
+          _orcItens[idx].nome = opt.text.split(' — ')[0];
+          const preco = parseFloat(opt.dataset.preco)||0;
+          if (preco) { _orcItens[idx].valor = preco; _renderOrcItens(); }
+          _recalcOrcTotal();
+        });
+        const regInp = div.querySelector(`[data-orc-reg="${idx}"]`);
+        regInp && (regInp.oninput = () => { _orcItens[idx].regiao = regInp.value; });
+        const valInp = div.querySelector(`[data-orc-val="${idx}"]`);
+        valInp && (valInp.oninput = () => { _orcItens[idx].valor = parseFloat(valInp.value)||0; _recalcOrcTotal(); });
+        const delBtn = div.querySelector(`[data-orc-del-item="${idx}"]`);
+        delBtn && (delBtn.onclick = () => { _orcItens.splice(idx,1); _renderOrcItens(); _recalcOrcTotal(); });
+      });
+    }
+    el.querySelector('#btnAddItemOrc').addEventListener('click', () => { _orcItens.push({servicoId:'',nome:'',regiao:'',valor:0}); _renderOrcItens(); });
+    el.querySelector('#btnNovoOrcamento').addEventListener('click', () => { el.querySelector('#formNovoOrcamento').style.display='block'; });
+    el.querySelector('#btnCancelarOrc').addEventListener('click', () => { el.querySelector('#formNovoOrcamento').style.display='none'; _orcItens=[]; });
+    el.querySelector('#formOrcDados').addEventListener('submit', e => {
+      e.preventDefault();
+      const itens = _orcItens.filter(i=>i.nome||i.servicoId);
+      const valor = num(el.querySelector('#orcValor').value) || itens.reduce((s,i)=>s+(i.valor||0),0);
+      if (!c.orcamentos) c.orcamentos = [];
+      c.orcamentos.push({
+        id:uid(), data:el.querySelector('#orcData').value,
+        validade:el.querySelector('#orcValidade').value,
+        itens, descricao:itens.map(i=>i.nome).join(', '),
+        valor, obs:el.querySelector('#orcObs').value.trim(), status:'aguardando'
+      });
+      save(STORAGE_KEYS.clientes, state.clientes);
+      showToast('Orçamento salvo!'); _orcItens=[];
+      renderAbaPlanoOrcamento(el, c);
+    });
+    el.querySelectorAll('[data-orc-aceitar]').forEach(btn => btn.addEventListener('click', () => {
+      const o = c.orcamentos.find(x=>x.id===btn.dataset.orcAceitar);
+      if (o) { o.status='aceito'; o.statusEm=new Date().toISOString(); save(STORAGE_KEYS.clientes,state.clientes); showToast('✅ Orçamento aceito!'); renderAbaPlanoOrcamento(el,c); }
+    }));
+    el.querySelectorAll('[data-orc-recusar]').forEach(btn => btn.addEventListener('click', () => {
+      const o = c.orcamentos.find(x=>x.id===btn.dataset.orcRecusar);
+      if (o) { o.status='recusado'; o.statusEm=new Date().toISOString(); save(STORAGE_KEYS.clientes,state.clientes); showToast('❌ Orçamento recusado.'); renderAbaPlanoOrcamento(el,c); }
+    }));
+    el.querySelectorAll('[data-orc-financeiro]').forEach(btn => btn.addEventListener('click', () => {
+      const o = c.orcamentos.find(x=>x.id===btn.dataset.orcFinanceiro);
+      if (!o) return;
+      const descricao = `Orçamento aceito — ${o.itens&&o.itens.length ? o.itens.map(i=>i.nome).join(', ') : (o.descricao||'Procedimento')}`;
+      state.financeiro.push({
+        id:uid(), tipo:'receita', atendimento:false, origem:'particular',
+        descricao, valor:o.valor, data:todayISO(),
+        clienteId:c.id, clienteNome:c.nome,
+        profissionalId:'', profissionalNome:'',
+        procedimentoNome:descricao, orcamentoId:o.id,
+        formaPagamento:'A definir', taxaPercentual:0, taxaValor:0,
+        custoInsumos:0, valorLiquido:o.valor, lucro:o.valor, baixas:[]
+      });
+      o.financeiroPago = todayISO();
+      save(STORAGE_KEYS.financeiro, state.financeiro);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderFinanceiro && renderFinanceiro();
+      showToast('💰 Lançado no financeiro!');
+      renderAbaPlanoOrcamento(el, c);
+    }));
+    el.querySelectorAll('[data-orc-pdf]').forEach(btn => btn.addEventListener('click', () => {
+      const o = c.orcamentos.find(x=>x.id===btn.dataset.orcPdf);
+      if (o) _gerarPdfOrcamento(o, c);
+    }));
+    el.querySelectorAll('[data-orc-del]').forEach(btn => btn.addEventListener('click', () => {
+      if (!confirm('Excluir orçamento?')) return;
+      c.orcamentos = c.orcamentos.filter(x=>x.id!==btn.dataset.orcDel);
+      save(STORAGE_KEYS.clientes, state.clientes);
+      renderAbaPlanoOrcamento(el, c);
+    }));
+  }
+
+  // Gera ticket de materiais no financeiro quando um procedimento é concluído
+  function _gerarTicketMateriais(cliente, item) {
+    if (!item.materiais || !item.materiais.length) return;
+    const custo = item.materiais.reduce((s, m) => s + (m.custo||0) * (m.qty||1), 0);
+    if (custo <= 0) return;
+    // evitar duplicata: se já existe lançamento para este item, não gera de novo
+    const jaExiste = (state.financeiro||[]).some(f => f.itemPlanoId === item.id && f.tipo === 'despesa' && f.categoria === 'materiais');
+    if (jaExiste) return;
+    state.financeiro = state.financeiro || [];
+    const matDesc = item.materiais.map(m => `${m.nome} ×${m.qty}`).join(', ');
+    state.financeiro.push({
+      id: uid(), tipo: 'despesa', origem: 'materiais', categoria: 'materiais',
+      descricao: `Materiais — ${item.procedimento}${item.dente ? ' ('+item.dente+')' : ''}: ${matDesc}`,
+      valor: custo, data: item.dataConclusao || todayISO(),
+      clienteId: cliente.id, clienteNome: cliente.nome,
+      procedimentoNome: item.procedimento, itemPlanoId: item.id,
+      profissionalId: '', profissionalNome: '',
+      formaPagamento: '', taxaPercentual: 0, taxaValor: 0,
+      custoInsumos: custo, valorLiquido: -custo, lucro: -custo, baixas: []
+    });
+    save(STORAGE_KEYS.financeiro, state.financeiro);
+    renderFinanceiro && renderFinanceiro();
+    showToast(`🔩 Custo de materiais (${formatMoney(custo)}) lançado no financeiro automaticamente.`);
   }
 
   function renderAbaOrcamento(el, c) {
