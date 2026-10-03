@@ -2817,7 +2817,7 @@
           <form id="formItemPlano">
             <div class="form-grid">
               <div class="field"><label>Procedimento cadastrado</label>
-                <select id="itemServico"><option value="">Outro (digitar abaixo)</option>${state.servicos.map(s => `<option value="${s.id}">${esc(s.nome)} — ${formatMoney(s.preco)}</option>`).join('')}</select>
+                <select id="itemServico"><option value="">Outro (digitar abaixo)</option>${(_st.servicos||[]).map(s => `<option value="${s.id}" data-preco="${s.preco||0}">${_esc(s.nome)} — ${_fmt(s.preco||0)}</option>`).join('')}</select>
               </div>
               <div class="field"><label>Dente / Região</label><input type="text" id="itemDente" placeholder="Ex: 26 ou Geral"></div>
               <div class="field"><label>Procedimento</label><input type="text" id="itemProcedimento" required placeholder="Descreva o procedimento"></div>
@@ -2996,19 +2996,53 @@
 
     // ── Materiais no form de NOVO procedimento ──
     let _novosMateriaisItem = [];
+    const _prodOpts = (_st.produtos||_st.estoque||[]).map(p => `<option value="${_esc(p.nome||p.descricao||'')}" data-custo="${p.custo||p.preco||0}">${_esc(p.nome||p.descricao||'')}${(p.custo||p.preco) ? ' — '+_fmt(p.custo||p.preco) : ''}</option>`).join('');
     function _renderNovosMateriaisItem() {
       const wrap = el.querySelector('#materiaisNovoItemWrap');
       if (!wrap) return;
       wrap.innerHTML = _novosMateriaisItem.map((m, idx) => `
         <div style="display:grid;grid-template-columns:1fr 70px 90px 26px;gap:6px;align-items:center">
-          <input type="text" placeholder="Nome do material/produto" value="${_esc(m.nome||'')}" data-mnome="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px">
-          <input type="number" placeholder="Qtd" min="0" step="0.01" value="${m.qty||''}" data-mqty="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px;width:100%">
+          <div style="position:relative">
+            <select data-msel="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px;width:100%">
+              <option value="">▾ Selecionar produto cadastrado</option>
+              ${_prodOpts}
+              <option value="__outro__">✏️ Digitar manualmente</option>
+            </select>
+            <input type="text" placeholder="Nome do material" value="${_esc(m.nome||'')}" data-mnome="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px;width:100%;margin-top:3px;${m._manual ? '' : 'display:none'}">
+          </div>
+          <input type="number" placeholder="Qtd" min="1" step="1" value="${m.qty||1}" data-mqty="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px;width:100%">
           <input type="number" placeholder="Custo un." min="0" step="0.01" value="${m.custo||''}" data-mcusto="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px;width:100%">
           <button type="button" data-mdel="${idx}" style="background:#fee2e2;color:#b3261e;border:none;border-radius:5px;cursor:pointer;font-size:14px;padding:3px 6px">×</button>
         </div>`).join('');
-      wrap.querySelectorAll('[data-mnome]').forEach(inp => inp.addEventListener('input', () => { _novosMateriaisItem[inp.dataset.mnome].nome = inp.value; }));
-      wrap.querySelectorAll('[data-mqty]').forEach(inp => inp.addEventListener('input', () => { _novosMateriaisItem[inp.dataset.mqty].qty = parseFloat(inp.value)||0; }));
-      wrap.querySelectorAll('[data-mcusto]').forEach(inp => inp.addEventListener('input', () => { _novosMateriaisItem[inp.dataset.mcusto].custo = parseFloat(inp.value)||0; }));
+      wrap.querySelectorAll('[data-msel]').forEach(sel => {
+        const idx = parseInt(sel.dataset.msel);
+        // pre-selecionar se já tem nome e não é manual
+        if (_novosMateriaisItem[idx].nome && !_novosMateriaisItem[idx]._manual) {
+          sel.value = _novosMateriaisItem[idx].nome;
+        }
+        sel.addEventListener('change', () => {
+          const nomeInput = sel.parentElement.querySelector('[data-mnome]');
+          if (sel.value === '__outro__') {
+            _novosMateriaisItem[idx]._manual = true;
+            nomeInput.style.display = '';
+            nomeInput.focus();
+          } else if (sel.value) {
+            _novosMateriaisItem[idx]._manual = false;
+            nomeInput.style.display = 'none';
+            const opt = sel.options[sel.selectedIndex];
+            _novosMateriaisItem[idx].nome = sel.value;
+            const custo = parseFloat(opt.dataset.custo) || 0;
+            if (custo > 0) {
+              _novosMateriaisItem[idx].custo = custo;
+              const custoInp = sel.closest('div[style]').querySelector('[data-mcusto]');
+              if (custoInp) custoInp.value = custo.toFixed(2);
+            }
+          }
+        });
+      });
+      wrap.querySelectorAll('[data-mnome]').forEach(inp => inp.addEventListener('input', () => { _novosMateriaisItem[parseInt(inp.dataset.mnome)].nome = inp.value; }));
+      wrap.querySelectorAll('[data-mqty]').forEach(inp => inp.addEventListener('input', () => { _novosMateriaisItem[parseInt(inp.dataset.mqty)].qty = parseFloat(inp.value)||1; }));
+      wrap.querySelectorAll('[data-mcusto]').forEach(inp => inp.addEventListener('input', () => { _novosMateriaisItem[parseInt(inp.dataset.mcusto)].custo = parseFloat(inp.value)||0; }));
       wrap.querySelectorAll('[data-mdel]').forEach(btn => btn.addEventListener('click', () => { _novosMateriaisItem.splice(parseInt(btn.dataset.mdel),1); _renderNovosMateriaisItem(); }));
     }
     el.querySelector('#btnAddMaterialNovoItem').addEventListener('click', () => {
@@ -3017,10 +3051,12 @@
 
     // ── Auto-preencher ao selecionar serviço ──
     el.querySelector('#itemServico').addEventListener('change', (e) => {
-      const s = (_st.servicos||[]).find(x => x.id === e.target.value);
-      if (!s) return;
-      el.querySelector('#itemProcedimento').value = s.nome;
-      el.querySelector('#itemValor').value = s.preco;
+      const opt = e.target.options[e.target.selectedIndex];
+      const preco = parseFloat(opt.dataset.preco) || 0;
+      const nome  = opt.text.split(' — ')[0];
+      if (!e.target.value) return;
+      el.querySelector('#itemProcedimento').value = nome;
+      el.querySelector('#itemValor').value = preco > 0 ? preco.toFixed(2) : '';
     });
 
     // ── Submit: adicionar procedimento ao plano ──
@@ -3093,17 +3129,47 @@
       if (!_editMatItens.length) { div.innerHTML = '<div style="font-size:13px;color:#6b7280">Nenhum material adicionado.</div>'; return; }
       div.innerHTML = _editMatItens.map((m, idx) => `
         <div style="display:grid;grid-template-columns:1fr 70px 100px 26px;gap:6px;align-items:center">
-          <input type="text" placeholder="Nome do material" value="${_esc(m.nome||'')}" data-em-nome="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px">
-          <input type="number" placeholder="Qtd" min="0" step="0.01" value="${m.qty||''}" data-em-qty="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px;width:100%">
+          <div>
+            <select data-em-sel="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px;width:100%">
+              <option value="">▾ Selecionar produto</option>
+              ${_prodOpts}
+              <option value="__outro__">✏️ Digitar manualmente</option>
+            </select>
+            <input type="text" placeholder="Nome do material" value="${_esc(m.nome||'')}" data-em-nome="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px;width:100%;margin-top:3px;${m._manual||(!_prodOpts||!m.nome)?'':'display:none'}">
+          </div>
+          <input type="number" placeholder="Qtd" min="1" step="1" value="${m.qty||1}" data-em-qty="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px;width:100%">
           <input type="number" placeholder="Custo un." min="0" step="0.01" value="${m.custo||''}" data-em-custo="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px;width:100%">
           <button type="button" data-em-del="${idx}" style="background:#fee2e2;color:#b3261e;border:none;border-radius:5px;cursor:pointer;font-size:14px;padding:3px 6px">×</button>
         </div>`).join('');
-      div.querySelectorAll('[data-em-nome]').forEach(inp => inp.addEventListener('input', () => { _editMatItens[inp.dataset.emNome].nome = inp.value; }));
-      div.querySelectorAll('[data-em-qty]').forEach(inp => inp.addEventListener('input', () => { _editMatItens[inp.dataset.emQty].qty = parseFloat(inp.value)||0; }));
-      div.querySelectorAll('[data-em-custo]').forEach(inp => inp.addEventListener('input', () => { _editMatItens[inp.dataset.emCusto].custo = parseFloat(inp.value)||0; }));
+      div.querySelectorAll('[data-em-sel]').forEach(sel => {
+        const idx = parseInt(sel.dataset.emSel);
+        if (_editMatItens[idx].nome && !_editMatItens[idx]._manual) sel.value = _editMatItens[idx].nome;
+        sel.addEventListener('change', () => {
+          const nomeInp = sel.parentElement.querySelector('[data-em-nome]');
+          if (sel.value === '__outro__') {
+            _editMatItens[idx]._manual = true;
+            nomeInp.style.display = '';
+            nomeInp.focus();
+          } else if (sel.value) {
+            _editMatItens[idx]._manual = false;
+            nomeInp.style.display = 'none';
+            const opt = sel.options[sel.selectedIndex];
+            _editMatItens[idx].nome = sel.value;
+            const custo = parseFloat(opt.dataset.custo) || 0;
+            if (custo > 0) {
+              _editMatItens[idx].custo = custo;
+              const custoInp = sel.closest('div[style]').querySelector('[data-em-custo]');
+              if (custoInp) custoInp.value = custo.toFixed(2);
+            }
+          }
+        });
+      });
+      div.querySelectorAll('[data-em-nome]').forEach(inp => inp.addEventListener('input', () => { _editMatItens[parseInt(inp.dataset.emNome)].nome = inp.value; }));
+      div.querySelectorAll('[data-em-qty]').forEach(inp => inp.addEventListener('input', () => { _editMatItens[parseInt(inp.dataset.emQty)].qty = parseFloat(inp.value)||1; }));
+      div.querySelectorAll('[data-em-custo]').forEach(inp => inp.addEventListener('input', () => { _editMatItens[parseInt(inp.dataset.emCusto)].custo = parseFloat(inp.value)||0; }));
       div.querySelectorAll('[data-em-del]').forEach(btn => btn.addEventListener('click', () => { _editMatItens.splice(parseInt(btn.dataset.emDel),1); _renderModalMatItens(); }));
     }
-    el.querySelector('#btnModalAddMat').addEventListener('click', () => { _editMatItens.push({nome:'',qty:1,custo:0}); _renderModalMatItens(); });
+    el.querySelector('#btnModalAddMat').addEventListener('click', () => { _editMatItens.push({nome:'',qty:1,custo:0,_manual:!_prodOpts}); _renderModalMatItens(); });
     el.querySelector('#btnSalvarMat').addEventListener('click', () => {
       const item = plano.itens.find(i => i.id === _editMatItemId);
       if (item) {
