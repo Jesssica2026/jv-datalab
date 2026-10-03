@@ -517,11 +517,12 @@
             <div style="display:flex;gap:8px;align-items:center">
               <button type="button" class="btn secondary small gold" id="btnModoDia">Dia</button>
               <button type="button" class="btn secondary small" id="btnModoSemana">Semana</button>
+              <button type="button" class="btn secondary small" id="btnModoMes">Mês</button>
             </div>
           </div>
           <div id="timelineNav" style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap"></div>
           <div id="timelineConteudo"></div>
-          <div style="display:flex;gap:16px;margin-top:14px;font-size:12.5px;color:#6b7280;flex-wrap:wrap">
+          <div style="display:flex;gap:16px;margin-top:14px;font-size:12.5px;color:#6b7280;flex-wrap:wrap" id="legendaTimelineEstatica">
             <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#1a7d3a;margin-right:5px"></span>Disponível</span>
             <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#c9701a;margin-right:5px"></span>Ocupado</span>
             <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#9aa0ab;margin-right:5px"></span>Bloqueado / Fechado</span>
@@ -3127,13 +3128,32 @@
     if (session.tipo === 'profissional') lista = lista.filter(a => a.profissionalId === session.profissionalId);
     else { const filtro = document.getElementById('filtroProfissional').value; if (filtro) lista = lista.filter(a => a.profissionalId === filtro); }
     lista.sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
-    document.getElementById('listaAgendamentos').innerHTML = lista.length ? lista.map(a => {
+    const confirmados = lista.filter(a => !a.canceladoCliente);
+    const cancelados = lista.filter(a => !!a.canceladoCliente);
+    function rowHtml(a, isCancelado) {
       const cli = state.clientes.find(c => c.id === a.clienteId);
       const serv = state.servicos.find(s => s.id === a.servicoId);
       const prof = state.profissionais.find(p => p.id === a.profissionalId);
       const profTxt = session.tipo === 'admin' ? ` · ${prof ? prof.nome : 'Não atribuído'}` : '';
+      if (isCancelado) {
+        const motivo = a.motivoCancelamento ? ` — Motivo: ${a.motivoCancelamento}` : '';
+        return `<div class="list-row" style="opacity:.7;background:#fff5f5;border-left:3px solid #b3261e">
+          <span style="text-decoration:line-through;color:#b3261e">${formatDateBR(a.data)} às ${a.hora} — ${cli ? cli.nome : 'Paciente'} (${serv ? serv.nome : 'Serviço'})${profTxt}</span>
+          <span style="font-size:11px;color:#b3261e;text-decoration:none;white-space:nowrap">❌ Cancelado${motivo}</span>
+        </div>`;
+      }
       return `<div class="list-row"><span>${formatDateBR(a.data)} às ${a.hora} — ${cli ? cli.nome : 'Paciente'} (${serv ? serv.nome : 'Serviço'})${profTxt}${a.origem === 'online' ? '<span class="badge">Online</span>' : ''}</span><span style="display:flex;gap:6px;flex-shrink:0"><button class="btn gold small" data-whats-agenda="${a.id}" title="Enviar WhatsApp">🟢</button><button class="btn danger small" data-cancel-list="${a.id}">Cancelar</button></span></div>`;
-    }).join('') : '<div class="empty-msg">Nenhum agendamento futuro.</div>';
+    }
+    let html = '';
+    if (confirmados.length) {
+      html += confirmados.map(a => rowHtml(a, false)).join('');
+    } else {
+      html += '<div class="empty-msg">Nenhum agendamento confirmado futuro.</div>';
+    }
+    if (cancelados.length) {
+      html += `<div style="margin-top:14px;padding-top:10px;border-top:1px solid #fee2e2"><p style="font-size:12px;font-weight:600;color:#b3261e;margin-bottom:8px">❌ Cancelados (${cancelados.length})</p>${cancelados.map(a => rowHtml(a, true)).join('')}</div>`;
+    }
+    document.getElementById('listaAgendamentos').innerHTML = html;
   }
   function renderAgendaCompleta() { renderAgendamentos(); renderDisponibilidade(); renderTimeline(); }
   document.getElementById('filtroProfissional').addEventListener('change', renderAgendaCompleta);
@@ -3369,21 +3389,89 @@
   // ---------- Visão da Agenda (timeline) ----------
   document.getElementById('btnModoDia').addEventListener('click', () => { timelineModo = 'dia'; renderTimeline(); });
   document.getElementById('btnModoSemana').addEventListener('click', () => { timelineModo = 'semana'; renderTimeline(); });
+  document.getElementById('btnModoMes').addEventListener('click', () => { timelineModo = 'mes'; renderTimeline(); });
   function renderTimelineNav() {
     document.getElementById('btnModoDia').classList.toggle('gold', timelineModo === 'dia');
     document.getElementById('btnModoSemana').classList.toggle('gold', timelineModo === 'semana');
+    document.getElementById('btnModoMes').classList.toggle('gold', timelineModo === 'mes');
     const nav = document.getElementById('timelineNav');
     if (timelineModo === 'dia') {
       nav.innerHTML = `<button type="button" class="btn secondary small" id="btnDiaAnterior">◀</button><input type="date" id="timelineDataInput" value="${timelineData}" style="max-width:170px"><button type="button" class="btn secondary small" id="btnDiaProximo">▶</button>`;
       document.getElementById('btnDiaAnterior').addEventListener('click', () => { timelineData = somarDias(timelineData, -1); renderTimeline(); });
       document.getElementById('btnDiaProximo').addEventListener('click', () => { timelineData = somarDias(timelineData, 1); renderTimeline(); });
       document.getElementById('timelineDataInput').addEventListener('change', (e) => { timelineData = e.target.value; renderTimeline(); });
-    } else {
+    } else if (timelineModo === 'semana') {
       const inicioSemana = inicioDaSemana(timelineData), fimSemana = somarDias(inicioSemana, 6);
       nav.innerHTML = `<button type="button" class="btn secondary small" id="btnSemanaAnterior">◀</button><span style="font-size:13px;color:var(--cor-primaria);font-weight:600">${formatDateBR(inicioSemana)} — ${formatDateBR(fimSemana)}</span><button type="button" class="btn secondary small" id="btnSemanaProxima">▶</button>`;
       document.getElementById('btnSemanaAnterior').addEventListener('click', () => { timelineData = somarDias(timelineData, -7); renderTimeline(); });
       document.getElementById('btnSemanaProxima').addEventListener('click', () => { timelineData = somarDias(timelineData, 7); renderTimeline(); });
+    } else {
+      const d = new Date(timelineData + 'T00:00:00');
+      const mesNomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      nav.innerHTML = `<button type="button" class="btn secondary small" id="btnMesAnterior">◀</button><span style="font-size:13px;color:var(--cor-primaria);font-weight:600">${mesNomes[d.getMonth()]} ${d.getFullYear()}</span><button type="button" class="btn secondary small" id="btnMesProximo">▶</button>`;
+      document.getElementById('btnMesAnterior').addEventListener('click', () => { const d2 = new Date(timelineData + 'T00:00:00'); d2.setMonth(d2.getMonth() - 1); timelineData = d2.toISOString().slice(0,10); renderTimeline(); });
+      document.getElementById('btnMesProximo').addEventListener('click', () => { const d2 = new Date(timelineData + 'T00:00:00'); d2.setMonth(d2.getMonth() + 1); timelineData = d2.toISOString().slice(0,10); renderTimeline(); });
     }
+  }
+  function renderTimelineMes(profissionalId, dataRef) {
+    const alvo = profissionalId;
+    const d = new Date(dataRef + 'T00:00:00');
+    const ano = d.getFullYear(), mes = d.getMonth();
+    const hoje = todayISO();
+    const nomesDias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    // Primeiro dia do mês e total de dias
+    const primeiroDia = new Date(ano, mes, 1);
+    const totalDias = new Date(ano, mes + 1, 0).getDate();
+    const inicioCelula = primeiroDia.getDay(); // 0=dom
+    // Cabeçalho
+    let html = `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;min-width:500px">`;
+    nomesDias.forEach(n => {
+      html += `<div style="text-align:center;font-size:11px;font-weight:700;color:#6b7280;padding:4px 0">${n}</div>`;
+    });
+    // Células vazias antes do dia 1
+    for (let i = 0; i < inicioCelula; i++) {
+      html += `<div style="min-height:80px;background:#f9fafb;border-radius:6px;padding:4px"></div>`;
+    }
+    // Dias do mês
+    for (let dia = 1; dia <= totalDias; dia++) {
+      const iso = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+      const isHoje = iso === hoje;
+      const fechado = !alvo || !janelaDoDia(alvo, iso);
+      const agendDia = alvo ? state.agendamentos.filter(a => a.profissionalId === alvo && a.data === iso) : [];
+      agendDia.sort((a,b) => a.hora.localeCompare(b.hora));
+      const confirmados = agendDia.filter(a => !a.canceladoCliente);
+      const cancelados = agendDia.filter(a => !!a.canceladoCliente);
+      let conteudo = '';
+      if (fechado) {
+        conteudo = `<div style="font-size:9px;color:#c4c9d4;text-align:center;margin-top:8px">Fechado</div>`;
+      } else {
+        // Mostra até 2 agendamentos + indicador de mais
+        const todos = agendDia.slice(0, 2).map(a => {
+          const cancelado = !!a.canceladoCliente;
+          const cli = state.clientes.find(c => c.id === a.clienteId);
+          const nome = cli ? cli.nome.split(' ')[0] : 'Pac.';
+          return `<div style="font-size:9px;border-radius:3px;padding:1px 4px;margin-bottom:2px;${cancelado ? 'background:#fee2e2;color:#b3261e;text-decoration:line-through;' : 'background:#fff7ed;color:#92400e;'}">${a.hora} ${nome}</div>`;
+        }).join('');
+        const mais = agendDia.length > 2 ? `<div style="font-size:9px;color:#6b7280;text-align:center">+${agendDia.length - 2}</div>` : '';
+        if (!agendDia.length) {
+          conteudo = `<div style="font-size:9px;color:#d1fae5;text-align:center;margin-top:10px">✓</div>`;
+        } else {
+          conteudo = todos + mais;
+        }
+      }
+      html += `<div style="min-height:80px;border-radius:6px;border:1px solid ${isHoje ? 'var(--cor-primaria)' : '#f0f0f0'};background:${isHoje ? '#fffbf0' : (fechado ? '#f9fafb' : '#fff')};padding:4px;cursor:${fechado ? 'default' : 'pointer'}" onclick="if('${iso}'>'${todayISO().slice(0,7)}'-'01') return; timelineData='${iso}';timelineModo='dia';renderTimeline()">
+        <div style="font-size:11px;font-weight:${isHoje?'700':'600'};color:${isHoje?'var(--cor-primaria)':'#374151'};margin-bottom:3px">${dia}</div>
+        ${conteudo}
+      </div>`;
+    }
+    html += `</div>`;
+    // Legenda
+    html += `<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid #f0f0f0;font-size:11px;color:#6b7280">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#fff7ed;border:2px solid #c9701a;margin-right:4px"></span>Confirmado</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#fee2e2;border:2px solid #b3261e;margin-right:4px"></span>Cancelado</span>
+      <span style="font-size:10px;color:#9aa0ab">Clique num dia para ver o detalhe</span>
+    </div>`;
+    return html;
   }
   function renderTimelineDia(profissionalId, dataISO) {
     const janelas = janelaDoDia(profissionalId, dataISO);
@@ -3452,8 +3540,11 @@
     renderTimelineNav();
     const alvo = profissionalAlvoAgenda();
     const cont = document.getElementById('timelineConteudo');
+    const legendaEst = document.getElementById('legendaTimelineEstatica');
+    if (legendaEst) legendaEst.style.display = timelineModo === 'dia' ? '' : 'none';
     if (!alvo) { cont.innerHTML = '<div class="empty-msg">Selecione um dentista para visualizar a agenda.</div>'; return; }
     if (timelineModo === 'dia') { cont.innerHTML = renderTimelineDia(alvo, timelineData); return; }
+    if (timelineModo === 'mes') { cont.innerHTML = renderTimelineMes(alvo, timelineData); return; }
     const inicioSemana = inicioDaSemana(timelineData);
     const dias = []; for (let i = 0; i < 7; i++) dias.push(somarDias(inicioSemana, i));
     const nomesDias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
