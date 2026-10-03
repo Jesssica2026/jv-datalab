@@ -6796,17 +6796,17 @@
 
   const TRAT_ABAS_ODONTO = [
     { id: 'odontograma', label: 'Odontograma' },
-    { id: 'plano', label: '📋 Plano & Orçamento' },
     { id: 'prontuario', label: 'Prontuário' },
     { id: 'receituario', label: 'Receituário' },
-    { id: 'tratamentos', label: '📋 Histórico' },
+    { id: 'tratamentos', label: '📋 Plano de Tratamento' },
+    { id: 'hist-ext', label: '🕒 Histórico' },
     { id: 'retornos', label: '🔄 Retornos' }
   ];
 
   const TRAT_ABAS_HARMONIZACAO = [
     { id: 'harmonizacao_ficha', label: 'Ficha Clínica' },
-    { id: 'orcamento', label: '💰 Orçamento' },
-    { id: 'tratamentos', label: '📋 Histórico' },
+    { id: 'tratamentos', label: '📋 Plano de Tratamento' },
+    { id: 'hist-ext', label: '🕒 Histórico' },
     { id: 'retornos', label: '🔄 Retornos' }
   ];
 
@@ -6948,12 +6948,188 @@
       if (tratAbaAtiva === 'receituario'        && _rec)  return _rec(el, c);
       if (tratAbaAtiva === 'tratamentos'        && _trat) return _trat(el, c);
       if (tratAbaAtiva === 'harmonizacao_ficha' && _harm) return _harm(el, c);
+      if (tratAbaAtiva === 'hist-ext') return renderAbaHistorico(el, c);
       if (tratAbaAtiva === 'retornos') return renderAbaRetornos(el, c);
       el.innerHTML = '<div class="empty-msg">Selecione uma aba.</div>';
     } catch(err) {
       console.error('[renderTratConteudo] erro na aba "' + tratAbaAtiva + '":', err);
       el.innerHTML = '<div class="empty-msg" style="color:#e74c3c">⚠️ Erro ao carregar aba: ' + (err && err.message ? err.message : String(err)) + '</div>';
     }
+  }
+
+  function renderAbaHistorico(el, c) {
+    const _st   = window.state || state;
+    const _fmt  = window._formatMoney  || formatMoney;
+    const _date = window._formatDateBR || formatDateBR;
+    const _esc  = window._esc          || esc;
+
+    // ── Coleta todos os registros ───────────────────────────────────────────
+    function coletarRegistros() {
+      const rows = [];
+
+      // 1. Tratamentos
+      (c.tratamentos || []).forEach(t => {
+        const statusMap = { aceito: 'Aceito', recusado: 'Recusado', aguardando: 'Aguardando' };
+        rows.push({
+          data: t.data || '',
+          tipo: 'tratamento',
+          tipoLabel: 'Tratamento',
+          desc: [t.procedimento, t.categoria].filter(Boolean).join(' · '),
+          valor: t.valor != null ? Number(t.valor) : null,
+          status: statusMap[t.statusAceite] || t.statusAceite || '',
+          extra: [t.formaPagamento, t.decisao].filter(Boolean).join(' · ')
+        });
+      });
+
+      // 2. Plano de tratamento
+      ((c.planoTratamento && c.planoTratamento.itens) || []).forEach(i => {
+        rows.push({
+          data: i.dataConclusao || '',
+          tipo: 'plano',
+          tipoLabel: 'Plano',
+          desc: i.procedimento || '',
+          valor: null,
+          status: i.status || '',
+          extra: i.sessoes ? 'Sessões: ' + i.sessoes : ''
+        });
+      });
+
+      // 3. Agendamentos
+      (_st.agendamentos || []).filter(a => a.pacienteId === c.id).forEach(a => {
+        rows.push({
+          data: a.data || '',
+          tipo: 'agendamento',
+          tipoLabel: 'Agendamento',
+          desc: [a.servico, a.profissional].filter(Boolean).join(' · '),
+          valor: null,
+          status: a.status || '',
+          extra: a.hora || ''
+        });
+      });
+
+      // 4. Financeiro
+      (_st.financeiro || []).filter(f => f.clienteId === c.id).forEach(f => {
+        rows.push({
+          data: f.data || '',
+          tipo: f.tipo === 'despesa' ? 'despesa' : 'receita',
+          tipoLabel: f.tipo === 'despesa' ? 'Despesa' : 'Receita',
+          desc: f.descricao || '',
+          valor: f.valor != null ? Number(f.valor) : null,
+          status: '',
+          extra: ''
+        });
+      });
+
+      return rows.sort((a, b) => b.data.localeCompare(a.data));
+    }
+
+    function exportCSV(rows) {
+      const header = 'Data,Tipo,Descrição,Valor,Status\n';
+      const lines = rows.map(r => [r.data, r.tipoLabel, '"' + (r.desc || '').replace(/"/g, '""') + '"', r.valor != null ? r.valor : '', r.status || ''].join(','));
+      const blob = new Blob([header + lines.join('\n')], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'historico-' + (c.nome || 'paciente').replace(/\s+/g, '-') + '.csv';
+      a.click();
+    }
+
+    const tipoBadgeColor = {
+      tratamento: '#dbeafe:#1e40af',
+      plano: '#ede9fe:#5b21b6',
+      agendamento: '#dcfce7:#166534',
+      receita: '#d1fae5:#065f46',
+      despesa: '#fee2e2:#991b1b'
+    };
+
+    function tipoBadge(tipo, label) {
+      const [bg, fg] = (tipoBadgeColor[tipo] || '#f3f4f6:#374151').split(':');
+      return `<span style="background:${bg};color:${fg};border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap">${_esc(label)}</span>`;
+    }
+
+    function statusBadge(status) {
+      if (!status) return '';
+      const map = { Aceito: '#d1fae5:#065f46', Recusado: '#fee2e2:#991b1b', Aguardando: '#fef3c7:#92400e', concluido: '#d1fae5:#065f46', cancelado: '#fee2e2:#991b1b', pendente: '#fef3c7:#92400e', confirmado: '#dbeafe:#1e40af' };
+      const [bg, fg] = (map[status] || '#f3f4f6:#374151').split(':');
+      return `<span style="background:${bg};color:${fg};border-radius:5px;padding:2px 8px;font-size:11px;font-weight:600">${_esc(status)}</span>`;
+    }
+
+    // ── Lê filtros do DOM (re-render preserva seleção) ──────────────────────
+    const prevTipo  = el.querySelector('#histFiltroTipo')  ? el.querySelector('#histFiltroTipo').value  : '';
+    const prevDe    = el.querySelector('#histFiltroDe')    ? el.querySelector('#histFiltroDe').value    : '';
+    const prevAte   = el.querySelector('#histFiltroAte')   ? el.querySelector('#histFiltroAte').value   : '';
+
+    let allRows = coletarRegistros();
+
+    el.innerHTML = `
+      <div style="margin-top:10px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+          <select id="histFiltroTipo" style="padding:7px 10px;border:1px solid var(--cor-borda);border-radius:8px;font-size:13px;background:#fbfbfd">
+            <option value="">Todos os tipos</option>
+            <option value="tratamento">Tratamentos</option>
+            <option value="plano">Plano</option>
+            <option value="agendamento">Agendamentos</option>
+            <option value="receita">Receitas</option>
+            <option value="despesa">Despesas</option>
+          </select>
+          <div style="display:flex;align-items:center;gap:6px">
+            <label style="font-size:12px;color:#6b7280;margin:0">De</label>
+            <input type="date" id="histFiltroDe" style="padding:6px 9px;border:1px solid var(--cor-borda);border-radius:8px;font-size:13px;background:#fbfbfd">
+            <label style="font-size:12px;color:#6b7280;margin:0">Até</label>
+            <input type="date" id="histFiltroAte" style="padding:6px 9px;border:1px solid var(--cor-borda);border-radius:8px;font-size:13px;background:#fbfbfd">
+          </div>
+          <button type="button" id="histExportBtn" class="btn secondary small" style="margin-left:auto">📥 Exportar CSV</button>
+        </div>
+        <div id="histLista"></div>
+      </div>
+    `;
+
+    // restaura filtros
+    const selTipo = el.querySelector('#histFiltroTipo');
+    const inpDe   = el.querySelector('#histFiltroDe');
+    const inpAte  = el.querySelector('#histFiltroAte');
+    if (prevTipo) selTipo.value = prevTipo;
+    if (prevDe)   inpDe.value  = prevDe;
+    if (prevAte)  inpAte.value = prevAte;
+
+    function renderLista() {
+      let rows = allRows.slice();
+      const tipo = selTipo.value;
+      const de   = inpDe.value;
+      const ate  = inpAte.value;
+      if (tipo) rows = rows.filter(r => r.tipo === tipo);
+      if (de)   rows = rows.filter(r => r.data >= de);
+      if (ate)  rows = rows.filter(r => r.data <= ate);
+
+      const lista = el.querySelector('#histLista');
+      if (!rows.length) {
+        lista.innerHTML = '<div class="empty-msg">Nenhum registro encontrado para os filtros selecionados.</div>';
+        return;
+      }
+      lista.innerHTML = rows.map(r => `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--cor-borda);border-radius:9px;background:#fff;margin-bottom:7px;flex-wrap:wrap">
+          <span style="font-size:12px;color:#6b7280;white-space:nowrap;min-width:80px">${r.data ? _date(r.data) : '—'}</span>
+          ${tipoBadge(r.tipo, r.tipoLabel)}
+          <span style="flex:1;font-size:13px;color:var(--cor-texto)">${_esc(r.desc)}${r.extra ? '<span style="color:#9ca3af;font-size:12px"> · ' + _esc(r.extra) + '</span>' : ''}</span>
+          ${r.valor != null ? `<span style="font-size:13px;font-weight:600;color:var(--cor-primaria);white-space:nowrap">${_fmt(r.valor)}</span>` : ''}
+          ${statusBadge(r.status)}
+        </div>
+      `).join('');
+    }
+
+    renderLista();
+    selTipo.addEventListener('change', renderLista);
+    inpDe.addEventListener('change', renderLista);
+    inpAte.addEventListener('change', renderLista);
+    el.querySelector('#histExportBtn').addEventListener('click', () => {
+      let rows = allRows.slice();
+      const tipo = selTipo.value;
+      const de   = inpDe.value;
+      const ate  = inpAte.value;
+      if (tipo) rows = rows.filter(r => r.tipo === tipo);
+      if (de)   rows = rows.filter(r => r.data >= de);
+      if (ate)  rows = rows.filter(r => r.data <= ate);
+      exportCSV(rows);
+    });
   }
 
   function renderAbaRetornos(el, c) {
