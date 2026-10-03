@@ -2868,7 +2868,7 @@
             </tbody>
           </table>
         </div>
-        <div style="text-align:right;font-weight:700;color:var(--cor-primaria);margin-top:10px;font-size:15px">Total do plano: ${_fmt(total)}</div>
+        <div id="totalPlanoDiv" style="text-align:right;font-weight:700;color:var(--cor-primaria);margin-top:10px;font-size:15px">Total do plano: ${_fmt(total)}</div>
         ${custoTotal > 0 ? `<div style="text-align:right;font-size:12px;color:#6b7280;margin-top:4px">Custo estimado de materiais: ${_fmt(custoTotal)} · margem estimada: ${_fmtMargem(total > 0 ? ((total - custoTotal) / total) * 100 : 0)}</div>` : ''}
       </div>
 
@@ -3033,11 +3033,11 @@
             const opt = sel.options[sel.selectedIndex];
             _novosMateriaisItem[idx].nome = sel.value;
             const custo = parseFloat(opt.dataset.custo) || 0;
-            if (custo > 0) {
-              _novosMateriaisItem[idx].custo = custo;
-              const custoInp = sel.closest('div[style]').querySelector('[data-mcusto]');
-              if (custoInp) custoInp.value = custo.toFixed(2);
-            }
+            _novosMateriaisItem[idx].custo = custo;
+            // sobe dois níveis: div.position:relative → div.grid → pega o [data-mcusto] irmão
+            const gridRow = sel.parentElement.parentElement;
+            const custoInp = gridRow.querySelector('[data-mcusto]');
+            if (custoInp) custoInp.value = custo > 0 ? custo.toFixed(2) : '';
           }
         });
       });
@@ -3050,6 +3050,15 @@
       _novosMateriaisItem.push({nome:'',qty:1,custo:0}); _renderNovosMateriaisItem();
     });
 
+    // ── Atualizar total em tempo real ──
+    function _atualizarTotalPreview() {
+      const formAberto = el.querySelector('#formAddProcWrap') && el.querySelector('#formAddProcWrap').style.display !== 'none';
+      const valorForm = formAberto ? (parseFloat(el.querySelector('#itemValor')?.value) || 0) : 0;
+      const totalSalvo = plano.itens.reduce((s, i) => s + Number(i.valor || 0), 0);
+      const totalDiv = el.querySelector('#totalPlanoDiv');
+      if (totalDiv) totalDiv.textContent = 'Total do plano: ' + _fmt(totalSalvo + valorForm);
+    }
+
     // ── Auto-preencher ao selecionar serviço ──
     el.querySelector('#itemServico').addEventListener('change', (e) => {
       const opt = e.target.options[e.target.selectedIndex];
@@ -3058,7 +3067,11 @@
       if (!e.target.value) return;
       el.querySelector('#itemProcedimento').value = nome;
       el.querySelector('#itemValor').value = preco > 0 ? preco.toFixed(2) : '';
+      _atualizarTotalPreview();
     });
+
+    // atualizar total quando digita valor manualmente
+    el.querySelector('#itemValor')?.addEventListener('input', _atualizarTotalPreview);
 
     // ── Submit: adicionar procedimento ao plano ──
     el.querySelector('#formItemPlano').addEventListener('submit', (e) => {
@@ -3157,11 +3170,10 @@
             const opt = sel.options[sel.selectedIndex];
             _editMatItens[idx].nome = sel.value;
             const custo = parseFloat(opt.dataset.custo) || 0;
-            if (custo > 0) {
-              _editMatItens[idx].custo = custo;
-              const custoInp = sel.closest('div[style]').querySelector('[data-em-custo]');
-              if (custoInp) custoInp.value = custo.toFixed(2);
-            }
+            _editMatItens[idx].custo = custo;
+            const gridRow = sel.parentElement.parentElement;
+            const custoInp = gridRow.querySelector('[data-em-custo]');
+            if (custoInp) custoInp.value = custo > 0 ? custo.toFixed(2) : '';
           }
         });
       });
