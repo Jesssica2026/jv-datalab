@@ -3776,29 +3776,9 @@
             </div>
           </div>
 
-          <!-- ⑦ DECISÃO DO CLIENTE -->
-          <div id="secaoDecisao" style="margin-bottom:24px;display:none">
-            <label style="font-weight:700;font-size:13px;color:#374151;display:block;margin-bottom:8px">⑦ Decisão do paciente</label>
-            <div style="display:flex;gap:10px;flex-wrap:wrap" id="decisaoBtns">
-              <button type="button" class="decisao-btn" data-decisao="aguardando" style="padding:8px 18px;border:2px solid #e65100;border-radius:8px;background:#fff3e0;color:#e65100;font-size:13px;font-weight:600;cursor:pointer">⏳ Aguardando resposta</button>
-              <button type="button" class="decisao-btn" data-decisao="aceito" style="padding:8px 18px;border:2px solid var(--cor-borda);border-radius:8px;background:var(--cor-surface);font-size:13px;font-weight:600;cursor:pointer">✅ Paciente aceitou</button>
-              <button type="button" class="decisao-btn" data-decisao="recusado" style="padding:8px 18px;border:2px solid var(--cor-borda);border-radius:8px;background:var(--cor-surface);font-size:13px;font-weight:600;cursor:pointer">❌ Paciente recusou</button>
-            </div>
-            <!-- Aviso de lançamento no financeiro quando aceito -->
-            <div id="avisoPgto" style="display:none;margin-top:10px;padding:10px 12px;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;font-size:13px;color:#1a7d3a">
-              ✅ Ao salvar, o valor será <strong>lançado automaticamente no financeiro</strong> com desconto da taxa e do custo de materiais.
-            </div>
-            <div id="avisoRecusado" style="display:none;margin-top:10px;padding:10px 12px;background:#fdecea;border:1px solid #ef9a9a;border-radius:8px;font-size:13px;color:#b3261e">
-              ❌ Será salvo como orçamento recusado. Nenhum lançamento no financeiro.
-            </div>
-          </div>
-
           <!-- BOTÕES DE AÇÃO -->
           <div id="secaoBotoes" style="display:none">
-            <div style="display:flex;gap:10px;flex-wrap:wrap">
-              <button type="button" class="btn secondary" id="btnGerarOrcamento">📄 Gerar orçamento</button>
-              <button type="submit" class="btn" id="btnSalvarTratamento" style="background:var(--cor-primaria)">💾 Salvar tratamento</button>
-            </div>
+            <button type="submit" class="btn" id="btnSalvarTratamento" style="background:var(--cor-primaria)">💾 Salvar tratamento</button>
           </div>
 
         </form>
@@ -3828,7 +3808,7 @@
       el.querySelector('#blocoOdontograma').style.display = _cat === 'odonto' ? 'block' : 'none';
       el.querySelector('#blocoRegiao').style.display = _cat !== 'odonto' ? 'block' : 'none';
       // Mostrar demais seções
-      ['#secaoProcedimento','#secaoProdutos','#secaoObjetivo','#secaoValor','#secaoDecisao','#secaoBotoes'].forEach(s => {
+      ['#secaoProcedimento','#secaoProdutos','#secaoObjetivo','#secaoValor','#secaoBotoes'].forEach(s => {
         el.querySelector(s).style.display = 'block';
       });
     }));
@@ -3937,42 +3917,14 @@
 
     // ── Decisão do cliente ──
     el.querySelectorAll('.decisao-btn').forEach(btn => btn.addEventListener('click', () => {
-      _decisao = btn.dataset.decisao;
-      el.querySelectorAll('.decisao-btn').forEach(b => {
-        b.style.borderColor = 'var(--cor-borda)'; b.style.background = 'var(--cor-surface)'; b.style.color = 'inherit';
-      });
-      const cores = { aguardando: ['#e65100','#fff3e0','#e65100'], aceito: ['#1a7d3a','#e8f5e9','#1a7d3a'], recusado: ['#b3261e','#fdecea','#b3261e'] };
-      const [bc, bg, tc] = cores[_decisao] || cores.aguardando;
-      btn.style.borderColor = bc; btn.style.background = bg; btn.style.color = tc;
-      el.querySelector('#avisoPgto').style.display = _decisao === 'aceito' ? 'block' : 'none';
-      el.querySelector('#avisoRecusado').style.display = _decisao === 'recusado' ? 'block' : 'none';
+      // (decisão removida do form — fica na lista de orçamentos)
     }));
-    // Pré-selecionar "aguardando"
-    el.querySelector('[data-decisao="aguardando"]')?.click();
-
-    // ── Gerar orçamento ──
-    el.querySelector('#btnGerarOrcamento')?.addEventListener('click', () => {
-      const bruto = parseFloat(el.querySelector('#tNovoValor')?.value) || 0;
-      const proc = el.querySelector('#tNovoDescricao')?.value.trim() || (el.querySelector('#tNovoServico')?.options[el.querySelector('#tNovoServico').selectedIndex]?.text.split(' — ')[0] || '');
-      if (!proc && !bruto) { _toast('Preencha o procedimento e o valor antes de gerar o orçamento.'); return; }
-      const orc = {
-        id: _uid(), data: el.querySelector('#tNovoData')?.value || hoje, validade: '',
-        itens: proc ? [{ id: _uid(), nome: proc, regiao: [..._dentesSel.map(d=>'Dente '+d), ..._regioesSel, el.querySelector('#regiaoLivre')?.value||''].filter(Boolean).join(', '), valor: bruto }] : [],
-        valor: bruto, obs: el.querySelector('#tNovoObs')?.value.trim() || '', status: 'aguardando', financeiroPago: ''
-      };
-      if (!c.orcamentos) c.orcamentos = [];
-      c.orcamentos.push(orc);
-      _save(_sk.clientes, _st.clientes);
-      _toast('📄 Orçamento salvo! Veja abaixo na lista de orçamentos.');
-      renderListaOrcamentos();
-    });
 
     // ── Salvar tratamento ──
     el.querySelector('#formNovoTratamento')?.addEventListener('submit', e => {
       e.preventDefault();
       if (!_cat) { _toast('Selecione a categoria do tratamento.'); return; }
       const bruto = parseFloat(el.querySelector('#tNovoValor')?.value) || 0;
-      const formaKey = el.querySelector('#tNovoForma')?.value || 'dinheiro';
       const servId = el.querySelector('#tNovoServico')?.value || '';
       const descricao = el.querySelector('#tNovoDescricao')?.value.trim() || (el.querySelector('#tNovoServico')?.options[el.querySelector('#tNovoServico').selectedIndex]?.text.split(' — ')[0] || '');
       const profId = el.querySelector('#tNovoProf')?.value || '';
@@ -3985,8 +3937,9 @@
         return { prodId: m.prodId, nome: p ? p.nome : '', qtd: m.qtd||1, custoUnit: p ? _custoPorUso(p) : 0 };
       });
       const custoMateriais = materiais.reduce((s,m) => s + m.custoUnit*(m.qtd||1), 0);
-      const calc = _calcLucro(bruto, formaKey, custoMateriais);
       const dataT = el.querySelector('#tNovoData')?.value || hoje;
+
+      // Salva o tratamento com statusAceite = 'aguardando' (decisão é feita na lista de orçamentos)
       const novoTrat = {
         id: _uid(), data: dataT, categoria: _cat, categoriaLabel: { odonto:'Odontológico', botox:'Botox', harmonizacao:'Harmonização Facial' }[_cat] || _cat,
         servicoId: servId, procedimento: descricao, profissionalId: profId,
@@ -3996,48 +3949,25 @@
         objetivo: el.querySelector('#tNovoObjetivo')?.value.trim() || '',
         observacoes: el.querySelector('#tNovoObs')?.value.trim() || '',
         materiais, custoMateriais,
-        valor: bruto, formaPagamento: formaKey, formaPagamentoLabel: _formaByKey(formaKey).label,
-        parcelas: parseInt(el.querySelector('#tNovoParcelas')?.value)||1,
-        statusAceite: _decisao, lancadoFinanceiro: ''
+        valor: bruto,
+        statusAceite: 'aguardando', lancadoFinanceiro: ''
       };
+
+      // Também gera orçamento automaticamente para ficar na lista
+      if (!c.orcamentos) c.orcamentos = [];
+      c.orcamentos.push({
+        id: _uid(), data: dataT, validade: '',
+        itens: descricao ? [{ id: _uid(), nome: descricao, regiao: areaTratada, valor: bruto }] : [],
+        valor: bruto, obs: novoTrat.observacoes,
+        status: 'aguardando', financeiroPago: '',
+        tratamentoId: novoTrat.id,
+        custoMateriais, materiais
+      });
+
       if (!c.tratamentos) c.tratamentos = [];
       c.tratamentos.push(novoTrat);
-
-      // Lançar no financeiro se aceito
-      if (_decisao === 'aceito' && bruto > 0) {
-        state.financeiro = state.financeiro || [];
-        const f = _formaByKey(formaKey);
-        const matDesc = materiais.map(m=>`${m.nome} ×${m.qtd}`).join(', ');
-        // Receita
-        state.financeiro.push({
-          id: _uid(), tipo: 'receita', atendimento: true, origem: 'particular',
-          descricao: `${novoTrat.categoriaLabel} — ${descricao||'Tratamento'}${areaTratada?' ('+areaTratada+')':''}`,
-          valor: bruto, data: dataT,
-          clienteId: c.id, clienteNome: c.nome,
-          profissionalId: profId, profissionalNome: nomeProfissionalPorId(profId)||'',
-          servicoId: servId, servicoNome: descricao, procedimentoNome: descricao,
-          formaPagamento: f.label, taxaPercentual: calc.taxaPct, taxaValor: calc.taxa,
-          custoInsumos: custoMateriais, valorLiquido: calc.liquido, lucro: calc.lucro, baixas: []
-        });
-        // Despesa de materiais (se houver)
-        if (custoMateriais > 0) {
-          state.financeiro.push({
-            id: _uid(), tipo: 'despesa', origem: 'materiais', categoria: 'materiais',
-            descricao: `Materiais — ${descricao||'Tratamento'}: ${matDesc}`,
-            valor: custoMateriais, data: dataT,
-            clienteId: c.id, clienteNome: c.nome, procedimentoNome: descricao,
-            profissionalId: profId, profissionalNome: nomeProfissionalPorId(profId)||'',
-            formaPagamento: '', taxaPercentual: 0, taxaValor: 0,
-            custoInsumos: custoMateriais, valorLiquido: -custoMateriais, lucro: -custoMateriais, baixas: []
-          });
-        }
-        _save(_sk.financeiro, state.financeiro);
-        novoTrat.lancadoFinanceiro = dataT;
-        if (typeof renderFinanceiro === 'function') renderFinanceiro();
-        if (typeof renderDashboard === 'function') renderDashboard();
-      }
       _save(_sk.clientes, _st.clientes);
-      _toast(_decisao === 'aceito' ? '✅ Tratamento salvo e lançado no financeiro!' : _decisao === 'recusado' ? '❌ Tratamento salvo como recusado.' : '💾 Tratamento salvo!');
+      _toast('💾 Tratamento salvo! Confirme a decisão do cliente na lista de orçamentos abaixo.');
       renderAbaTratamentos(el, c);
     });
 
@@ -4188,10 +4118,13 @@
         wrapParc.style.display = isCartao ? 'block' : 'none';
         const taxa = _r2(bruto * f.taxa / 100);
         const liquido = _r2(bruto - taxa);
+        const custoMat = _r2(o.custoMateriais || 0);
+        const lucro = _r2(liquido - custoMat);
         preview.innerHTML = `
           <div style="display:flex;justify-content:space-between"><span style="color:#6b7280">Valor bruto</span><span style="font-weight:600">${_fmt(bruto)}</span></div>
           ${taxa>0?`<div style="display:flex;justify-content:space-between"><span style="color:#e65100">Taxa (${f.taxa}%)</span><span style="color:#e65100">− ${_fmt(taxa)}</span></div>`:''}
-          <div style="display:flex;justify-content:space-between;border-top:1px solid #e3e5ec;margin-top:6px;padding-top:6px"><span style="font-weight:700;color:var(--cor-primaria)">Valor líquido</span><span style="font-weight:700;color:#1a7d3a">${_fmt(liquido)}</span></div>`;
+          ${custoMat>0?`<div style="display:flex;justify-content:space-between"><span style="color:#6b7280">Custo materiais</span><span style="color:#6b7280">− ${_fmt(custoMat)}</span></div>`:''}
+          <div style="display:flex;justify-content:space-between;border-top:1px solid #e3e5ec;margin-top:6px;padding-top:6px"><span style="font-weight:700;color:var(--cor-primaria)">Lucro líquido</span><span style="font-weight:700;color:#1a7d3a">${_fmt(lucro)}</span></div>`;
       }
       inpValor.addEventListener('input', atualizarPreview);
       selForma.addEventListener('change', atualizarPreview);
@@ -4206,8 +4139,10 @@
         const fk = selForma.value;
         const f = _formaByKey(fk);
         const parcelas = parseInt(selParc.value)||1;
+        const custoMat = _r2(o.custoMateriais || 0);
         const taxa = _r2(bruto * f.taxa / 100);
         const liquido = _r2(bruto - taxa);
+        const lucro = _r2(liquido - custoMat);
         const itensDesc = (o.itens||[]).map(i=>i.nome+(i.regiao?' ('+i.regiao+')':'')).join(', ')||'Orçamento';
         const hoje2 = new Date().toISOString().slice(0,10);
 
@@ -4219,7 +4154,7 @@
         o.valor = bruto;
         o.financeiroPago = hoje2;
 
-        // Lança no financeiro
+        // Lança receita no financeiro (já deduz custo de materiais do lucro)
         _st.financeiro = _st.financeiro || [];
         _st.financeiro.push({
           id: _uid(), tipo: 'receita', atendimento: true, origem: 'orcamento',
@@ -4227,9 +4162,21 @@
           valor: bruto, data: hoje2,
           clienteId: c.id, clienteNome: c.nome,
           formaPagamento: f.label, taxaPercentual: f.taxa, taxaValor: taxa,
-          custoInsumos: 0, valorLiquido: liquido, lucro: liquido,
+          custoInsumos: custoMat, valorLiquido: liquido, lucro,
           parcelas, orcamentoId: o.id, baixas: []
         });
+        // Lança despesa de materiais separada (para rastreio)
+        if (custoMat > 0) {
+          const matDesc = (o.materiais||[]).map(m=>`${m.nome} ×${m.qtd||1}`).join(', ');
+          _st.financeiro.push({
+            id: _uid(), tipo: 'despesa', origem: 'materiais', categoria: 'materiais',
+            descricao: `Materiais — ${itensDesc}: ${matDesc}`,
+            valor: custoMat, data: hoje2,
+            clienteId: c.id, clienteNome: c.nome,
+            formaPagamento: '', taxaPercentual: 0, taxaValor: 0,
+            custoInsumos: custoMat, valorLiquido: -custoMat, lucro: -custoMat, baixas: []
+          });
+        }
         _save(_sk.financeiro, _st.financeiro);
         _save(_sk.clientes, _st.clientes);
         if (typeof renderFinanceiro === 'function') renderFinanceiro();
