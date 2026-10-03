@@ -2996,7 +2996,8 @@
 
     // ── Materiais no form de NOVO procedimento ──
     let _novosMateriaisItem = [];
-    const _prodOpts = (_st.produtos||_st.estoque||[]).map(p => `<option value="${_esc(p.nome||p.descricao||'')}" data-custo="${p.custo||p.preco||0}">${_esc(p.nome||p.descricao||'')}${(p.custo||p.preco) ? ' — '+_fmt(p.custo||p.preco) : ''}</option>`).join('');
+    const _custoPorUso = p => { if (!p) return 0; if (p.custoUsoOverride != null) return Number(p.custoUsoOverride); const u = Number(p.usosPorEmbalagem); return u > 0 ? Number(p.valorCompra||0) / u : (Number(p.custo||p.preco||0)); };
+    const _prodOpts = (_st.produtos||[]).map(p => { const cu = _custoPorUso(p); return `<option value="${_esc(p.nome||'')}" data-custo="${cu}">${_esc(p.nome||'')}${cu > 0 ? ' — '+_fmt(cu)+'/uso' : ''}</option>`; }).join('');
     function _renderNovosMateriaisItem() {
       const wrap = el.querySelector('#materiaisNovoItemWrap');
       if (!wrap) return;
