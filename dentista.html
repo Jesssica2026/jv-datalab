@@ -2772,15 +2772,39 @@
 
   // ─── ABA UNIFICADA: PLANO & ORÇAMENTO ────────────────────────────────────────
   function renderAbaPlanoOrcamento(el, c) {
+    // aliases compatíveis com escopo admin e com página de Tratamento
+    const _st   = (typeof state !== 'undefined' ? state : null) || window.state;
+    const _save = (typeof save !== 'undefined' ? save : null) || window._save;
+    const _uid  = (typeof uid  !== 'undefined' ? uid  : null) || window._uid;
+    const _esc  = (typeof esc  !== 'undefined' ? esc  : null) || window._esc;
+    const _fmt  = (typeof formatMoney !== 'undefined' ? formatMoney : null) || window._formatMoney;
+    const _date = (typeof formatDateBR !== 'undefined' ? formatDateBR : null) || window._formatDateBR;
+    const _today= (typeof todayISO !== 'undefined' ? todayISO : null) || window._todayISO;
+    const _num  = (typeof num !== 'undefined' ? num : null) || window._num;
+    const _r2   = (typeof r2  !== 'undefined' ? r2  : null) || (v => Math.round((v||0)*100)/100);
+    const _toast= (typeof showToast !== 'undefined' ? showToast : null) || window._showToast;
+    const _SK   = (typeof STORAGE_KEYS !== 'undefined' ? STORAGE_KEYS : null) || window._STORAGE_KEYS;
+    const _aposMudanca = (typeof aposMudancaPlano !== 'undefined' ? aposMudancaPlano : null) || window._aposMudancaPlano || (() => {});
+    const _definirStatus = (typeof definirStatusItem !== 'undefined' ? definirStatusItem : null) || window._definirStatusItem || (() => '');
+    const _devolverMat   = (typeof devolverMateriais !== 'undefined' ? devolverMateriais : null) || window._devolverMateriais || (() => {});
+    const _convenioPac   = (typeof convenioDoPaciente !== 'undefined' ? convenioDoPaciente : null) || window._convenioDoPaciente || (() => null);
+    const _custoMat  = (typeof custoMateriaisItem !== 'undefined' ? custoMateriaisItem : null) || window._custoMateriaisItem || (i => (i.materiais||[]).reduce((s,m)=>(s+(m.custo||0)*(m.qty||1)),0));
+    const _fmtMargem = (typeof fmtMargem !== 'undefined' ? fmtMargem : null) || window._fmtMargem || (v => v.toFixed(1)+'%');
+    const _renderParcelas = (typeof renderParcelasGlobais !== 'undefined' ? renderParcelasGlobais : null) || window._renderParcelasGlobais || null;
+    const _abrirPgto = (typeof abrirPagamentoParcela !== 'undefined' ? abrirPagamentoParcela : null) || window._abrirPagamentoParcela || (() => {});
+    const _desfazerPgto = (typeof desfazerPagamentoParcela !== 'undefined' ? desfazerPagamentoParcela : null) || window._desfazerPagamentoParcela || (() => {});
+    const _renderFin = (typeof renderFinanceiro !== 'undefined' ? renderFinanceiro : null) || window._renderFinanceiro || null;
+    const _gerarPdf  = (typeof _gerarPdfOrcamento !== 'undefined' ? _gerarPdfOrcamento : null) || window._gerarPdfOrcamento || (() => {});
+
     if (!c.planoTratamento) c.planoTratamento = { itens: [], parcelas: [], aceite: {} };
     if (!c.orcamentos) c.orcamentos = [];
     const plano = c.planoTratamento;
     const orcamentos = c.orcamentos;
     const total = plano.itens.reduce((s, i) => s + Number(i.valor || 0), 0);
-    const custoTotal = r2(plano.itens.reduce((s, i) => s + custoMateriaisItem(i), 0));
+    const custoTotal = _r2(plano.itens.reduce((s, i) => s + _custoMat(i), 0));
     const nomeStatus = { pendente: 'Pendente', andamento: 'Em andamento', concluido: 'Concluído' };
-    const conv = convenioDoPaciente(c);
-    const servOpts = (state.servicos||[]).map(s=>`<option value="${s.id}" data-preco="${s.preco||0}">${esc(s.nome)}${s.preco?' — '+formatMoney(s.preco):''}</option>`).join('');
+    const conv = _convenioPac(c);
+    const servOpts = (_st.servicos||[]).map(s=>`<option value="${s.id}" data-preco="${s.preco||0}">${_esc(s.nome)}${s.preco?' — '+_fmt(s.preco):''}</option>`).join('');
 
     el.innerHTML = `
       <!-- ═══ SEÇÃO 1: PROCEDIMENTOS DO PLANO ═══ -->
@@ -2818,18 +2842,18 @@
             <thead><tr><th>Dente</th><th>Procedimento</th><th>Valor</th><th>Materiais</th><th>Status</th><th>Concluído em</th><th></th></tr></thead>
             <tbody>
               ${plano.itens.length ? plano.itens.map(i => {
-                const custoItem = custoMateriaisItem(i);
+                const custoItem = _custoMat(i);
                 const matLabel = i.materiais && i.materiais.length
-                  ? i.materiais.map(m => `${esc(m.nome)} ${m.qty > 1 ? '×'+m.qty : ''}`).join(', ')
+                  ? i.materiais.map(m => `${_esc(m.nome)} ${m.qty > 1 ? '×'+m.qty : ''}`).join(', ')
                   : '—';
                 return `
                 <tr>
-                  <td>${esc(i.dente) || 'Geral'}</td>
-                  <td>${esc(i.procedimento)}</td>
-                  <td>${formatMoney(i.valor)}</td>
+                  <td>${_esc(i.dente) || 'Geral'}</td>
+                  <td>${_esc(i.procedimento)}</td>
+                  <td>${_fmt(i.valor)}</td>
                   <td style="font-size:12px;max-width:180px">
                     <span title="${matLabel}">${matLabel.length > 35 ? matLabel.slice(0,33)+'…' : matLabel}</span>
-                    ${custoItem > 0 ? `<br><span style="color:#6b7280;font-size:11px">custo: ${formatMoney(custoItem)}</span>` : ''}
+                    ${custoItem > 0 ? `<br><span style="color:#6b7280;font-size:11px">custo: ${_fmt(custoItem)}</span>` : ''}
                     <button class="btn secondary small" data-edit-mat="${i.id}" style="margin-top:3px;font-size:11px;padding:2px 6px">✏️</button>
                   </td>
                   <td>
@@ -2837,15 +2861,15 @@
                       ${Object.keys(nomeStatus).map(k => `<option value="${k}" ${i.status === k ? 'selected' : ''}>${nomeStatus[k]}</option>`).join('')}
                     </select>
                   </td>
-                  <td>${i.status === 'concluido' ? `<input type="date" class="data-item" data-item="${i.id}" value="${esc(i.dataConclusao)}" style="width:140px;font-size:12px">` : '—'}</td>
+                  <td>${i.status === 'concluido' ? `<input type="date" class="data-item" data-item="${i.id}" value="${_esc(i.dataConclusao)}" style="width:140px;font-size:12px">` : '—'}</td>
                   <td><button class="btn danger small" data-del-item="${i.id}" style="font-size:11px;padding:3px 7px">🗑️</button></td>
                 </tr>`;
               }).join('') : '<tr><td colspan="7" class="empty-msg">Nenhum procedimento adicionado.</td></tr>'}
             </tbody>
           </table>
         </div>
-        <div style="text-align:right;font-weight:700;color:var(--cor-primaria);margin-top:10px;font-size:15px">Total do plano: ${formatMoney(total)}</div>
-        ${custoTotal > 0 ? `<div style="text-align:right;font-size:12px;color:#6b7280;margin-top:4px">Custo estimado de materiais: ${formatMoney(custoTotal)} · margem estimada: ${fmtMargem(total > 0 ? ((total - custoTotal) / total) * 100 : 0)}</div>` : ''}
+        <div style="text-align:right;font-weight:700;color:var(--cor-primaria);margin-top:10px;font-size:15px">Total do plano: ${_fmt(total)}</div>
+        ${custoTotal > 0 ? `<div style="text-align:right;font-size:12px;color:#6b7280;margin-top:4px">Custo estimado de materiais: ${_fmt(custoTotal)} · margem estimada: ${_fmtMargem(total > 0 ? ((total - custoTotal) / total) * 100 : 0)}</div>` : ''}
       </div>
 
       <!-- ═══ MODAL EDIÇÃO DE MATERIAIS ═══ -->
@@ -2869,7 +2893,7 @@
         <div>
           <h4 style="font-size:13px;color:var(--cor-primaria);margin-bottom:10px">✅ Aceite do paciente</h4>
           <label class="checkbox-item"><input type="checkbox" id="planoAceite" ${plano.aceite.aceito ? 'checked' : ''}> Paciente aceitou o plano de tratamento</label>
-          ${plano.aceite.aceito ? `<div style="font-size:12px;color:#6b7280;margin-top:6px">Aceito em ${formatDateBR(plano.aceite.data)}</div>` : ''}
+          ${plano.aceite.aceito ? `<div style="font-size:12px;color:#6b7280;margin-top:6px">Aceito em ${_date(plano.aceite.data)}</div>` : ''}
         </div>
         <div>
           <h4 style="font-size:13px;color:var(--cor-primaria);margin-bottom:10px">💳 Parcelamento</h4>
@@ -2890,15 +2914,15 @@
             ${plano.parcelas.map(pc => `
               <tr>
                 <td>${pc.numero}/${plano.parcelas.length}</td>
-                <td>${formatMoney(pc.valor)}</td>
-                <td>${pc.pago ? `<span style="color:#1a7d3a;font-weight:600">Paga</span>${pc.forma ? `<br><span style="font-size:11px;color:#6b7280">${pc.origem === 'convenio' ? 'Convênio' : 'Particular'} · ${esc(pc.forma)}</span>` : ''}` : '<span style="color:#b3261e;font-weight:600">Pendente</span>'}</td>
-                <td>${pc.dataPagamento ? formatDateBR(pc.dataPagamento) : '—'}</td>
+                <td>${_fmt(pc.valor)}</td>
+                <td>${pc.pago ? `<span style="color:#1a7d3a;font-weight:600">Paga</span>${pc.forma ? `<br><span style="font-size:11px;color:#6b7280">${pc.origem === 'convenio' ? 'Convênio' : 'Particular'} · ${_esc(pc.forma)}</span>` : ''}` : '<span style="color:#b3261e;font-weight:600">Pendente</span>'}</td>
+                <td>${pc.dataPagamento ? _date(pc.dataPagamento) : '—'}</td>
                 <td><button class="btn ${pc.pago ? 'secondary' : 'gold'} small" data-parcela="${pc.pago ? 'desfazer' : 'pagar'}" data-numero="${pc.numero}">${pc.pago ? 'Desfazer' : 'Registrar pgto'}</button></td>
               </tr>`).join('')}
           </tbody>
         </table>
       </div>
-      <div style="font-size:11.5px;color:#6b7280;margin-top:6px">${conv ? `Convênio: ${esc(conv)} (sem taxa de maquininha).` : 'Paciente particular — taxa conforme forma de pagamento.'}</div>
+      <div style="font-size:11.5px;color:#6b7280;margin-top:6px">${conv ? `Convênio: ${_esc(conv)} (sem taxa de maquininha).` : 'Paciente particular — taxa conforme forma de pagamento.'}</div>
       ` : ''}
 
       <hr style="border:none;border-top:1px solid var(--cor-borda);margin:20px 0">
@@ -2913,7 +2937,7 @@
           <h4 style="color:var(--cor-primaria);margin-bottom:12px">Novo orçamento</h4>
           <form id="formOrcDados">
             <div class="form-grid">
-              <div class="field"><label>Data</label><input type="date" id="orcData" value="${todayISO()}"></div>
+              <div class="field"><label>Data</label><input type="date" id="orcData" value="${_today()}"></div>
               <div class="field"><label>Válido até</label><input type="date" id="orcValidade"></div>
             </div>
             <div class="field" style="margin-top:4px">
@@ -2934,9 +2958,9 @@
             <div class="card" style="margin-bottom:12px">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px">
                 <div>
-                  <strong style="color:var(--cor-primaria)">${formatDateBR(o.data)}</strong>
-                  ${o.validade ? `<span style="font-size:12px;color:#6b7280;margin-left:8px">Válido até ${formatDateBR(o.validade)}</span>` : ''}
-                  <br><span style="font-size:15px;font-weight:700;color:var(--cor-secundaria)">${formatMoney(o.valor)}</span>
+                  <strong style="color:var(--cor-primaria)">${_date(o.data)}</strong>
+                  ${o.validade ? `<span style="font-size:12px;color:#6b7280;margin-left:8px">Válido até ${_date(o.validade)}</span>` : ''}
+                  <br><span style="font-size:15px;font-weight:700;color:var(--cor-secundaria)">${_fmt(o.valor)}</span>
                 </div>
                 <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
                   ${o.status === 'aceito' ? '<span style="background:#e8f5e9;color:#1a7d3a;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Aceito</span>' :
@@ -2952,9 +2976,9 @@
                   <button class="btn danger small" data-orc-del="${o.id}">🗑️</button>
                 </div>
               </div>
-              ${o.itens && o.itens.length ? `<div style="font-size:13px">${o.itens.map(i=>`<span style="margin-right:10px">${esc(i.nome)}${i.regiao?' ('+esc(i.regiao)+')':''} — ${formatMoney(i.valor||0)}</span>`).join('')}</div>` : o.descricao ? `<div style="font-size:13px;margin-bottom:4px">${esc(o.descricao)}</div>` : ''}
-              ${o.obs ? `<div style="font-size:12px;color:#6b7280;margin-top:4px">${esc(o.obs)}</div>` : ''}
-              ${o.financeiroPago ? `<div style="font-size:11px;color:#1a7d3a;margin-top:4px">✅ Lançado no financeiro em ${formatDateBR(o.financeiroPago)}</div>` : ''}
+              ${o.itens && o.itens.length ? `<div style="font-size:13px">${o.itens.map(i=>`<span style="margin-right:10px">${_esc(i.nome)}${i.regiao?' ('+_esc(i.regiao)+')':''} — ${_fmt(i.valor||0)}</span>`).join('')}</div>` : o.descricao ? `<div style="font-size:13px;margin-bottom:4px">${_esc(o.descricao)}</div>` : ''}
+              ${o.obs ? `<div style="font-size:12px;color:#6b7280;margin-top:4px">${_esc(o.obs)}</div>` : ''}
+              ${o.financeiroPago ? `<div style="font-size:11px;color:#1a7d3a;margin-top:4px">✅ Lançado no financeiro em ${_date(o.financeiroPago)}</div>` : ''}
             </div>
           `).join('')}
         </div>
@@ -2977,7 +3001,7 @@
       if (!wrap) return;
       wrap.innerHTML = _novosMateriaisItem.map((m, idx) => `
         <div style="display:grid;grid-template-columns:1fr 70px 90px 26px;gap:6px;align-items:center">
-          <input type="text" placeholder="Nome do material/produto" value="${esc(m.nome||'')}" data-mnome="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px">
+          <input type="text" placeholder="Nome do material/produto" value="${_esc(m.nome||'')}" data-mnome="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px">
           <input type="number" placeholder="Qtd" min="0" step="0.01" value="${m.qty||''}" data-mqty="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px;width:100%">
           <input type="number" placeholder="Custo un." min="0" step="0.01" value="${m.custo||''}" data-mcusto="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px;width:100%">
           <button type="button" data-mdel="${idx}" style="background:#fee2e2;color:#b3261e;border:none;border-radius:5px;cursor:pointer;font-size:14px;padding:3px 6px">×</button>
@@ -2993,7 +3017,7 @@
 
     // ── Auto-preencher ao selecionar serviço ──
     el.querySelector('#itemServico').addEventListener('change', (e) => {
-      const s = state.servicos.find(x => x.id === e.target.value);
+      const s = (_st.servicos||[]).find(x => x.id === e.target.value);
       if (!s) return;
       el.querySelector('#itemProcedimento').value = s.nome;
       el.querySelector('#itemValor').value = s.preco;
@@ -3003,7 +3027,7 @@
     el.querySelector('#formItemPlano').addEventListener('submit', (e) => {
       e.preventDefault();
       const item = {
-        id: uid(),
+        id: _uid(),
         dente: el.querySelector('#itemDente').value.trim(),
         procedimento: el.querySelector('#itemProcedimento').value.trim(),
         valor: parseFloat(el.querySelector('#itemValor').value) || 0,
@@ -3014,40 +3038,39 @@
         materiais: _novosMateriaisItem.filter(m => m.nome).map(m => ({nome:m.nome, qty:m.qty||1, custo:m.custo||0}))
       };
       plano.itens.push(item);
-      definirStatusItem(item, 'pendente');
-      save(STORAGE_KEYS.clientes, state.clientes);
-      aposMudancaPlano(c);
+      _definirStatus(item, 'pendente');
+      _save(_SK.clientes, _st.clientes);
+      _aposMudanca(c);
       _novosMateriaisItem = [];
       renderAbaPlanoOrcamento(el, c);
-      showToast('✅ Procedimento adicionado ao plano!');
+      _toast('✅ Procedimento adicionado ao plano!');
     });
 
     // ── Status e data de cada procedimento ──
     el.querySelectorAll('.status-item').forEach(sel => sel.addEventListener('change', () => {
       const item = plano.itens.find(i => i.id === sel.dataset.item);
       if (!item) return;
-      const aviso = definirStatusItem(item, sel.value);
-      // Se concluiu: gera ticket financeiro automático se tiver materiais
+      _definirStatus(item, sel.value);
       if (sel.value === 'concluido') _gerarTicketMateriais(c, item);
-      save(STORAGE_KEYS.clientes, state.clientes);
-      aposMudancaPlano(c);
+      _save(_SK.clientes, _st.clientes);
+      _aposMudanca(c);
       renderAbaPlanoOrcamento(el, c);
-      showToast('Status atualizado!' + (aviso||''));
+      _toast('Status atualizado!');
     }));
     el.querySelectorAll('.data-item').forEach(inp => inp.addEventListener('change', () => {
       const item = plano.itens.find(i => i.id === inp.dataset.item);
       if (!item) return;
       item.dataConclusao = inp.value;
-      save(STORAGE_KEYS.clientes, state.clientes);
-      aposMudancaPlano(c);
+      _save(_SK.clientes, _st.clientes);
+      _aposMudanca(c);
     }));
     el.querySelectorAll('[data-del-item]').forEach(btn => btn.addEventListener('click', () => {
       if (!confirm('Excluir este procedimento do plano?')) return;
       const item = plano.itens.find(i => i.id === btn.dataset.delItem);
-      if (item) devolverMateriais(item.baixas || []);
+      if (item) _devolverMat(item.baixas || []);
       plano.itens = plano.itens.filter(i => i.id !== btn.dataset.delItem);
-      save(STORAGE_KEYS.clientes, state.clientes);
-      aposMudancaPlano(c);
+      _save(_SK.clientes, _st.clientes);
+      _aposMudanca(c);
       renderAbaPlanoOrcamento(el, c);
     }));
 
@@ -3070,7 +3093,7 @@
       if (!_editMatItens.length) { div.innerHTML = '<div style="font-size:13px;color:#6b7280">Nenhum material adicionado.</div>'; return; }
       div.innerHTML = _editMatItens.map((m, idx) => `
         <div style="display:grid;grid-template-columns:1fr 70px 100px 26px;gap:6px;align-items:center">
-          <input type="text" placeholder="Nome do material" value="${esc(m.nome||'')}" data-em-nome="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px">
+          <input type="text" placeholder="Nome do material" value="${_esc(m.nome||'')}" data-em-nome="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px">
           <input type="number" placeholder="Qtd" min="0" step="0.01" value="${m.qty||''}" data-em-qty="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px;width:100%">
           <input type="number" placeholder="Custo un." min="0" step="0.01" value="${m.custo||''}" data-em-custo="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 7px;font-size:12px;width:100%">
           <button type="button" data-em-del="${idx}" style="background:#fee2e2;color:#b3261e;border:none;border-radius:5px;cursor:pointer;font-size:14px;padding:3px 6px">×</button>
@@ -3085,9 +3108,9 @@
       const item = plano.itens.find(i => i.id === _editMatItemId);
       if (item) {
         item.materiais = _editMatItens.filter(m => m.nome);
-        save(STORAGE_KEYS.clientes, state.clientes);
-        aposMudancaPlano(c);
-        showToast('Materiais salvos!');
+        _save(_SK.clientes, _st.clientes);
+        _aposMudanca(c);
+        _toast('Materiais salvos!');
       }
       modalMat.style.display = 'none';
       renderAbaPlanoOrcamento(el, c);
@@ -3098,9 +3121,9 @@
     // ── Aceite do paciente ──
     el.querySelector('#planoAceite').addEventListener('change', (e) => {
       plano.aceite.aceito = e.target.checked;
-      plano.aceite.data = e.target.checked ? todayISO() : '';
-      save(STORAGE_KEYS.clientes, state.clientes);
-      aposMudancaPlano(c);
+      plano.aceite.data = e.target.checked ? _today() : '';
+      _save(_SK.clientes, _st.clientes);
+      _aposMudanca(c);
       renderAbaPlanoOrcamento(el, c);
     });
 
@@ -3118,16 +3141,16 @@
       }
       const idsAntigos = new Set(plano.parcelas.flatMap(pc => pc.lancamentos || []));
       if (idsAntigos.size && !confirm('Já existem parcelas pagas. Refazer remove os pagamentos registrados. Continuar?')) return;
-      if (idsAntigos.size) { state.financeiro = state.financeiro.filter(f => !idsAntigos.has(f.id)); save(STORAGE_KEYS.financeiro, state.financeiro); }
+      if (idsAntigos.size) { _st.financeiro = (_st.financeiro||[]).filter(f => !idsAntigos.has(f.id)); _save(_SK.financeiro, _st.financeiro); }
       plano.parcelas = parcelas;
-      save(STORAGE_KEYS.clientes, state.clientes);
+      _save(_SK.clientes, _st.clientes);
       renderAbaPlanoOrcamento(el, c);
-      renderParcelasGlobais && renderParcelasGlobais();
-      showToast('Parcelas geradas!');
+      _renderParcelas && _renderParcelas();
+      _toast('Parcelas geradas!');
     });
     el.querySelectorAll('[data-parcela]').forEach(btn => btn.addEventListener('click', () => {
-      if (btn.dataset.parcela === 'pagar') abrirPagamentoParcela(c.id, btn.dataset.numero);
-      else if (confirm('Desfazer este pagamento? Os lançamentos gerados serão removidos.')) desfazerPagamentoParcela(c.id, btn.dataset.numero);
+      if (btn.dataset.parcela === 'pagar') _abrirPgto(c.id, btn.dataset.numero);
+      else if (confirm('Desfazer este pagamento? Os lançamentos gerados serão removidos.')) _desfazerPgto(c.id, btn.dataset.numero);
     }));
 
     // ── Seção de Orçamentos formais ──
@@ -3145,7 +3168,7 @@
           <select data-orc-serv="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 6px;font-size:13px">
             <option value="">Procedimento</option>${servOpts}
           </select>
-          <input type="text" value="${esc(item.regiao||'')}" placeholder="Dente/região" data-orc-reg="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 6px;font-size:13px">
+          <input type="text" value="${_esc(item.regiao||'')}" placeholder="Dente/região" data-orc-reg="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 6px;font-size:13px">
           <input type="number" min="0" step="0.01" value="${item.valor||''}" placeholder="Valor" data-orc-val="${idx}" style="border:1px solid var(--cor-borda);border-radius:5px;padding:4px 6px;font-size:13px;width:100%">
           <button type="button" data-orc-del-item="${idx}" style="background:#fee2e2;color:#b3261e;border:none;border-radius:5px;cursor:pointer;font-size:16px;line-height:1;padding:4px 6px">×</button>
         </div>`).join('');
@@ -3174,54 +3197,55 @@
     el.querySelector('#formOrcDados').addEventListener('submit', e => {
       e.preventDefault();
       const itens = _orcItens.filter(i=>i.nome||i.servicoId);
-      const valor = num(el.querySelector('#orcValor').value) || itens.reduce((s,i)=>s+(i.valor||0),0);
+      const valor = _num(el.querySelector('#orcValor').value) || itens.reduce((s,i)=>s+(i.valor||0),0);
       if (!c.orcamentos) c.orcamentos = [];
       c.orcamentos.push({
-        id:uid(), data:el.querySelector('#orcData').value,
+        id:_uid(), data:el.querySelector('#orcData').value,
         validade:el.querySelector('#orcValidade').value,
         itens, descricao:itens.map(i=>i.nome).join(', '),
         valor, obs:el.querySelector('#orcObs').value.trim(), status:'aguardando'
       });
-      save(STORAGE_KEYS.clientes, state.clientes);
-      showToast('Orçamento salvo!'); _orcItens=[];
+      _save(_SK.clientes, _st.clientes);
+      _toast('Orçamento salvo!'); _orcItens=[];
       renderAbaPlanoOrcamento(el, c);
     });
     el.querySelectorAll('[data-orc-aceitar]').forEach(btn => btn.addEventListener('click', () => {
       const o = c.orcamentos.find(x=>x.id===btn.dataset.orcAceitar);
-      if (o) { o.status='aceito'; o.statusEm=new Date().toISOString(); save(STORAGE_KEYS.clientes,state.clientes); showToast('✅ Orçamento aceito!'); renderAbaPlanoOrcamento(el,c); }
+      if (o) { o.status='aceito'; o.statusEm=new Date().toISOString(); _save(_SK.clientes,_st.clientes); _toast('✅ Orçamento aceito!'); renderAbaPlanoOrcamento(el,c); }
     }));
     el.querySelectorAll('[data-orc-recusar]').forEach(btn => btn.addEventListener('click', () => {
       const o = c.orcamentos.find(x=>x.id===btn.dataset.orcRecusar);
-      if (o) { o.status='recusado'; o.statusEm=new Date().toISOString(); save(STORAGE_KEYS.clientes,state.clientes); showToast('❌ Orçamento recusado.'); renderAbaPlanoOrcamento(el,c); }
+      if (o) { o.status='recusado'; o.statusEm=new Date().toISOString(); _save(_SK.clientes,_st.clientes); _toast('❌ Orçamento recusado.'); renderAbaPlanoOrcamento(el,c); }
     }));
     el.querySelectorAll('[data-orc-financeiro]').forEach(btn => btn.addEventListener('click', () => {
       const o = c.orcamentos.find(x=>x.id===btn.dataset.orcFinanceiro);
       if (!o) return;
       const descricao = `Orçamento aceito — ${o.itens&&o.itens.length ? o.itens.map(i=>i.nome).join(', ') : (o.descricao||'Procedimento')}`;
-      state.financeiro.push({
-        id:uid(), tipo:'receita', atendimento:false, origem:'particular',
-        descricao, valor:o.valor, data:todayISO(),
+      if (!_st.financeiro) _st.financeiro = [];
+      _st.financeiro.push({
+        id:_uid(), tipo:'receita', atendimento:false, origem:'particular',
+        descricao, valor:o.valor, data:_today(),
         clienteId:c.id, clienteNome:c.nome,
         profissionalId:'', profissionalNome:'',
         procedimentoNome:descricao, orcamentoId:o.id,
         formaPagamento:'A definir', taxaPercentual:0, taxaValor:0,
         custoInsumos:0, valorLiquido:o.valor, lucro:o.valor, baixas:[]
       });
-      o.financeiroPago = todayISO();
-      save(STORAGE_KEYS.financeiro, state.financeiro);
-      save(STORAGE_KEYS.clientes, state.clientes);
-      renderFinanceiro && renderFinanceiro();
-      showToast('💰 Lançado no financeiro!');
+      o.financeiroPago = _today();
+      _save(_SK.financeiro, _st.financeiro);
+      _save(_SK.clientes, _st.clientes);
+      _renderFin && _renderFin();
+      _toast('💰 Lançado no financeiro!');
       renderAbaPlanoOrcamento(el, c);
     }));
     el.querySelectorAll('[data-orc-pdf]').forEach(btn => btn.addEventListener('click', () => {
       const o = c.orcamentos.find(x=>x.id===btn.dataset.orcPdf);
-      if (o) _gerarPdfOrcamento(o, c);
+      if (o) _gerarPdf(o, c);
     }));
     el.querySelectorAll('[data-orc-del]').forEach(btn => btn.addEventListener('click', () => {
       if (!confirm('Excluir orçamento?')) return;
       c.orcamentos = c.orcamentos.filter(x=>x.id!==btn.dataset.orcDel);
-      save(STORAGE_KEYS.clientes, state.clientes);
+      _save(_SK.clientes, _st.clientes);
       renderAbaPlanoOrcamento(el, c);
     }));
   }
