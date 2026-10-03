@@ -3802,6 +3802,10 @@
           </div>
 
         </form>
+        <div style="margin-top:32px;">
+          <h3 style="font-size:15px;color:var(--cor-primaria);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--cor-borda);">📄 Orçamentos Gerados</h3>
+          <div id="listaOrcamentos"></div>
+        </div>
       </div>
     `;
 
@@ -3959,7 +3963,8 @@
       if (!c.orcamentos) c.orcamentos = [];
       c.orcamentos.push(orc);
       _save(_sk.clientes, _st.clientes);
-      _toast('📄 Orçamento gerado! Acesse a aba Plano & Orçamento para ver.');
+      _toast('📄 Orçamento salvo! Veja abaixo na lista de orçamentos.');
+      renderListaOrcamentos();
     });
 
     // ── Salvar tratamento ──
@@ -4043,6 +4048,112 @@
       _save(_sk.clientes, _st.clientes);
       renderAbaTratamentos(el, c);
     }));
+
+    function renderListaOrcamentos() {
+      const listaEl = el.querySelector('#listaOrcamentos');
+      if (!listaEl) return;
+      const orcs = (c.orcamentos || []).slice().reverse();
+      if (!orcs.length) {
+        listaEl.innerHTML = '<div class="empty-msg">Nenhum orçamento gerado ainda.</div>';
+        return;
+      }
+      listaEl.innerHTML = orcs.map(o => {
+        const cores = { aguardando:'#e65100', aceito:'#1a7d3a', recusado:'#b3261e' };
+        const labels = { aguardando:'Aguardando', aceito:'Aceito', recusado:'Recusado' };
+        const cor = cores[o.status] || '#666';
+        const label = labels[o.status] || o.status;
+        const itensDesc = (o.itens||[]).map(i=>i.nome+(i.regiao?' ('+i.regiao+')':'')).join(', ') || o.descricao || '—';
+        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--cor-borda);flex-wrap:wrap;">
+      <div style="flex:1;min-width:160px;">
+        <div style="font-size:13px;font-weight:600;color:var(--cor-primaria)">${_esc(itensDesc)}</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px">${_date(o.data)} · ${_fmt(o.valor||0)}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <span style="font-size:11px;font-weight:700;color:${cor};background:${cor}18;border:1px solid ${cor}44;padding:2px 8px;border-radius:20px">${label}</span>
+        <button class="btn" style="font-size:12px;padding:5px 11px;background:#0d1b3e" data-orc-pdf="${o.id}">📄 PDF</button>
+        <button class="btn danger" style="font-size:12px;padding:5px 11px" data-orc-del="${o.id}">🗑</button>
+      </div>
+    </div>`;
+      }).join('');
+      // events
+      listaEl.querySelectorAll('[data-orc-pdf]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const o = (c.orcamentos||[]).find(x=>x.id===btn.dataset.orcPdf);
+          if (o) gerarPDFOrcamento(o);
+        });
+      });
+      listaEl.querySelectorAll('[data-orc-del]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (!confirm('Excluir este orçamento?')) return;
+          c.orcamentos = (c.orcamentos||[]).filter(x=>x.id!==btn.dataset.orcDel);
+          _save(_sk.clientes, _st.clientes);
+          renderListaOrcamentos();
+        });
+      });
+    }
+
+    function gerarPDFOrcamento(o) {
+      const clinica = _st.config?.nomeClinica || 'Clínica Odontológica';
+      const dr = _st.config?.nomeDentista || '';
+      const end = _st.config?.endereco || '';
+      const tel = _st.config?.telefone || '';
+      const itens = (o.itens||[]);
+      const total = o.valor || itens.reduce((s,i)=>s+(i.valor||0),0);
+      const rows = itens.length
+        ? itens.map(i=>`<tr><td style="padding:8px 10px;border-bottom:1px solid #eee">${_esc(i.nome)}${i.regiao?' <span style="color:#888;font-size:12px">('+_esc(i.regiao)+')</span>':''}</td><td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:right">${_fmt(i.valor||0)}</td></tr>`).join('')
+        : `<tr><td colspan="2" style="padding:8px 10px;border-bottom:1px solid #eee;color:#666">${_esc(o.descricao||'Orçamento')}</td></tr>`;
+      const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+<title>Orçamento — ${_esc(c.nome)}</title>
+<style>
+  body{font-family:'Segoe UI',Arial,sans-serif;color:#1f2430;margin:0;padding:40px;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0d1b3e;padding-bottom:18px;margin-bottom:24px;}
+  .clinic-name{font-size:22px;font-weight:700;color:#0d1b3e;}
+  .clinic-info{font-size:12px;color:#6b7280;margin-top:4px;}
+  .badge{background:#0d1b3e;color:#fff;font-size:13px;font-weight:700;padding:6px 14px;border-radius:6px;white-space:nowrap;}
+  h2{font-size:16px;color:#0d1b3e;margin:0 0 14px;}
+  table{width:100%;border-collapse:collapse;margin-bottom:20px;}
+  th{background:#0d1b3e;color:#fff;padding:9px 10px;text-align:left;font-size:13px;}
+  th:last-child{text-align:right;}
+  .total-row td{font-weight:700;font-size:15px;color:#0d1b3e;border-top:2px solid #0d1b3e;padding:10px;}
+  .total-row td:last-child{text-align:right;}
+  .footer{margin-top:40px;border-top:1px solid #e3e5ec;padding-top:16px;font-size:12px;color:#888;text-align:center;}
+  .section{margin-bottom:20px;}
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;}
+  .info-item label{display:block;font-size:11px;color:#888;font-weight:600;margin-bottom:2px;}
+</style></head><body>
+<div class="header">
+  <div>
+    <div class="clinic-name">${_esc(clinica)}</div>
+    <div class="clinic-info">${dr?'<div>'+_esc(dr)+'</div>':''}${end?'<div>'+_esc(end)+'</div>':''}${tel?'<div>'+_esc(tel)+'</div>':''}</div>
+  </div>
+  <div class="badge">ORÇAMENTO</div>
+</div>
+<div class="section">
+  <div class="info-grid">
+    <div class="info-item"><label>PACIENTE</label><span style="font-weight:600">${_esc(c.nome)}</span></div>
+    <div class="info-item"><label>DATA</label><span>${_date(o.data)}</span></div>
+    ${c.telefone?'<div class="info-item"><label>TELEFONE</label><span>'+_esc(c.telefone)+'</span></div>':''}
+    ${o.validade?'<div class="info-item"><label>VALIDADE</label><span>'+_date(o.validade)+'</span></div>':''}
+  </div>
+</div>
+<h2>Procedimentos</h2>
+<table>
+  <thead><tr><th>Procedimento</th><th style="text-align:right">Valor</th></tr></thead>
+  <tbody>${rows}<tr class="total-row"><td>TOTAL</td><td>${_fmt(total)}</td></tr></tbody>
+</table>
+${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;color:#444;background:#f8f9fb;padding:12px;border-radius:8px;border:1px solid #e3e5ec">'+_esc(o.obs)+'</div></div>':''}
+<div class="footer">Este orçamento é válido por 30 dias a partir da data de emissão. · ${clinica}</div>
+</body></html>`;
+      const w = window.open('', '_blank');
+      if (!w) { _toast('Popup bloqueado. Libere popups para gerar o PDF.'); return; }
+      w.document.write(html);
+      w.document.close();
+      w.focus();
+      setTimeout(() => { w.print(); }, 600);
+    }
+
+    // Render lista de orçamentos
+    renderListaOrcamentos();
   }
 
   function imprimirReceita(r, p) {
