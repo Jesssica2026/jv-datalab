@@ -928,6 +928,9 @@
             <textarea class="ia-textarea" id="iaPromptPromo" placeholder="Ex: Promoção de limpeza dental + clareamento com 30% de desconto"></textarea>
             <br><br>
             <button class="ia-btn ia-btn-primary" onclick="iaGerarPromocao()">✨ Gerar mensagem</button>
+            <div id="iaMsgBadge" style="margin-top:10px;font-size:12px;color:#6b7280;padding:6px 10px;background:#f3f4f6;border-radius:6px;display:inline-block">
+              🤖 Mensagens IA restantes este mês: <strong id="iaRestantesNum">—</strong>/10
+            </div>
             <div class="ia-loading" id="iaLoadingPromo">⏳ Gerando...</div>
             <div class="ia-resultado" id="iaResultadoPromo" style="display:none"></div>
             <div id="iaBotoesPromo" style="display:none;margin-top:8px;gap:8px;flex-wrap:wrap">
@@ -6936,6 +6939,39 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
 })();
 
   // ===== IA GEMINI =====
+  // ===== CONTADOR IA (limite 10 mensagens/mês) =====
+  const IA_LIMITE_MES = 10;
+  const IA_STORAGE_USO = 'dentista_ia_uso';
+
+  function iaGetUsoMes() {
+    const agora = new Date();
+    const chave = agora.getFullYear() + '-' + String(agora.getMonth()+1).padStart(2,'0');
+    const raw = localStorage.getItem(IA_STORAGE_USO);
+    if (!raw) return { chave, count: 0 };
+    try {
+      const obj = JSON.parse(raw);
+      if (obj.chave !== chave) return { chave, count: 0 }; // novo mês, zera
+      return obj;
+    } catch(e) { return { chave, count: 0 }; }
+  }
+
+  function iaIncrementarUso() {
+    const uso = iaGetUsoMes();
+    uso.count++;
+    localStorage.setItem(IA_STORAGE_USO, JSON.stringify(uso));
+  }
+
+  function iaVerificarLimite() {
+    const uso = iaGetUsoMes();
+    return uso.count < IA_LIMITE_MES;
+  }
+
+  function iaMensagensRestantes() {
+    const uso = iaGetUsoMes();
+    return Math.max(0, IA_LIMITE_MES - uso.count);
+  }
+
+
   function geminiGetKey() { return localStorage.getItem('dentista_gemini_key') || ''; }
   function geminiGetUrl() { return 'https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash-lite:generateContent?key=' + geminiGetKey(); }
   function iaSalvarChave() {
@@ -6950,11 +6986,14 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
     const inp = document.getElementById('iaGeminiKeyInput');
     const status = document.getElementById('iaChaveStatus');
     if (saved && inp) { inp.value = saved; if (status) { status.textContent = '✅ Chave configurada.'; status.style.color = '#1a7d3a'; } }
+    iaAtualizarBadge();
   }, 500);
   const IA_SEGMENTO = 'clínica odontológica';
 
   async function geminiGerarTexto(prompt) {
     if (!geminiGetKey()) throw new Error('Configure a chave Gemini API no topo da página IA & Promoções.');
+    if (!iaVerificarLimite()) throw new Error(`Limite de ${IA_LIMITE_MES} mensagens IA atingido este mês. Renova no próximo mês! 🔄`);
+    iaIncrementarUso();
     const resp = await fetch(geminiGetUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -6975,7 +7014,7 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
     try {
       const prompt = `Você é um assistente de marketing para ${IA_SEGMENTO}. Crie uma mensagem de WhatsApp promocional, amigável e persuasiva, com no máximo 3 parágrafos curtos, sobre: ${tema}. Use emojis. Não inclua saudação genérica. Escreva em português brasileiro.`;
       const texto = await geminiGerarTexto(prompt);
-      resultado.textContent = texto; resultado.style.display = 'block'; botoes.style.display = 'flex';
+      resultado.textContent = texto; resultado.style.display = 'block'; botoes.style.display = 'flex'; iaAtualizarBadge(); iaAtualizarBadge();
     } catch(e) { resultado.textContent = '❌ Erro: ' + e.message; resultado.style.display = 'block'; }
     loading.style.display = 'none';
   }
@@ -6988,7 +7027,7 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
     try {
       const prompt = `Você é um assistente de marketing para ${IA_SEGMENTO}. Crie uma mensagem de WhatsApp carinhosa para reconquistar pacientes que não aparecem há mais de 30 dias. Seja caloroso, use emojis, máximo 3 parágrafos curtos. Português brasileiro.`;
       const texto = await geminiGerarTexto(prompt);
-      resultado.textContent = texto; resultado.style.display = 'block'; botoes.style.display = 'flex';
+      resultado.textContent = texto; resultado.style.display = 'block'; botoes.style.display = 'flex'; iaAtualizarBadge(); iaAtualizarBadge();
     } catch(e) { resultado.textContent = '❌ Erro: ' + e.message; resultado.style.display = 'block'; }
     loading.style.display = 'none';
   }
@@ -7044,6 +7083,11 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
     const inativos = iaGetInativos();
     if (!inativos.length) { lista.innerHTML = '<p style="color:#aaa;font-size:13px">Nenhum paciente inativo 🎉</p>'; return; }
     lista.innerHTML = inativos.map(c => `<div style="font-size:13px;padding:4px 0;border-bottom:1px solid #f0f0f0">👤 ${c.nome}</div>`).join('');
+  }
+  
+  function iaAtualizarBadge() {
+    const el = document.getElementById('iaRestantesNum');
+    if (el) el.textContent = iaMensagensRestantes();
   }
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-page="ia"]').forEach(btn => btn.addEventListener('click', iaCarregarInativos));
