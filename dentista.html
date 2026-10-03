@@ -4032,6 +4032,11 @@
           if (!o) return;
           if (!confirm('Marcar orçamento como recusado?')) return;
           o.status = 'recusado';
+          // Atualiza tratamento vinculado
+          if (o.tratamentoId) {
+            const trat = (c.tratamentos||[]).find(t => t.id === o.tratamentoId);
+            if (trat) trat.statusAceite = 'recusado';
+          }
           _save(_sk.clientes, _st.clientes);
           renderListaOrcamentos();
           _toast('❌ Orçamento marcado como recusado.');
@@ -4177,6 +4182,17 @@
             custoInsumos: custoMat, valorLiquido: -custoMat, lucro: -custoMat, baixas: []
           });
         }
+        // Atualiza statusAceite do tratamento vinculado (se houver)
+        if (o.tratamentoId) {
+          const trat = (c.tratamentos||[]).find(t => t.id === o.tratamentoId);
+          if (trat) {
+            trat.statusAceite = 'aceito';
+            trat.formaPagamento = fk;
+            trat.formaPagamentoLabel = f.label;
+            trat.parcelas = parcelas;
+            trat.lancadoFinanceiro = hoje2;
+          }
+        }
         _save(_sk.financeiro, _st.financeiro);
         _save(_sk.clientes, _st.clientes);
         if (typeof renderFinanceiro === 'function') renderFinanceiro();
@@ -4197,6 +4213,15 @@
       const rows = itens.length
         ? itens.map(i=>`<tr><td style="padding:8px 10px;border-bottom:1px solid #eee">${_esc(i.nome)}${i.regiao?' <span style="color:#888;font-size:12px">('+_esc(i.regiao)+')</span>':''}</td><td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:right">${_fmt(i.valor||0)}</td></tr>`).join('')
         : `<tr><td colspan="2" style="padding:8px 10px;border-bottom:1px solid #eee;color:#666">${_esc(o.descricao||'Orçamento')}</td></tr>`;
+
+      // Monta texto do WhatsApp
+      const itensWpp = itens.length
+        ? itens.map(i => `• ${i.nome}${i.regiao?' ('+i.regiao+')':''}: ${_fmt(i.valor||0)}`).join('%0A')
+        : `• ${_esc(o.descricao||'Orçamento')}`;
+      const msgWpp = `Olá ${_esc(c.nome)}! 😊%0A%0ASegue seu orçamento da *${_esc(clinica)}*:%0A%0A${itensWpp}%0A%0A*TOTAL: ${_fmt(total)}*%0A%0AOrçamento válido por 30 dias. Qualquer dúvida, estamos à disposição! 🦷`;
+      const telWpp = (c.telefone||'').replace(/\D/g,'');
+      const wppLink = `https://wa.me/55${telWpp}?text=${msgWpp}`;
+
       const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
 <title>Orçamento — ${_esc(c.nome)}</title>
 <style>
@@ -4215,7 +4240,16 @@
   .section{margin-bottom:20px;}
   .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;}
   .info-item label{display:block;font-size:11px;color:#888;font-weight:600;margin-bottom:2px;}
+  .acoes{display:flex;gap:12px;margin-bottom:28px;flex-wrap:wrap;}
+  .btn-pdf{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;text-decoration:none;}
+  .btn-imprimir{background:#0d1b3e;color:#fff;}
+  .btn-wpp{background:#25d366;color:#fff;}
+  @media print{.acoes{display:none!important;}}
 </style></head><body>
+<div class="acoes">
+  <button class="btn-pdf btn-imprimir" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+  ${telWpp ? `<a class="btn-pdf btn-wpp" href="${wppLink}" target="_blank">💬 Enviar pelo WhatsApp</a>` : '<span style="font-size:13px;color:#888">Cadastre o telefone do paciente para enviar pelo WhatsApp</span>'}
+</div>
 <div class="header">
   <div>
     <div class="clinic-name">${_esc(clinica)}</div>
@@ -4244,7 +4278,6 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
       w.document.write(html);
       w.document.close();
       w.focus();
-      setTimeout(() => { w.print(); }, 600);
     }
 
     // Render lista de orçamentos
