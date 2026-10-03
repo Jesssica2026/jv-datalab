@@ -1345,11 +1345,12 @@
   // expõe funções de tratamento para blocos externos
   window.fichaVaziaPaciente      = fichaVaziaPaciente;
   window._renderAbaOdontograma   = (...a) => renderAbaOdontograma(...a);
-  window._renderAbaPlano         = (...a) => renderAbaPlano(...a);
+  window._renderAbaPlano             = (...a) => renderAbaPlanoOrcamento(...a);
+  window._renderAbaOrcamento         = (...a) => renderAbaPlanoOrcamento(...a);
+  window._renderAbaPlanoOrcamento    = (...a) => renderAbaPlanoOrcamento(...a);
   window._renderAbaProntuario    = (...a) => renderAbaProntuario(...a);
   window._renderAbaReceituario   = (...a) => renderAbaReceituario(...a);
   window._renderAbaHarmonizacao  = (...a) => renderAbaHarmonizacao(...a);
-  window._renderAbaOrcamento     = (...a) => renderAbaOrcamento(...a);
   window._renderAbaTratamentos   = (...a) => renderAbaTratamentos(...a);
   state.config = Object.assign({}, DEFAULT_CONFIG, state.config);
   state.regrasStatus = Object.assign({ diasInativo: 30, diasAbandono: 90, diasRevisao: 180, diasAparelho: 45 }, load(STORAGE_KEYS.regrasStatus, null) || {});
@@ -6327,9 +6328,8 @@
 
   const TRAT_ABAS_ODONTO = [
     { id: 'odontograma', label: 'Odontograma' },
-    { id: 'plano', label: 'Plano de Tratamento' },
+    { id: 'plano', label: '📋 Plano & Orçamento' },
     { id: 'prontuario', label: 'Prontuário' },
-    { id: 'orcamento', label: '💰 Orçamento' },
     { id: 'receituario', label: 'Receituário' },
     { id: 'tratamentos', label: '📋 Histórico' },
     { id: 'retornos', label: '🔄 Retornos' }
@@ -6468,17 +6468,15 @@
     if (!c.anamnese) c.anamnese = vazia.anamnese;
     if (!c.anamneseHarmonizacao) c.anamneseHarmonizacao = vazia.anamneseHarmonizacao;
     try {
-      const _odo  = window._renderAbaOdontograma  || (typeof renderAbaOdontograma  !== 'undefined' ? renderAbaOdontograma  : null);
-      const _plan = window._renderAbaPlano         || (typeof renderAbaPlano         !== 'undefined' ? renderAbaPlano         : null);
-      const _pron = window._renderAbaProntuario    || (typeof renderAbaProntuario    !== 'undefined' ? renderAbaProntuario    : null);
-      const _orc  = window._renderAbaOrcamento     || (typeof renderAbaOrcamento     !== 'undefined' ? renderAbaOrcamento     : null);
-      const _rec  = window._renderAbaReceituario   || (typeof renderAbaReceituario   !== 'undefined' ? renderAbaReceituario   : null);
-      const _trat = window._renderAbaTratamentos   || (typeof renderAbaTratamentos   !== 'undefined' ? renderAbaTratamentos   : null);
-      const _harm = window._renderAbaHarmonizacao  || (typeof renderAbaHarmonizacao  !== 'undefined' ? renderAbaHarmonizacao  : null);
+      const _odo   = window._renderAbaOdontograma     || (typeof renderAbaOdontograma     !== 'undefined' ? renderAbaOdontograma     : null);
+      const _plan  = window._renderAbaPlanoOrcamento  || window._renderAbaPlano || (typeof renderAbaPlanoOrcamento !== 'undefined' ? renderAbaPlanoOrcamento : null);
+      const _pron  = window._renderAbaProntuario      || (typeof renderAbaProntuario      !== 'undefined' ? renderAbaProntuario      : null);
+      const _rec   = window._renderAbaReceituario     || (typeof renderAbaReceituario     !== 'undefined' ? renderAbaReceituario     : null);
+      const _trat  = window._renderAbaTratamentos     || (typeof renderAbaTratamentos     !== 'undefined' ? renderAbaTratamentos     : null);
+      const _harm  = window._renderAbaHarmonizacao    || (typeof renderAbaHarmonizacao    !== 'undefined' ? renderAbaHarmonizacao    : null);
       if (tratAbaAtiva === 'odontograma'        && _odo)  return _odo(el, c);
-      if (tratAbaAtiva === 'plano'              && _plan) return _plan(el, c);
+      if ((tratAbaAtiva === 'plano' || tratAbaAtiva === 'orcamento') && _plan) return _plan(el, c);
       if (tratAbaAtiva === 'prontuario'         && _pron) return _pron(el, c);
-      if (tratAbaAtiva === 'orcamento'          && _orc)  return _orc(el, c);
       if (tratAbaAtiva === 'receituario'        && _rec)  return _rec(el, c);
       if (tratAbaAtiva === 'tratamentos'        && _trat) return _trat(el, c);
       if (tratAbaAtiva === 'harmonizacao_ficha' && _harm) return _harm(el, c);
