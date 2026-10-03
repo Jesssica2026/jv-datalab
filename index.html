@@ -122,6 +122,37 @@
       },
 
       // -----------------------------------------------------------
+      // Pacotes adicionais (add-ons)
+      // -----------------------------------------------------------
+      addons: [
+        {
+          id: "storage",
+          icon: "💾",
+          name: "Armazenamento Extra",
+          desc: "Adicione mais espaço à sua conta para fotos, documentos e backups.",
+          tiers: [
+            { label: "1 GB extra",  price: "R$ 20/mês",  priceId: "price_STORAGE_1GB" },
+            { label: "5 GB extra",  price: "R$ 80/mês",  priceId: "price_STORAGE_5GB" },
+            { label: "15 GB extra", price: "R$ 200/mês", priceId: "price_STORAGE_15GB" }
+          ],
+          note: "Pode ser adicionado a qualquer plano. Contratação a partir do próximo ciclo."
+        },
+        {
+          id: "assinatura",
+          icon: "📝",
+          name: "Assinaturas Digitais Legalizadas",
+          desc: "Envie contratos, termos e fichas para seus clientes assinarem digitalmente com validade jurídica. Ideal para clínicas e estúdios que precisam de documentação segura.",
+          tiers: [
+            { label: "10 assinaturas/mês",   price: "R$ 39/mês",  priceId: "price_SIGN_10" },
+            { label: "30 assinaturas/mês",   price: "R$ 89/mês",  priceId: "price_SIGN_30" },
+            { label: "Ilimitado",             price: "R$ 179/mês", priceId: "price_SIGN_UNL" }
+          ],
+          note: "Assinaturas com validade jurídica conforme MP 2.200-2/2001. Parceria com provedor certificado ICP-Brasil.",
+          badge: "🔒 Validade jurídica"
+        }
+      ],
+
+      // -----------------------------------------------------------
       // Nichos atendidos
       // -----------------------------------------------------------
       niches: [
@@ -431,6 +462,77 @@
       margin-top: 10px;
     }
 
+    /* ── ADD-ONS ── */
+    .addons {
+      padding: 4rem 1.5rem;
+      background: rgba(255,255,255,0.03);
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .addons-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .addon-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .addon-header {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .addon-icon {
+      font-size: 26px; line-height: 1;
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px; padding: 10px;
+    }
+    .addon-title { font-size: 17px; font-weight: 700; color: var(--white); }
+    .addon-badge {
+      display: inline-block;
+      font-size: 11px; font-weight: 600;
+      background: rgba(244,162,97,0.2);
+      color: var(--orange);
+      border: 1px solid rgba(244,162,97,0.3);
+      padding: 3px 10px; border-radius: 20px;
+      margin-top: 4px;
+    }
+    .addon-desc {
+      font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.6;
+    }
+    .addon-tiers { display: flex; flex-direction: column; gap: 8px; }
+    .addon-tier {
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .addon-tier:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.25);
+    }
+    .addon-tier-label { font-size: 14px; font-weight: 500; color: var(--white); }
+    .addon-tier-price { font-size: 14px; font-weight: 700; color: var(--orange); }
+    .addon-tier-btn {
+      font-size: 12px; background: var(--orange); color: var(--navy);
+      border: none; border-radius: 6px; padding: 4px 12px;
+      font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif;
+      white-space: nowrap;
+    }
+    .addon-note {
+      font-size: 12px; color: rgba(255,255,255,0.38); line-height: 1.5;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 10px; margin-top: 4px;
+    }
+
     /* ── HAMBURGER BUTTON ── */
     .nav-hamburger {
       display: none;
@@ -506,6 +608,7 @@
   <div class="nav-right" id="navRight">
     <a href="#sobre" class="nav-link">Quem somos</a>
     <a href="#como-funciona" class="nav-link">Como funciona</a>
+    <a href="#adicionais" class="nav-link">Adicionais</a>
     <a href="#planos" class="btn-nav">Ver planos</a>
   </div>
 </nav>
@@ -543,6 +646,14 @@
 </section>
 
 <!-- ── QUEM SOMOS ── -->
+<section class="addons" id="adicionais">
+  <div style="text-align:center;margin-bottom:2.5rem">
+    <h2 class="section-title">Pacotes Adicionais</h2>
+    <p class="section-sub">Expanda as funcionalidades do seu plano conforme sua necessidade.</p>
+  </div>
+  <div class="addons-grid" id="addons-grid"></div>
+</section>
+
 <section class="about" id="sobre">
   <h2 class="section-title" id="about-title"></h2>
   <p style="color:rgba(255,255,255,0.65); font-size:16px; line-height:1.8;" id="about-text"></p>
@@ -662,6 +773,30 @@ document.addEventListener('DOMContentLoaded', () => {
     sg.innerHTML += `<div class="step"><div class="step-icon">${s.icon}</div><h3>${s.title}</h3><p>${s.desc}</p></div>`;
   });
 
+  // Add-ons
+  const ag = document.getElementById('addons-grid');
+  (CONFIG.addons || []).forEach(addon => {
+    const tiersHtml = addon.tiers.map(t => `
+      <div class="addon-tier">
+        <span class="addon-tier-label">${t.label}</span>
+        <span class="addon-tier-price">${t.price}</span>
+        <button class="addon-tier-btn" onclick="abrirModalAddon('${addon.id}','${t.label}','${t.price}','${t.priceId}')">Contratar</button>
+      </div>`).join('');
+    ag.innerHTML += `
+      <div class="addon-card">
+        <div class="addon-header">
+          <div class="addon-icon">${addon.icon}</div>
+          <div>
+            <div class="addon-title">${addon.name}</div>
+            ${addon.badge ? `<div class="addon-badge">${addon.badge}</div>` : ''}
+          </div>
+        </div>
+        <div class="addon-desc">${addon.desc}</div>
+        <div class="addon-tiers">${tiersHtml}</div>
+        ${addon.note ? `<div class="addon-note">ℹ️ ${addon.note}</div>` : ''}
+      </div>`;
+  });
+
   // Planos
   const pg = document.getElementById('plans-grid');
   const keys = Object.keys(CONFIG.plans);
@@ -714,6 +849,15 @@ function abrirModal(planKey) {
   planAtual = planKey;
   const p = CONFIG.plans[planKey];
   document.getElementById('modal-title').textContent = `Assinar — ${p.name} ${p.price}`;
+  document.getElementById('modal').classList.add('open');
+  initStripe();
+}
+
+function abrirModalAddon(addonId, label, price, priceId) {
+  // Reutiliza o mesmo modal, só troca priceId e título
+  planAtual = '__addon__' + addonId;
+  CONFIG.plans[planAtual] = { name: label, price, priceId };
+  document.getElementById('modal-title').textContent = `Contratar — ${label} · ${price}`;
   document.getElementById('modal').classList.add('open');
   initStripe();
 }
