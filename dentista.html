@@ -2839,7 +2839,7 @@
         <!-- Tabela de procedimentos -->
         <div class="tabela-scroll">
           <table>
-            <thead><tr><th>Dente</th><th>Procedimento</th><th>Valor</th><th>Materiais</th><th>Status</th><th>Concluído em</th><th></th></tr></thead>
+            <thead><tr><th>Dente</th><th>Procedimento</th><th>Valor</th><th>Materiais</th><th>✅ Aceite</th><th>Status</th><th>Concluído em</th><th></th></tr></thead>
             <tbody>
               ${plano.itens.length ? plano.itens.map(i => {
                 const custoItem = _custoMat(i);
@@ -2847,7 +2847,7 @@
                   ? i.materiais.map(m => `${_esc(m.nome)} ${m.qty > 1 ? '×'+m.qty : ''}`).join(', ')
                   : '—';
                 return `
-                <tr>
+                <tr style="${i.aceiteCliente ? 'background:rgba(26,125,58,0.04)' : ''}">
                   <td>${_esc(i.dente) || 'Geral'}</td>
                   <td>${_esc(i.procedimento)}</td>
                   <td>${_fmt(i.valor)}</td>
@@ -2855,6 +2855,13 @@
                     <span title="${matLabel}">${matLabel.length > 35 ? matLabel.slice(0,33)+'…' : matLabel}</span>
                     ${custoItem > 0 ? `<br><span style="color:#6b7280;font-size:11px">custo: ${_fmt(custoItem)}</span>` : ''}
                     <button class="btn secondary small" data-edit-mat="${i.id}" style="margin-top:3px;font-size:11px;padding:2px 6px">✏️</button>
+                  </td>
+                  <td style="text-align:center">
+                    <label style="display:flex;align-items:center;justify-content:center;gap:4px;cursor:pointer;font-size:12px;${i.aceiteCliente?'color:#1a7d3a;font-weight:600':'color:#6b7280'}">
+                      <input type="checkbox" class="aceite-item" data-item="${i.id}" ${i.aceiteCliente ? 'checked' : ''} style="width:15px;height:15px;cursor:pointer">
+                      ${i.aceiteCliente ? 'Aceito' : 'Pendente'}
+                    </label>
+                    ${i.aceiteCliente && i.aceiteData ? `<div style="font-size:10px;color:#6b7280">${_date(i.aceiteData)}</div>` : ''}
                   </td>
                   <td>
                     <select class="status-item" data-item="${i.id}" style="font-size:12px;padding:3px 4px">
@@ -2864,7 +2871,7 @@
                   <td>${i.status === 'concluido' ? `<input type="date" class="data-item" data-item="${i.id}" value="${_esc(i.dataConclusao)}" style="width:140px;font-size:12px">` : '—'}</td>
                   <td><button class="btn danger small" data-del-item="${i.id}" style="font-size:11px;padding:3px 7px">🗑️</button></td>
                 </tr>`;
-              }).join('') : '<tr><td colspan="7" class="empty-msg">Nenhum procedimento adicionado.</td></tr>'}
+              }).join('') : '<tr><td colspan="8" class="empty-msg">Nenhum procedimento adicionado.</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -3121,6 +3128,17 @@
       plano.itens = plano.itens.filter(i => i.id !== btn.dataset.delItem);
       _save(_SK.clientes, _st.clientes);
       _aposMudanca(c);
+      renderAbaPlanoOrcamento(el, c);
+    }));
+
+    // ── Aceite por procedimento individual ──
+    el.querySelectorAll('.aceite-item').forEach(cb => cb.addEventListener('change', () => {
+      const item = plano.itens.find(i => i.id === cb.dataset.item);
+      if (!item) return;
+      item.aceiteCliente = cb.checked;
+      item.aceiteData = cb.checked ? _today() : '';
+      _save(_SK.clientes, _st.clientes);
+      _toast(cb.checked ? '✅ Aceite registrado!' : 'Aceite removido.');
       renderAbaPlanoOrcamento(el, c);
     }));
 
@@ -3528,29 +3546,88 @@
     const tratamentos = c.tratamentos || [];
     const hoje = todayISO();
     const produtosOpts = (state.produtos || []).map(p => `<option value="${p.id}">${esc(p.nome)} — ${formatMoney(custoPorUso(p))}/uso</option>`).join('');
-    // ticket médio
+
+    // ── Montar histórico unificado ──
+    // 1) Atendimentos registrados manualmente
+    const evAtend = tratamentos.map(t => ({
+      _tipo: 'atendimento', id: t.id, data: t.data,
+      titulo: esc(nomeServicoPorId(t.servicoId)) || esc(t.procedimento) || 'Atendimento',
+      subtitulo: t.regiao ? esc(t.regiao) : '',
+      valor: t.valor || 0, custo: t.custoMateriais || 0,
+      profissional: t.profissionalId ? esc(nomeProfissionalPorId(t.profissionalId)) : '',
+      materiais: t.materiais || [], obs: t.observacoes || '',
+      status: '', _raw: t
+    }));
+    // 2) Procedimentos do plano de tratamento (concluídos)
+    const plano = c.planoTratamento || {};
+    const evPlano = (plano.itens || []).filter(i => i.status === 'concluido' || i.dataConclusao).map(i => ({
+      _tipo: 'plano', id: i.id, data: i.dataConclusao || hoje,
+      titulo: esc(i.procedimento) || 'Procedimento',
+      subtitulo: i.dente ? `Dente ${esc(i.dente)}` : '',
+      valor: i.valor || 0, custo: 0,
+      profissional: '', materiais: i.materiais || [], obs: '',
+      status: i.aceiteCliente ? '✅ Aceito' : '', _raw: i
+    }));
+    // 3) Orçamentos formais (aceitos)
+    const orcamentos = (c.orcamentos || []).filter(o => o.status === 'aceito');
+    const evOrc = orcamentos.map(o => ({
+      _tipo: 'orcamento', id: o.id, data: o.data,
+      titulo: 'Orçamento aceito',
+      subtitulo: o.itens && o.itens.length ? o.itens.map(i=>esc(i.nome||i.procedimento||'')).filter(Boolean).join(', ') : esc(o.descricao||''),
+      valor: o.valor || 0, custo: 0,
+      profissional: '', materiais: [], obs: o.obs || '',
+      status: '📄 Orçamento', _raw: o
+    }));
+
+    let todosEventos = [...evAtend, ...evPlano, ...evOrc].sort((a,b) => b.data.localeCompare(a.data));
+
+    // Stats sobre atendimentos registrados
     const comValor = tratamentos.filter(t => t.valor > 0);
     const ticketMedio = comValor.length ? comValor.reduce((s,t)=>s+t.valor,0)/comValor.length : 0;
     const custoTotal = tratamentos.reduce((s,t)=>s+(t.custoMateriais||0),0);
+    const totalReceita = tratamentos.reduce((s,t)=>s+(t.valor||0),0);
+
     el.innerHTML = `
       <div style="margin-top:10px">
-        ${tratamentos.length > 0 ? `
-        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px">
-          <div class="card" style="flex:1;min-width:140px;text-align:center;padding:12px 16px">
-            <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em">Ticket médio</div>
-            <div style="font-size:20px;font-weight:700;color:var(--cor-secundaria)">${formatMoney(ticketMedio)}</div>
+        ${todosEventos.length > 0 ? `
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+          <div class="card" style="flex:1;min-width:120px;text-align:center;padding:10px 14px">
+            <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em">Total registrado</div>
+            <div style="font-size:18px;font-weight:700;color:var(--cor-secundaria)">${formatMoney(totalReceita)}</div>
           </div>
-          <div class="card" style="flex:1;min-width:140px;text-align:center;padding:12px 16px">
-            <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em">Custo materiais</div>
-            <div style="font-size:20px;font-weight:700;color:#e65100">${formatMoney(custoTotal)}</div>
+          <div class="card" style="flex:1;min-width:120px;text-align:center;padding:10px 14px">
+            <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em">Ticket médio</div>
+            <div style="font-size:18px;font-weight:700;color:var(--cor-primaria)">${formatMoney(ticketMedio)}</div>
           </div>
-          <div class="card" style="flex:1;min-width:140px;text-align:center;padding:12px 16px">
-            <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em">Atendimentos</div>
-            <div style="font-size:20px;font-weight:700;color:var(--cor-primaria)">${tratamentos.length}</div>
+          <div class="card" style="flex:1;min-width:120px;text-align:center;padding:10px 14px">
+            <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em">Custo materiais</div>
+            <div style="font-size:18px;font-weight:700;color:#e65100">${formatMoney(custoTotal)}</div>
+          </div>
+          <div class="card" style="flex:1;min-width:120px;text-align:center;padding:10px 14px">
+            <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em">Eventos</div>
+            <div style="font-size:18px;font-weight:700;color:#4b5162">${todosEventos.length}</div>
           </div>
         </div>` : ''}
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-          <h4 style="color:var(--cor-primaria)">Histórico de atendimentos</h4>
+
+        <!-- Filtros e exportar -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;background:var(--cor-surface);padding:10px 12px;border-radius:8px;border:1px solid var(--cor-borda)">
+          <input type="text" id="histFiltroNome" placeholder="🔍 Buscar procedimento…" style="flex:1;min-width:150px;border:1px solid var(--cor-borda);border-radius:6px;padding:5px 8px;font-size:13px">
+          <input type="date" id="histFiltroDe" style="border:1px solid var(--cor-borda);border-radius:6px;padding:5px 8px;font-size:13px" title="De">
+          <span style="font-size:12px;color:#6b7280">até</span>
+          <input type="date" id="histFiltroAte" style="border:1px solid var(--cor-borda);border-radius:6px;padding:5px 8px;font-size:13px" title="Até">
+          <select id="histFiltroTipo" style="border:1px solid var(--cor-borda);border-radius:6px;padding:5px 8px;font-size:13px">
+            <option value="">Todos os tipos</option>
+            <option value="atendimento">Atendimentos</option>
+            <option value="plano">Plano concluído</option>
+            <option value="orcamento">Orçamentos aceitos</option>
+          </select>
+          <button type="button" class="btn secondary small" id="histLimparFiltros">✕ Limpar</button>
+          <button type="button" class="btn small" id="histExportar" style="background:var(--cor-primaria);color:#fff">⬇️ Exportar CSV</button>
+        </div>
+
+        <!-- Registrar atendimento -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <h4 style="color:var(--cor-primaria);margin:0">📋 Histórico completo</h4>
           <button type="button" class="btn small" id="btnNovoTrat">+ Registrar atendimento</button>
         </div>
         <div id="formNovoTrat" style="display:none" class="card" style="margin-bottom:14px">
@@ -3576,28 +3653,99 @@
             </div>
           </form>
         </div>
-        <div id="listaTratamentos">
-          ${!tratamentos.length ? '<div class="empty-msg">Nenhum atendimento registrado ainda.</div>' : tratamentos.slice().sort((a,b)=>b.data.localeCompare(a.data)).map(t => `
-            <div class="card" style="margin-bottom:10px">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
-                <div>
-                  <strong style="color:var(--cor-primaria)">${formatDateBR(t.data)}</strong>
-                  ${t.regiao ? `<span style="font-size:12px;color:#6b7280;margin-left:6px">${esc(t.regiao)}</span>` : ''}
-                  <br><span style="font-size:13px">${esc(nomeServicoPorId(t.servicoId)) || esc(t.procedimento) || '—'}</span>
-                  ${t.profissionalId ? `<span style="font-size:12px;color:#6b7280"> · ${esc(nomeProfissionalPorId(t.profissionalId))}</span>` : ''}
-                  <span style="font-size:13px;font-weight:600;color:var(--cor-secundaria)">${t.valor ? ' · ' + formatMoney(t.valor) : ''}</span>
-                  ${t.custoMateriais > 0 ? `<span style="font-size:12px;color:#e65100"> · Materiais: ${formatMoney(t.custoMateriais)}</span>` : ''}
-                </div>
-                <button class="btn danger small" data-del-trat="${t.id}">🗑️</button>
-              </div>
-              ${t.materiais && t.materiais.length ? `<div style="font-size:12px;color:#6b7280;margin-top:6px">${t.materiais.map(m=>`${esc(m.nome)} ×${m.qtd}`).join(', ')}</div>` : ''}
-              ${t.observacoes ? `<div style="font-size:13px;color:#4b5162;margin-top:8px;padding-top:8px;border-top:1px solid var(--cor-borda)">${esc(t.observacoes)}</div>` : ''}
-            </div>
-          `).join('')}
+
+        <!-- Lista de eventos -->
+        <div id="listaHistorico">
+          ${_renderHistoricoItems(todosEventos)}
         </div>
       </div>
     `;
-    // materiais dinâmicos
+
+    function _renderHistoricoItems(items) {
+      if (!items.length) return '<div class="empty-msg">Nenhum evento encontrado.</div>';
+      const tipoLabel = { atendimento: '🦷 Atendimento', plano: '📋 Plano', orcamento: '📄 Orçamento' };
+      const tipoColor = { atendimento: '#1565C0', plano: '#1a7d3a', orcamento: '#e65100' };
+      return items.map(ev => `
+        <div class="card" style="margin-bottom:10px;border-left:3px solid ${tipoColor[ev._tipo]||'var(--cor-borda)'}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+            <div>
+              <span style="font-size:10px;font-weight:600;color:${tipoColor[ev._tipo]||'#6b7280'};text-transform:uppercase;letter-spacing:.04em">${tipoLabel[ev._tipo]||ev._tipo}</span>
+              ${ev.status ? `<span style="font-size:10px;color:#6b7280;margin-left:8px">${ev.status}</span>` : ''}
+              <br><strong style="color:var(--cor-primaria)">${formatDateBR(ev.data)}</strong>
+              ${ev.subtitulo ? `<span style="font-size:12px;color:#6b7280;margin-left:6px">${ev.subtitulo}</span>` : ''}
+              <br><span style="font-size:13px">${ev.titulo}</span>
+              ${ev.profissional ? `<span style="font-size:12px;color:#6b7280"> · ${ev.profissional}</span>` : ''}
+              ${ev.valor > 0 ? `<span style="font-size:13px;font-weight:600;color:var(--cor-secundaria)"> · ${formatMoney(ev.valor)}</span>` : ''}
+              ${ev.custo > 0 ? `<span style="font-size:12px;color:#e65100"> · Mat: ${formatMoney(ev.custo)}</span>` : ''}
+            </div>
+            ${ev._tipo === 'atendimento' ? `<button class="btn danger small" data-del-trat="${ev.id}">🗑️</button>` : ''}
+          </div>
+          ${ev.materiais && ev.materiais.length ? `<div style="font-size:12px;color:#6b7280;margin-top:6px">${ev.materiais.map(m=>`${esc(m.nome||m.prodId||'')} ×${m.qtd||m.qty||1}`).join(', ')}</div>` : ''}
+          ${ev.obs ? `<div style="font-size:13px;color:#4b5162;margin-top:8px;padding-top:8px;border-top:1px solid var(--cor-borda)">${esc(ev.obs)}</div>` : ''}
+        </div>`).join('');
+    }
+
+    // ── Filtros interativos ──
+    function _aplicarFiltros() {
+      const busca = (el.querySelector('#histFiltroNome')?.value||'').toLowerCase().trim();
+      const de = el.querySelector('#histFiltroDe')?.value || '';
+      const ate = el.querySelector('#histFiltroAte')?.value || '';
+      const tipo = el.querySelector('#histFiltroTipo')?.value || '';
+      const filtrado = todosEventos.filter(ev => {
+        if (tipo && ev._tipo !== tipo) return false;
+        if (de && ev.data < de) return false;
+        if (ate && ev.data > ate) return false;
+        if (busca && !(ev.titulo.toLowerCase().includes(busca) || ev.subtitulo.toLowerCase().includes(busca))) return false;
+        return true;
+      });
+      const div = el.querySelector('#listaHistorico');
+      if (div) div.innerHTML = _renderHistoricoItems(filtrado);
+      _bindDelTrat();
+    }
+    el.querySelector('#histFiltroNome')?.addEventListener('input', _aplicarFiltros);
+    el.querySelector('#histFiltroDe')?.addEventListener('change', _aplicarFiltros);
+    el.querySelector('#histFiltroAte')?.addEventListener('change', _aplicarFiltros);
+    el.querySelector('#histFiltroTipo')?.addEventListener('change', _aplicarFiltros);
+    el.querySelector('#histLimparFiltros')?.addEventListener('click', () => {
+      el.querySelector('#histFiltroNome').value = '';
+      el.querySelector('#histFiltroDe').value = '';
+      el.querySelector('#histFiltroAte').value = '';
+      el.querySelector('#histFiltroTipo').value = '';
+      _aplicarFiltros();
+    });
+
+    // ── Exportar CSV ──
+    el.querySelector('#histExportar')?.addEventListener('click', () => {
+      const busca = (el.querySelector('#histFiltroNome')?.value||'').toLowerCase().trim();
+      const de = el.querySelector('#histFiltroDe')?.value || '';
+      const ate = el.querySelector('#histFiltroAte')?.value || '';
+      const tipo = el.querySelector('#histFiltroTipo')?.value || '';
+      const filtrado = todosEventos.filter(ev => {
+        if (tipo && ev._tipo !== tipo) return false;
+        if (de && ev.data < de) return false;
+        if (ate && ev.data > ate) return false;
+        if (busca && !(ev.titulo.toLowerCase().includes(busca) || ev.subtitulo.toLowerCase().includes(busca))) return false;
+        return true;
+      });
+      const linhas = [['Data','Tipo','Procedimento','Dente/Região','Profissional','Valor (R$)','Custo Mat (R$)','Materiais','Observações','Status']];
+      filtrado.forEach(ev => {
+        const mats = (ev.materiais||[]).map(m=>`${m.nome||m.prodId||''} x${m.qtd||m.qty||1}`).join(' | ');
+        linhas.push([
+          ev.data, ev._tipo === 'atendimento' ? 'Atendimento' : ev._tipo === 'plano' ? 'Plano' : 'Orçamento',
+          ev.titulo.replace(/[&<>]/g,''), ev.subtitulo.replace(/[&<>]/g,''),
+          ev.profissional, (ev.valor||0).toFixed(2).replace('.',','),
+          (ev.custo||0).toFixed(2).replace('.',','), mats, ev.obs.replace(/\n/g,' '), ev.status
+        ]);
+      });
+      const csv = linhas.map(r => r.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(';')).join('\r\n');
+      const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `historico_${c.nome.replace(/\s+/g,'_')}_${hoje}.csv`;
+      a.click();
+    });
+
+    // ── Materiais dinâmicos ──
     let _matItens = [];
     function _recalcCusto() {
       const total = _matItens.reduce((s,m) => {
@@ -3633,6 +3781,7 @@
     });
     el.querySelector('#btnNovoTrat').addEventListener('click', () => {
       el.querySelector('#formNovoTrat').style.display = 'block';
+      el.querySelector('#formNovoTrat').scrollIntoView({behavior:'smooth',block:'nearest'});
     });
     el.querySelector('#btnCancelarTrat').addEventListener('click', () => {
       el.querySelector('#formNovoTrat').style.display = 'none'; _matItens = [];
@@ -3643,7 +3792,6 @@
       if (!serv) return;
       const valInp = el.querySelector('#tratValor');
       if (valInp && !valInp.value && serv.preco) valInp.value = serv.preco;
-      // pré-carrega materiais do serviço se tiver ficha de custo
       if (serv.insumos && serv.insumos.length && _matItens.length === 0) {
         _matItens = serv.insumos.map(i=>({prodId:i.produtoId||i.id||'', qtd:i.usos||i.qtd||1}));
         _renderMatLista(); _recalcCusto();
@@ -3672,12 +3820,16 @@
       showToast('Atendimento registrado!');
       renderAbaTratamentos(el, c);
     });
-    el.querySelectorAll('[data-del-trat]').forEach(btn => btn.addEventListener('click', () => {
-      if (!confirm('Excluir este atendimento?')) return;
-      c.tratamentos = c.tratamentos.filter(x => x.id !== btn.dataset.delTrat);
-      save(STORAGE_KEYS.clientes, state.clientes);
-      renderAbaTratamentos(el, c);
-    }));
+
+    function _bindDelTrat() {
+      el.querySelectorAll('[data-del-trat]').forEach(btn => btn.addEventListener('click', () => {
+        if (!confirm('Excluir este atendimento?')) return;
+        c.tratamentos = c.tratamentos.filter(x => x.id !== btn.dataset.delTrat);
+        save(STORAGE_KEYS.clientes, state.clientes);
+        renderAbaTratamentos(el, c);
+      }));
+    }
+    _bindDelTrat();
   }
 
   function imprimirReceita(r, p) {
