@@ -1435,6 +1435,7 @@
     if (bloqueio) return { tipo: 'bloqueado', texto: `Bloqueado${bloqueio.motivo ? ' — ' + bloqueio.motivo : ''}` };
     const agendamentosSlot = state.agendamentos.filter(a => {
       if (a.profissionalId !== profissionalId || a.data !== dataISO) return false;
+      if (a.canceladoCliente) return false; // cancelado libera o horário
       const durAg = duracaoDoServico(a.servicoId);
       const aInicio = horaParaMin(a.hora), aFim = aInicio + durAg;
       return inicioMin < aFim && aInicio < fimMin;
