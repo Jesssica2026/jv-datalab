@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+  <meta name="apple-mobile-web-app-capable" content="no">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -152,8 +153,8 @@
           <div class="field">
             <label>Plano</label>
             <select id="assPlano" required>
-              <option value="Starter">Starter — R$49/mês</option>
-              <option value="Profissional">Profissional — R$89/mês</option>
+              <option value="Starter">Starter — R$49/mês (com IA)</option>
+              <option value="Profissional">Profissional — R$89/mês (com IA)</option>
               <option value="Clínica">Clínica — R$149/mês (com IA)</option>
               <option value="Premium">Premium — R$249/mês (com IA)</option>
             </select>
@@ -170,6 +171,17 @@
           <div class="field"><label>Armazenamento (GB)</label><input type="text" id="assLimiteGB" value="1 GB" style="pointer-events:none;background:#f0f1f5;color:#6b7280"></div>
           <div class="field"><label>Data de vencimento</label><input type="date" id="assVencimento" required></div>
         </div>
+        <div class="field" style="margin-top:10px">
+          <label>Pacotes adicionais</label>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px">
+            <label style="font-weight:400;display:flex;align-items:center;gap:5px"><input type="checkbox" id="addStorage1" value="storage_1gb"> 💾 +1 GB armazenamento (R$20/mês)</label>
+            <label style="font-weight:400;display:flex;align-items:center;gap:5px"><input type="checkbox" id="addStorage5" value="storage_5gb"> 💾 +5 GB armazenamento (R$80/mês)</label>
+            <label style="font-weight:400;display:flex;align-items:center;gap:5px"><input type="checkbox" id="addStorage15" value="storage_15gb"> 💾 +15 GB armazenamento (R$200/mês)</label>
+            <label style="font-weight:400;display:flex;align-items:center;gap:5px"><input type="checkbox" id="addSign10" value="sign_10"> 📝 10 assinaturas digitais/mês (R$39/mês)</label>
+            <label style="font-weight:400;display:flex;align-items:center;gap:5px"><input type="checkbox" id="addSign30" value="sign_30"> 📝 30 assinaturas digitais/mês (R$89/mês)</label>
+            <label style="font-weight:400;display:flex;align-items:center;gap:5px"><input type="checkbox" id="addSignUnl" value="sign_unl"> 📝 Assinaturas ilimitadas (R$179/mês)</label>
+          </div>
+        </div>
         <div class="btn-row"><button type="submit" class="btn">Gerar código e cadastrar</button></div>
       </form>
     </div>
@@ -179,6 +191,48 @@
       <div class="search-box"><input type="text" id="buscaAssinante" placeholder="Buscar por nome ou código..."></div>
       <div id="listaAssinantes"></div>
     </div>
+
+    <div class="card">
+      <h3>📄 Contratos dos Assinantes</h3>
+      <p style="font-size:13px;color:#6b7280;margin-bottom:14px">Envie contratos e termos de uso para seus assinantes assinarem digitalmente.</p>
+      <div class="search-box"><input type="text" id="buscaContrato" placeholder="Buscar assinante..."></div>
+      <div id="listaContratos"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: enviar contrato -->
+<div class="modal-overlay" id="modalContrato">
+  <div class="modal" style="max-width:500px">
+    <h3>📄 Enviar Contrato</h3>
+    <input type="hidden" id="contratoAssinanteId">
+    <div class="field"><label>Assinante</label><input type="text" id="contratoAssinanteNome" readonly style="background:#f0f1f5;color:#6b7280"></div>
+    <div class="field">
+      <label>Tipo de documento</label>
+      <select id="contratoTipo">
+        <option value="contrato_uso">📋 Contrato de Uso do Sistema</option>
+        <option value="termo_privacidade">🔒 Termo de Privacidade e LGPD</option>
+        <option value="termo_servico">📝 Termo de Serviço</option>
+        <option value="aditivo">➕ Aditivo Contratual</option>
+      </select>
+    </div>
+    <div class="field"><label>Observação (opcional)</label><textarea id="contratoObs" rows="3" style="width:100%;padding:9px 11px;border:1px solid var(--cor-borda);border-radius:8px;font-size:13.5px;font-family:inherit;background:#fbfbfd;resize:vertical"></textarea></div>
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px;margin-bottom:14px;font-size:12.5px;color:#0369a1">
+      ℹ️ O contrato será registrado e o status ficará como <strong>Pendente</strong> até ser marcado como assinado.
+    </div>
+    <div class="btn-row">
+      <button type="button" class="btn gold" id="btnEnviarContrato">Registrar contrato</button>
+      <button type="button" class="btn secondary" id="btnFecharModalContrato">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: ver contrato -->
+<div class="modal-overlay" id="modalVerContrato">
+  <div class="modal" style="max-width:500px">
+    <h3>📄 Detalhes do Contrato</h3>
+    <div id="verContratoConteudo"></div>
+    <div class="btn-row" id="verContratoBtns"></div>
   </div>
 </div>
 
@@ -221,8 +275,8 @@
       <div class="field">
         <label>Plano</label>
         <select id="editPlano" required>
-          <option value="Starter">Starter — R$49/mês</option>
-          <option value="Profissional">Profissional — R$89/mês</option>
+          <option value="Starter">Starter — R$49/mês (com IA)</option>
+          <option value="Profissional">Profissional — R$89/mês (com IA)</option>
           <option value="Clínica">Clínica — R$149/mês (com IA)</option>
           <option value="Premium">Premium — R$249/mês (com IA)</option>
         </select>
@@ -230,6 +284,17 @@
       <div class="field"><label>Limite de profissionais</label><input type="number" id="editLimite" min="1" step="1" required></div>
       <div class="field"><label>Limite de clientes</label><input type="number" id="editLimiteClientes" min="1" step="1" required></div>
       <div class="field"><label>Data de vencimento</label><input type="date" id="editVencimento" required></div>
+      <div class="field">
+        <label>Pacotes adicionais</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
+          <label style="font-weight:400;display:flex;align-items:center;gap:5px"><input type="checkbox" id="editAddStorage1" value="storage_1gb"> 💾 +1 GB (R$20/mês)</label>
+          <label style="font-weight:400;display:flex;align-items:center;gap:5px"><input type="checkbox" id="editAddStorage5" value="storage_5gb"> 💾 +5 GB (R$80/mês)</label>
+          <label style="font-weight:400;display:flex;align-items:center;gap:5px"><input type="checkbox" id="editAddStorage15" value="storage_15gb"> 💾 +15 GB (R$200/mês)</label>
+          <label style="font-weight:400;display:flex;align-items:center;gap:5px"><input type="checkbox" id="editAddSign10" value="sign_10"> 📝 10 assin./mês (R$39)</label>
+          <label style="font-weight:400;display:flex;align-items:center;gap:5px"><input type="checkbox" id="editAddSign30" value="sign_30"> 📝 30 assin./mês (R$89)</label>
+          <label style="font-weight:400;display:flex;align-items:center;gap:5px"><input type="checkbox" id="editAddSignUnl" value="sign_unl"> 📝 Ilimitado (R$179)</label>
+        </div>
+      </div>
       <div class="btn-row">
         <button type="submit" class="btn">Salvar</button>
         <button type="button" class="btn secondary" id="btnFecharModalEditar">Cancelar</button>
@@ -247,7 +312,8 @@
   const STORAGE_KEYS = {
     config: 'jv_datalab_config',
     licencas: 'jv_datalab_licencas',
-    sessao: 'jv_admin_sessao'
+    sessao: 'jv_admin_sessao',
+    contratos: 'jv_datalab_contratos'
   };
 
   const DEFAULT_CONFIG = { senhaAdmin: '', nomeEmpresa: 'JV Datalab', whatsappSuporte: '' };
@@ -367,6 +433,7 @@
       state.licencas = licencas;
       save(STORAGE_KEYS.licencas, licencas);
       renderAssinantes();
+      renderContratos();
     } catch(e) { console.warn('[Supabase] erro carregar:', e); }
   }
 
@@ -432,7 +499,10 @@
       limiteClientes: parseInt(document.getElementById('assLimiteClientes').dataset.val || document.getElementById('assLimiteClientes').value, 10) || cfgPlano.clientes,
       temIA: cfgPlano.temIA,
       dataCriacao: todayISO(),
-      dataVencimento: document.getElementById('assVencimento').value
+      dataVencimento: document.getElementById('assVencimento').value,
+      adicionais: ['addStorage1','addStorage5','addStorage15','addSign10','addSign30','addSignUnl']
+        .filter(id => document.getElementById(id) && document.getElementById(id).checked)
+        .map(id => document.getElementById(id).value)
     };
     state.licencas.push(lic);
     save(STORAGE_KEYS.licencas, state.licencas);
@@ -493,6 +563,7 @@
               <div class="meta">Plano: ${plano}${periodicidade === 'anual' ? ' · Anual' : ''}${temIA ? ' · 🤖 IA' : ''}</div>
               <div class="meta">${limProf >= 99999 ? '∞' : limProf} profissional(is) · ${limCli >= 99999 ? '∞' : limCli} clientes</div>
               <div class="meta">Vence em: ${formatDateBR(l.dataVencimento)}</div>
+              ${(l.adicionais && l.adicionais.length) ? `<div class="meta" style="color:#7c3aed">📦 ${l.adicionais.map(a => ({storage_1gb:'💾+1GB',storage_5gb:'💾+5GB',storage_15gb:'💾+15GB',sign_10:'📝10 ass.',sign_30:'📝30 ass.',sign_unl:'📝Ilimitadas'}[a]||a)).join(' · ')}</div>` : ''}
             </div>
           </div>
           <div class="acoes">
@@ -541,6 +612,11 @@
       document.getElementById('editLimite').value = lic.limiteProfissionais;
       document.getElementById('editLimiteClientes').value = lic.limiteClientes || 50;
       document.getElementById('editVencimento').value = lic.dataVencimento;
+      // Restaurar pacotes adicionais
+      ['editAddStorage1','editAddStorage5','editAddStorage15','editAddSign10','editAddSign30','editAddSignUnl'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.checked = (lic.adicionais || []).includes(el.value);
+      });
       modalEditar.classList.add('open');
     } else if (btnExcluir) {
       if (confirm('Excluir este assinante? O código de ativação dele deixará de funcionar imediatamente.')) {
@@ -591,12 +667,119 @@
     lic.limiteClientes = parseInt(document.getElementById('editLimiteClientes').value, 10) || cfgEditado.clientes;
     lic.temIA = cfgEditado.temIA;
     lic.dataVencimento = document.getElementById('editVencimento').value;
+    lic.adicionais = ['editAddStorage1','editAddStorage5','editAddStorage15','editAddSign10','editAddSign30','editAddSignUnl']
+      .filter(id => document.getElementById(id) && document.getElementById(id).checked)
+      .map(id => document.getElementById(id).value);
     save(STORAGE_KEYS.licencas, state.licencas);
     supaUpsertLicenca(lic);
     modalEditar.classList.remove('open');
     renderAssinantes();
     showToast('Assinante atualizado!');
   });
+
+  // ---------- Contratos ----------
+  let stateContratos = load(STORAGE_KEYS.contratos, []);
+
+  const TIPO_CONTRATO_LABEL = {
+    contrato_uso: 'Contrato de Uso',
+    termo_privacidade: 'Termo de Privacidade',
+    termo_servico: 'Termo de Serviço',
+    aditivo: 'Aditivo Contratual'
+  };
+
+  function renderContratos() {
+    const busca = (document.getElementById('buscaContrato')?.value || '').toLowerCase();
+    const lista = state.licencas.filter(l => {
+      const nome = (l.nomeAssinante || '').toLowerCase();
+      return !busca || nome.includes(busca);
+    });
+    const box = document.getElementById('listaContratos');
+    if (!box) return;
+    if (!lista.length) { box.innerHTML = '<div class="empty-msg">Nenhum assinante encontrado.</div>'; return; }
+    box.innerHTML = lista.map(l => {
+      const contratos = stateContratos.filter(c => c.licId === l.id);
+      const ultimo = contratos.length ? contratos[contratos.length - 1] : null;
+      const statusBadge = ultimo
+        ? (ultimo.status === 'assinado'
+            ? '<span class="badge ativo">Assinado</span>'
+            : '<span class="badge vencendo">Pendente</span>')
+        : '<span style="color:#9ca3af;font-size:12px">Sem contrato</span>';
+      return `
+        <div class="assinante-card" style="margin-bottom:10px">
+          <div class="topo-card">
+            <div>
+              <div class="nome">${l.nomeAssinante || '(sem nome)'}</div>
+              <div class="codigo">${l.codigo || ''} · ${SEGMENTO_LABEL[l.segmento]||l.segmento||''} · ${l.plano||''}</div>
+            </div>
+            <div style="text-align:right">${statusBadge}</div>
+          </div>
+          <div class="acoes">
+            <button class="btn secondary small" data-enviar-contrato="${l.id}">📄 Enviar contrato</button>
+            ${contratos.length ? `<button class="btn secondary small" data-ver-contratos="${l.id}">Ver histórico (${contratos.length})</button>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  document.getElementById('buscaContrato')?.addEventListener('input', renderContratos);
+
+  const modalContrato = document.getElementById('modalContrato');
+  const modalVerContrato = document.getElementById('modalVerContrato');
+  let licContratoSel = null;
+
+  document.getElementById('listaContratos')?.addEventListener('click', (e) => {
+    const btnEnv = e.target.closest('[data-enviar-contrato]');
+    const btnVer = e.target.closest('[data-ver-contratos]');
+    if (btnEnv) {
+      licContratoSel = state.licencas.find(l => l.id === btnEnv.dataset.enviarContrato);
+      if (!licContratoSel) return;
+      document.getElementById('contratoAssinante').value = licContratoSel.nomeAssinante;
+      document.getElementById('contratoTipo').value = 'contrato_uso';
+      document.getElementById('contratoObs').value = '';
+      modalContrato.classList.add('open');
+    } else if (btnVer) {
+      const lic = state.licencas.find(l => l.id === btnVer.dataset.verContratos);
+      if (!lic) return;
+      const contratos = stateContratos.filter(c => c.licId === lic.id);
+      const content = document.getElementById('verContratoConteudo');
+      content.innerHTML = contratos.length ? contratos.map(c => `
+        <div style="border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <strong>${TIPO_CONTRATO_LABEL[c.tipo]||c.tipo}</strong>
+            <span class="badge ${c.status==='assinado'?'ativo':'vencendo'}">${c.status==='assinado'?'Assinado':'Pendente'}</span>
+          </div>
+          <div style="font-size:12px;color:#6b7280">Enviado em: ${c.dataEnvio||'—'}</div>
+          ${c.obs ? `<div style="font-size:12px;margin-top:4px">${c.obs}</div>` : ''}
+          ${c.status !== 'assinado' ? `<button class="btn secondary small" style="margin-top:8px" data-marcar-assinado="${c.id}">✔ Marcar como assinado</button>` : ''}
+        </div>`).join('') : '<p style="color:#9ca3af">Nenhum contrato registrado.</p>';
+      modalVerContrato.classList.add('open');
+
+      content.querySelectorAll('[data-marcar-assinado]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const c = stateContratos.find(x => x.id === btn.dataset.marcarAssinado);
+          if (c) { c.status = 'assinado'; save(STORAGE_KEYS.contratos, stateContratos); renderContratos(); modalVerContrato.classList.remove('open'); showToast('Contrato marcado como assinado!'); }
+        });
+      });
+    }
+  });
+
+  document.getElementById('btnCancelarContrato')?.addEventListener('click', () => modalContrato.classList.remove('open'));
+  modalContrato?.addEventListener('click', (e) => { if (e.target === modalContrato) modalContrato.classList.remove('open'); });
+
+  document.getElementById('btnEnviarContrato')?.addEventListener('click', () => {
+    if (!licContratoSel) return;
+    const tipo = document.getElementById('contratoTipo').value;
+    const obs = document.getElementById('contratoObs').value.trim();
+    const contrato = { id: uid(), licId: licContratoSel.id, tipo, obs, status: 'pendente', dataEnvio: todayISO() };
+    stateContratos.push(contrato);
+    save(STORAGE_KEYS.contratos, stateContratos);
+    modalContrato.classList.remove('open');
+    renderContratos();
+    showToast(`Contrato "${TIPO_CONTRATO_LABEL[tipo]}" registrado para ${licContratoSel.nomeAssinante}!`);
+  });
+
+  document.getElementById('btnFecharVerContrato')?.addEventListener('click', () => modalVerContrato.classList.remove('open'));
+  modalVerContrato?.addEventListener('click', (e) => { if (e.target === modalVerContrato) modalVerContrato.classList.remove('open'); });
 
   // ---------- Autenticação ----------
   function renderSetupForm() {
@@ -668,6 +851,7 @@
     applyConfig();
     renderStats();
     renderAssinantes();
+    renderContratos();
     supaCarregarLicencas(); // atualiza lista do Supabase em background
 
     // Bind plan selects AFTER DOM is visible
