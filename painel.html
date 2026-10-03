@@ -1132,6 +1132,9 @@
             <textarea class="ia-textarea" id="iaPromptPromo" placeholder="Ex: Black Friday 50% de desconto em todos os serviços este fim de semana"></textarea>
             <br><br>
             <button class="ia-btn ia-btn-primary" onclick="iaGerarPromocao()">✨ Gerar mensagem</button>
+            <div id="iaMsgBadge" style="margin-top:10px;font-size:12px;color:#6b7280;padding:6px 10px;background:#f3f4f6;border-radius:6px;display:inline-block">
+              🤖 Mensagens IA restantes este mês: <strong id="iaRestantesNum">—</strong>/10
+            </div>
             <div class="ia-loading" id="iaLoadingPromo">⏳ Gerando...</div>
             <div class="ia-resultado" id="iaResultadoPromo" style="display:none"></div>
             <div id="iaBotoesPromo" style="display:none;margin-top:8px;gap:8px;flex-wrap:wrap">
@@ -5626,6 +5629,39 @@
 })();
 
   // ===== IA GEMINI =====
+  // ===== CONTADOR IA (limite 10 mensagens/mês) =====
+  const IA_LIMITE_MES = 10;
+  const IA_STORAGE_USO = 'salao_ia_uso';
+
+  function iaGetUsoMes() {
+    const agora = new Date();
+    const chave = agora.getFullYear() + '-' + String(agora.getMonth()+1).padStart(2,'0');
+    const raw = localStorage.getItem(IA_STORAGE_USO);
+    if (!raw) return { chave, count: 0 };
+    try {
+      const obj = JSON.parse(raw);
+      if (obj.chave !== chave) return { chave, count: 0 }; // novo mês, zera
+      return obj;
+    } catch(e) { return { chave, count: 0 }; }
+  }
+
+  function iaIncrementarUso() {
+    const uso = iaGetUsoMes();
+    uso.count++;
+    localStorage.setItem(IA_STORAGE_USO, JSON.stringify(uso));
+  }
+
+  function iaVerificarLimite() {
+    const uso = iaGetUsoMes();
+    return uso.count < IA_LIMITE_MES;
+  }
+
+  function iaMensagensRestantes() {
+    const uso = iaGetUsoMes();
+    return Math.max(0, IA_LIMITE_MES - uso.count);
+  }
+
+
   const IA_SEGMENTO = 'salão de beleza';
 
   function geminiGetKey() { return localStorage.getItem('salao_gemini_key') || ''; }
@@ -5641,6 +5677,8 @@
   async function geminiGerarTexto(prompt) {
     const key = geminiGetKey();
     if (!key) { alert('Configure a chave Gemini API primeiro!'); throw new Error('Chave não configurada'); }
+    if (!iaVerificarLimite()) throw new Error(`Limite de ${IA_LIMITE_MES} mensagens IA atingido este mês. Renova no próximo mês! 🔄`);
+    iaIncrementarUso();
     const resp = await fetch(geminiGetUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -5661,7 +5699,7 @@
     try {
       const prompt = `Você é um assistente de marketing para ${IA_SEGMENTO}. Crie uma mensagem de WhatsApp promocional, amigável e persuasiva, com no máximo 3 parágrafos curtos, sobre: ${tema}. Use emojis. Não inclua saudação genérica. Escreva em português brasileiro.`;
       const texto = await geminiGerarTexto(prompt);
-      resultado.textContent = texto; resultado.style.display = 'block'; botoes.style.display = 'flex';
+      resultado.textContent = texto; resultado.style.display = 'block'; botoes.style.display = 'flex'; iaAtualizarBadge(); iaAtualizarBadge();
     } catch(e) { resultado.textContent = '❌ Erro: ' + e.message; resultado.style.display = 'block'; }
     loading.style.display = 'none';
   }
@@ -5674,7 +5712,7 @@
     try {
       const prompt = `Você é um assistente de marketing para ${IA_SEGMENTO}. Crie uma mensagem de WhatsApp carinhosa para reconquistar clientes que não aparecem há mais de 30 dias. Seja caloroso, use emojis, máximo 3 parágrafos curtos. Português brasileiro.`;
       const texto = await geminiGerarTexto(prompt);
-      resultado.textContent = texto; resultado.style.display = 'block'; botoes.style.display = 'flex';
+      resultado.textContent = texto; resultado.style.display = 'block'; botoes.style.display = 'flex'; iaAtualizarBadge(); iaAtualizarBadge();
     } catch(e) { resultado.textContent = '❌ Erro: ' + e.message; resultado.style.display = 'block'; }
     loading.style.display = 'none';
   }
@@ -5734,6 +5772,11 @@
     lista.innerHTML = inativos.map(c => `<div style="font-size:13px;padding:4px 0;border-bottom:1px solid #f0f0f0">👤 ${c.nome}</div>`).join('');
   }
   // Carrega inativos quando abre a aba IA
+  
+  function iaAtualizarBadge() {
+    const el = document.getElementById('iaRestantesNum');
+    if (el) el.textContent = iaMensagensRestantes();
+  }
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-page="ia"]').forEach(btn => btn.addEventListener('click', iaCarregarInativos));
   });
