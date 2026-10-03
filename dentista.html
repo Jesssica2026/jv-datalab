@@ -3488,53 +3488,124 @@
       return `<div style="display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:6px;background:${corFundo};margin-bottom:4px"><strong style="min-width:48px;color:var(--cor-primaria);font-size:12.5px">${minParaHora(t)}</strong><span style="width:8px;height:8px;border-radius:50%;background:${cor};flex-shrink:0"></span><span style="font-size:12.5px;color:#4b5162">${status.texto}</span></div>`;
     }).join('');
   }
-  function renderTimelineDiaCompacto(profissionalId, dataISO) {
-    const janelas = janelaDoDia(profissionalId, dataISO);
-    if (!janelas) return '<div style="font-size:10.5px;color:#9aa0ab;text-align:center;padding:8px 0">Fechado</div>';
+  function renderGradeSemanaOdonto() {
+    const alvo = profissionalAlvoAgenda();
+    if (!alvo) return '<div class="empty-msg">Selecione um dentista para visualizar a agenda.</div>';
+    const inicioSemana = inicioDaSemana(timelineData);
+    const dias = []; for (let i = 0; i < 7; i++) dias.push(somarDias(inicioSemana, i));
+    const nomesDias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
     const hoje = todayISO();
-    const isHoje = dataISO === hoje;
-    // Agendamentos do dia (todos, incluindo cancelados)
-    const agendDia = state.agendamentos.filter(a => a.profissionalId === profissionalId && a.data === dataISO);
-    agendDia.sort((a, b) => a.hora.localeCompare(b.hora));
-    // Bloqueios do dia
-    const prof = state.profissionais.find(p => p.id === profissionalId);
-    const bloqueiosDia = (prof ? prof.bloqueios || [] : []).filter(b => b.data === dataISO);
-    if (!agendDia.length && !bloqueiosDia.length) {
-      // Mostra barras de disponibilidade simples
-      const intervalo = state.config.intervaloGrade || 30;
-      const linhas = [];
-      janelas.forEach(j => { for (let t = j.inicio; t < j.fim; t += intervalo) linhas.push(t); });
-      linhas.sort((a, b) => a - b);
-      if (!linhas.length) return '<div style="font-size:10.5px;color:#9aa0ab;text-align:center;padding:8px 0">Sem horários</div>';
-      return '<div style="font-size:10px;color:#1a7d3a;text-align:center;padding:6px 0">✓ Disponível</div>' +
-        linhas.slice(0, 6).map(() => '<div style="height:6px;border-radius:3px;background:#d1fae5;margin-bottom:2px"></div>').join('') +
-        (linhas.length > 6 ? `<div style="font-size:9px;color:#9aa0ab;text-align:center">+${linhas.length - 6} horários</div>` : '');
-    }
-    let html = '';
-    // Bloqueios
-    bloqueiosDia.forEach(b => {
-      html += `<div style="background:#f3f4f6;border-left:3px solid #9aa0ab;border-radius:4px;padding:3px 5px;margin-bottom:3px;font-size:10px;color:#6b7280">
-        <strong>${b.horaInicio}–${b.horaFim}</strong><br>🔒 ${b.motivo || 'Bloqueado'}
-      </div>`;
-    });
-    // Agendamentos
-    agendDia.forEach(a => {
-      const cancelado = !!a.canceladoCliente;
-      const cli = state.clientes.find(c => c.id === a.clienteId);
-      const serv = state.servicos.find(s => s.id === a.servicoId);
-      const nomeCliente = cli ? cli.nome.split(' ')[0] : 'Paciente';
-      const nomeServ = serv ? serv.nome : '';
-      if (cancelado) {
-        html += `<div style="background:#fee2e2;border-left:3px solid #b3261e;border-radius:4px;padding:3px 5px;margin-bottom:3px;font-size:10px;color:#b3261e;text-decoration:line-through;opacity:.8">
-          <strong>${a.hora}</strong> ${nomeCliente}${nomeServ ? '<br>' + nomeServ : ''}
-        </div>`;
-      } else {
-        html += `<div style="background:#fff7ed;border-left:3px solid #c9701a;border-radius:4px;padding:3px 5px;margin-bottom:3px;font-size:10px;color:#92400e">
-          <strong>${a.hora}</strong> ${nomeCliente}${nomeServ ? '<br><span style="font-size:9px;opacity:.8">' + nomeServ + '</span>' : ''}
-        </div>`;
+    const prof = state.profissionais.find(p => p.id === alvo);
+
+    // Coletar agendamentos da semana
+    const agendSemana = state.agendamentos.filter(a => a.profissionalId === alvo && a.data >= inicioSemana && a.data <= somarDias(inicioSemana, 6));
+
+    // Determinar faixa de horas a partir das janelas de atendimento + agendamentos
+    let minHora = 8 * 60, maxHora = 19 * 60;
+    dias.forEach(d => {
+      const janelas = janelaDoDia(alvo, d);
+      if (janelas) {
+        janelas.forEach(j => {
+          if (j.inicio < minHora) minHora = j.inicio;
+          if (j.fim > maxHora) maxHora = j.fim;
+        });
       }
     });
-    return html || '<div style="font-size:10px;color:#9aa0ab;text-align:center;padding:6px 0">—</div>';
+    agendSemana.forEach(a => {
+      const m = horaParaMin(a.hora);
+      if (m < minHora) minHora = m;
+      const dur = duracaoDoServico(a.servicoId);
+      if (m + dur > maxHora) maxHora = m + dur;
+    });
+    minHora = Math.floor(minHora / 60) * 60;
+    maxHora = Math.ceil(maxHora / 60) * 60;
+    const totalMin = maxHora - minHora;
+    const PX = 1.4; // pixels por minuto
+    const ALTURA = Math.max(360, totalMin * PX);
+
+    // Linhas de hora
+    const horas = [];
+    for (let h = minHora; h <= maxHora; h += 60) horas.push(h);
+
+    const horasLateral = horas.map(h => {
+      const top = (h - minHora) * PX;
+      return `<div style="position:absolute;top:${top}px;right:4px;font-size:10px;color:#9aa0ab;transform:translateY(-50%);white-space:nowrap">${minParaHora(h)}</div>`;
+    }).join('');
+
+    // Colunas por dia
+    const colDias = dias.map(d => {
+      const isHoje = d === hoje;
+      const nomeDia = nomesDias[new Date(d + 'T00:00:00').getDay()];
+      const diaBR = formatDateBR(d).slice(0, 5);
+      const janelas = janelaDoDia(alvo, d);
+      const agsDia = agendSemana.filter(a => a.data === d);
+      const bloqueiosDia = (prof ? prof.bloqueios || [] : []).filter(b => b.data === d);
+
+      // Faixas de disponibilidade (verde claro)
+      const faixasDisp = janelas ? janelas.map(j => {
+        const top = (j.inicio - minHora) * PX;
+        const h = (j.fim - j.inicio) * PX;
+        return `<div style="position:absolute;left:0;right:0;top:${top}px;height:${h}px;background:rgba(26,125,58,0.07);border-radius:2px"></div>`;
+      }).join('') : '';
+
+      // Faixas de bloqueio
+      const faixasBloq = bloqueiosDia.map(b => {
+        const ini = horaParaMin(b.horaInicio), fim = horaParaMin(b.horaFim);
+        const top = (ini - minHora) * PX;
+        const h = (fim - ini) * PX;
+        return `<div title="Bloqueado: ${b.motivo || ''}" style="position:absolute;left:2px;right:2px;top:${top}px;height:${h}px;background:rgba(154,160,171,0.25);border-left:3px solid #9aa0ab;border-radius:4px;font-size:9px;color:#6b7280;padding:2px 4px;overflow:hidden">🔒 ${b.motivo || 'Bloqueado'}</div>`;
+      }).join('');
+
+      // Blocos de agendamento
+      const blocos = agsDia.map(a => {
+        const cli = state.clientes.find(c => c.id === a.clienteId);
+        const serv = state.servicos.find(s => s.id === a.servicoId);
+        const dur = duracaoDoServico(a.servicoId);
+        const inicioMin = horaParaMin(a.hora);
+        const top = (inicioMin - minHora) * PX;
+        const altura = Math.max(22, dur * PX);
+        const cancelado = !!a.canceladoCliente;
+        const corBg = cancelado ? '#fee2e2' : '#fff7ed';
+        const corBord = cancelado ? '#b3261e' : '#c9701a';
+        const corTxt = cancelado ? '#b3261e' : '#92400e';
+        const risco = cancelado ? 'text-decoration:line-through;opacity:.8;' : '';
+        const nomeCliente = cli ? cli.nome.split(' ')[0] : 'Paciente';
+        const nomeServ = serv ? serv.nome : '';
+        return `<div title="${a.hora} — ${cli ? cli.nome : 'Paciente'}${serv ? ' · ' + serv.nome : ''}${cancelado ? ' (CANCELADO)' : ''}" style="position:absolute;left:2px;right:2px;top:${top}px;height:${altura}px;background:${corBg};border-left:3px solid ${corBord};border-radius:4px;padding:2px 5px;overflow:hidden;font-size:10px;color:${corTxt};${risco}z-index:2">
+          <strong>${a.hora}</strong> ${nomeCliente}${nomeServ && altura > 30 ? '<br>' + nomeServ : ''}
+        </div>`;
+      }).join('');
+
+      // Linhas de hora (tracejadas)
+      const linhasH = horas.filter(h => h < maxHora).map(h => {
+        const top = (h - minHora) * PX;
+        return `<div style="position:absolute;left:0;right:0;top:${top}px;border-top:1px dashed #e9eaf0;pointer-events:none"></div>`;
+      }).join('');
+
+      const cabecalho = `<div style="text-align:center;padding:6px 4px 8px;font-size:11.5px;font-weight:700;color:${isHoje ? 'var(--cor-primaria)' : '#374151'};border-bottom:2px solid ${isHoje ? 'var(--cor-primaria)' : '#f0f0f0'}">
+        ${nomeDia}<br><span style="font-weight:400;color:#6b7280;font-size:10.5px">${diaBR}</span>
+      </div>`;
+
+      const corpo = janelas
+        ? `<div style="position:relative;height:${ALTURA}px">${linhasH}${faixasDisp}${faixasBloq}${blocos}</div>`
+        : `<div style="position:relative;height:${ALTURA}px;background:#f9fafb">${linhasH}<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#c4c9d4">Fechado</div></div>`;
+
+      return `<div style="flex:1;min-width:90px">${cabecalho}${corpo}</div>`;
+    }).join('');
+
+    const legenda = `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;padding-top:10px;border-top:1px solid #f0f0f0;font-size:11px;color:#6b7280">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(26,125,58,0.15);border:1px solid #1a7d3a;margin-right:4px"></span>Disponível</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#fff7ed;border:2px solid #c9701a;margin-right:4px"></span>Agendado</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#fee2e2;border:2px solid #b3261e;margin-right:4px"></span>Cancelado</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(154,160,171,0.25);border:2px solid #9aa0ab;margin-right:4px"></span>Bloqueado</span>
+    </div>`;
+
+    return `<div style="overflow-x:auto">
+      <div style="display:flex;min-width:660px">
+        <div style="width:44px;flex-shrink:0;padding-top:44px;position:relative;height:${ALTURA + 44}px">${horasLateral}</div>
+        <div style="display:flex;flex:1;gap:0">${colDias}</div>
+      </div>
+    </div>${legenda}`;
   }
   function renderTimeline() {
     renderTimelineNav();
@@ -3545,27 +3616,7 @@
     if (!alvo) { cont.innerHTML = '<div class="empty-msg">Selecione um dentista para visualizar a agenda.</div>'; return; }
     if (timelineModo === 'dia') { cont.innerHTML = renderTimelineDia(alvo, timelineData); return; }
     if (timelineModo === 'mes') { cont.innerHTML = renderTimelineMes(alvo, timelineData); return; }
-    const inicioSemana = inicioDaSemana(timelineData);
-    const dias = []; for (let i = 0; i < 7; i++) dias.push(somarDias(inicioSemana, i));
-    const nomesDias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    const hoje = todayISO();
-    const colunas = dias.map(d => {
-      const isHoje = d === hoje;
-      const fechado = !janelaDoDia(alvo, d);
-      return `<div style="min-width:120px">
-        <div style="font-size:11px;text-align:center;margin-bottom:6px;font-weight:600;padding:4px 2px;border-radius:6px;background:${isHoje ? 'var(--cor-primaria)' : 'transparent'};color:${isHoje ? '#fff' : '#6b7280'}">
-          ${nomesDias[new Date(d + 'T00:00:00').getDay()]}<br>${formatDateBR(d).slice(0, 5)}
-        </div>
-        ${fechado ? '<div style="font-size:10px;color:#9aa0ab;text-align:center;padding:8px 0;background:#f9fafb;border-radius:6px">Fechado</div>' : renderTimelineDiaCompacto(alvo, d)}
-      </div>`;
-    }).join('');
-    // Legenda
-    const legenda = `<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid #f0f0f0;font-size:11px;color:#6b7280">
-      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#fff7ed;border:2px solid #c9701a;margin-right:4px"></span>Confirmado</span>
-      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#fee2e2;border:2px solid #b3261e;margin-right:4px"></span>Cancelado</span>
-      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#f3f4f6;border:2px solid #9aa0ab;margin-right:4px"></span>Bloqueado</span>
-    </div>`;
-    cont.innerHTML = `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;overflow-x:auto;min-width:700px">${colunas}</div>${legenda}`;
+    cont.innerHTML = renderGradeSemanaOdonto();
   }
 
   // ---------- Status de pacientes, retenção e evolução ----------
