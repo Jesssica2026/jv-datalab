@@ -4042,7 +4042,7 @@
             if (trat) trat.statusAceite = 'recusado';
           }
           _save(_sk.clientes, _st.clientes);
-          renderListaOrcamentos();
+          renderAbaTratamentos(el, c);
           _toast('❌ Orçamento marcado como recusado.');
         });
       });
@@ -4202,7 +4202,7 @@
         if (typeof renderFinanceiro === 'function') renderFinanceiro();
         if (typeof renderDashboard === 'function') renderDashboard();
         md.remove();
-        renderListaOrcamentos();
+        renderAbaTratamentos(el, c);
         _toast('✅ Orçamento aceito e lançado no financeiro!');
       });
     }
