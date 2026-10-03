@@ -2292,12 +2292,47 @@
   function renderDenteEditor(el, p) {
     const box = el.querySelector('#denteEditor');
     if (!denteAtivo) { box.innerHTML = '<div class="empty-msg">Clique em um dente para marcar a condição.</div>'; return; }
-    const registro = p.odontogramaAtual.dentes[denteAtivo] || { condicao: 'saudavel', obs: '' };
+    const registro = p.odontogramaAtual.dentes[denteAtivo];
+    const COND_LABEL = { saudavel:'Saudável', carie:'Cárie', restauracao:'Restauração', coroa:'Coroa', ausente:'Ausente/Extraído', canal:'Tratamento de Canal', implante:'Implante' };
+
+    // Se já tem registro salvo com data → somente leitura
+    if (registro && registro.savedAt) {
+      function fmtDT(iso) {
+        try {
+          const d = new Date(iso);
+          return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} às ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        } catch(e){ return iso; }
+      }
+      box.innerHTML = `
+        <div style="background:#f9fafb;border:1px solid var(--cor-borda);border-radius:10px;padding:14px">
+          <h4 style="color:var(--cor-primaria);font-size:14px;margin-bottom:10px">🦷 Dente ${denteAtivo} — Registro salvo</h4>
+          <div style="margin-bottom:6px"><strong>Condição:</strong> ${COND_LABEL[registro.condicao]||registro.condicao}</div>
+          ${registro.obs ? `<div style="margin-bottom:6px"><strong>Observação:</strong> ${registro.obs}</div>` : ''}
+          <div style="font-size:12px;color:#6b7280;margin-bottom:14px">🕐 Salvo em ${fmtDT(registro.savedAt)}</div>
+          <div style="background:#fff3e0;border-radius:8px;padding:10px;font-size:12px;color:#7c5e00;margin-bottom:12px">
+            ⚠️ Registros salvos não podem ser editados para manter o histórico clínico íntegro. Para corrigir, exclua e registre novamente.
+          </div>
+          <button type="button" class="btn danger small" id="btnExcluirDente">🗑️ Excluir registro</button>
+        </div>
+      `;
+      document.getElementById('btnExcluirDente').addEventListener('click', () => {
+        if (!confirm(`Excluir o registro do dente ${denteAtivo}? Esta ação não pode ser desfeita.`)) return;
+        delete p.odontogramaAtual.dentes[denteAtivo];
+        save(STORAGE_KEYS.clientes, state.clientes);
+        showToast('Registro excluído.');
+        denteAtivo = null;
+        renderAbaOdontograma(el, p);
+      });
+      return;
+    }
+
+    // Sem registro salvo → formulário de cadastro
+    const cur = registro || { condicao: 'saudavel', obs: '' };
     box.innerHTML = `
       <h4 style="color:var(--cor-primaria);font-size:14px;margin-bottom:8px">Dente ${denteAtivo}</h4>
-      <div class="checkbox-grid">${CONDICOES_DENTE.map(cd => `<label class="checkbox-item"><input type="radio" name="condicaoDente" value="${cd.id}" ${registro.condicao === cd.id ? 'checked' : ''}> ${cd.label}</label>`).join('')}</div>
-      <div class="field"><label>Observação</label><textarea id="denteObs">${registro.obs || ''}</textarea></div>
-      <div class="btn-row"><button type="button" class="btn small" id="btnSalvarDente">Salvar dente</button></div>
+      <div class="checkbox-grid">${CONDICOES_DENTE.map(cd => `<label class="checkbox-item"><input type="radio" name="condicaoDente" value="${cd.id}" ${cur.condicao === cd.id ? 'checked' : ''}> ${cd.label}</label>`).join('')}</div>
+      <div class="field"><label>Observação</label><textarea id="denteObs">${cur.obs || ''}</textarea></div>
+      <div class="btn-row"><button type="button" class="btn small" id="btnSalvarDente">💾 Salvar dente</button></div>
     `;
     document.getElementById('btnSalvarDente').addEventListener('click', () => {
       const condicao = box.querySelector('input[name=condicaoDente]:checked').value;
@@ -2307,7 +2342,7 @@
         savedAt: new Date().toISOString()
       };
       save(STORAGE_KEYS.clientes, state.clientes);
-      showToast('Dente atualizado!');
+      showToast('Dente salvo!');
       renderAbaOdontograma(el, p);
     });
   }
@@ -3728,7 +3763,7 @@
             <div class="form-grid" style="grid-template-columns:1fr 1fr">
               <div class="field" style="margin:0">
                 <label>Data de início</label>
-                <input type="date" id="tNovoData" value="${hoje}">
+                <input type="date" id="tNovoData" value="${hoje}" readonly style="background:#f3f4f6;cursor:not-allowed;color:#6b7280">
               </div>
               <div class="field" style="margin:0">
                 <label>Frequência de retorno</label>
