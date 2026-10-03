@@ -4063,25 +4063,69 @@
         const cor = cores[o.status] || '#666';
         const label = labels[o.status] || o.status;
         const itensDesc = (o.itens||[]).map(i=>i.nome+(i.regiao?' ('+i.regiao+')':'')).join(', ') || o.descricao || '—';
-        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--cor-borda);flex-wrap:wrap;">
+        const jaLancado = !!o.financeiroPago;
+        const botoesPendentes = o.status === 'aguardando' ? `
+          <button class="btn" style="font-size:12px;padding:5px 11px;background:#1a7d3a" data-orc-aceitar="${o.id}">✅ Aceitar</button>
+          <button class="btn" style="font-size:12px;padding:5px 11px;background:#b3261e" data-orc-recusar="${o.id}">❌ Recusar</button>` : '';
+        const btnFinanceiro = (o.status === 'aceito' && !jaLancado) ? `
+          <button class="btn" style="font-size:12px;padding:5px 11px;background:#c9a24b;color:#0d1b3e" data-orc-financeiro="${o.id}">💰 Lançar</button>` : '';
+        const tagLancado = jaLancado ? `<span style="font-size:11px;color:#1a7d3a;font-weight:600">✓ Lançado</span>` : '';
+        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--cor-borda);flex-wrap:wrap;">
       <div style="flex:1;min-width:160px;">
         <div style="font-size:13px;font-weight:600;color:var(--cor-primaria)">${_esc(itensDesc)}</div>
-        <div style="font-size:12px;color:#6b7280;margin-top:2px">${_date(o.data)} · ${_fmt(o.valor||0)}</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px">${_date(o.data)} · ${_fmt(o.valor||0)}${o.formaPagamentoLabel?' · '+_esc(o.formaPagamentoLabel):''}</div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">
         <span style="font-size:11px;font-weight:700;color:${cor};background:${cor}18;border:1px solid ${cor}44;padding:2px 8px;border-radius:20px">${label}</span>
+        ${tagLancado}
+        ${botoesPendentes}
+        ${btnFinanceiro}
         <button class="btn" style="font-size:12px;padding:5px 11px;background:#0d1b3e" data-orc-pdf="${o.id}">📄 PDF</button>
         <button class="btn danger" style="font-size:12px;padding:5px 11px" data-orc-del="${o.id}">🗑</button>
       </div>
     </div>`;
       }).join('');
-      // events
+
+      // ── Aceitar orçamento → modal de pagamento ──
+      listaEl.querySelectorAll('[data-orc-aceitar]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const o = (c.orcamentos||[]).find(x=>x.id===btn.dataset.orcAceitar);
+          if (!o) return;
+          abrirModalPagamentoOrc(o);
+        });
+      });
+
+      // ── Recusar orçamento ──
+      listaEl.querySelectorAll('[data-orc-recusar]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const o = (c.orcamentos||[]).find(x=>x.id===btn.dataset.orcRecusar);
+          if (!o) return;
+          if (!confirm('Marcar orçamento como recusado?')) return;
+          o.status = 'recusado';
+          _save(_sk.clientes, _st.clientes);
+          renderListaOrcamentos();
+          _toast('❌ Orçamento marcado como recusado.');
+        });
+      });
+
+      // ── Lançar no financeiro (orçamento aceito ainda não lançado) ──
+      listaEl.querySelectorAll('[data-orc-financeiro]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const o = (c.orcamentos||[]).find(x=>x.id===btn.dataset.orcFinanceiro);
+          if (!o) return;
+          abrirModalPagamentoOrc(o);
+        });
+      });
+
+      // ── PDF ──
       listaEl.querySelectorAll('[data-orc-pdf]').forEach(btn => {
         btn.addEventListener('click', () => {
           const o = (c.orcamentos||[]).find(x=>x.id===btn.dataset.orcPdf);
           if (o) gerarPDFOrcamento(o);
         });
       });
+
+      // ── Excluir ──
       listaEl.querySelectorAll('[data-orc-del]').forEach(btn => {
         btn.addEventListener('click', () => {
           if (!confirm('Excluir este orçamento?')) return;
@@ -4089,6 +4133,110 @@
           _save(_sk.clientes, _st.clientes);
           renderListaOrcamentos();
         });
+      });
+    }
+
+    // ── Modal de pagamento para orçamento aceito ──
+    function abrirModalPagamentoOrc(o) {
+      // Remove modal anterior se existir
+      document.querySelector('#modalPagOrc')?.remove();
+      const formas = _formas();
+      const totalOrc = o.valor || 0;
+
+      const md = document.createElement('div');
+      md.id = 'modalPagOrc';
+      md.style.cssText = 'position:fixed;inset:0;background:rgba(13,27,62,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+      md.innerHTML = `
+        <div style="background:#fff;border-radius:16px;padding:28px;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(13,27,62,0.18)">
+          <h3 style="font-size:17px;color:var(--cor-primaria);margin-bottom:6px">💰 Confirmar Pagamento</h3>
+          <p style="font-size:13px;color:#6b7280;margin-bottom:18px">${_esc((o.itens||[]).map(i=>i.nome).join(', ')||'Orçamento')}</p>
+          <div class="field">
+            <label>Valor (R$)</label>
+            <input type="number" id="orcValorFinal" value="${totalOrc.toFixed(2)}" min="0" step="0.01" style="width:100%;padding:9px 11px;border:1px solid var(--cor-borda);border-radius:8px;font-size:14px;font-family:inherit">
+          </div>
+          <div class="field">
+            <label>Forma de Pagamento</label>
+            <select id="orcForma" style="width:100%;padding:9px 11px;border:1px solid var(--cor-borda);border-radius:8px;font-size:14px;font-family:inherit">
+              ${formas.map(f=>`<option value="${f.key}">${f.label}${f.taxa>0?' (taxa '+f.taxa+'%)':''}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field" id="orcParcelasWrap" style="display:none">
+            <label>Parcelas</label>
+            <select id="orcParcelas" style="width:100%;padding:9px 11px;border:1px solid var(--cor-borda);border-radius:8px;font-size:14px;font-family:inherit">
+              ${[1,2,3,4,5,6,7,8,9,10,11,12].map(n=>`<option value="${n}">${n}x</option>`).join('')}
+            </select>
+          </div>
+          <div id="orcPreviewCalc" style="background:#f4f5f8;border-radius:10px;padding:12px;margin:14px 0;font-size:13px;line-height:1.8"></div>
+          <div style="display:flex;gap:10px;margin-top:18px">
+            <button class="btn secondary" id="orcCancelarModal" style="flex:1">Cancelar</button>
+            <button class="btn" id="orcConfirmarModal" style="flex:2;background:#1a7d3a">✅ Confirmar e Lançar</button>
+          </div>
+        </div>`;
+      document.body.appendChild(md);
+
+      const inpValor = md.querySelector('#orcValorFinal');
+      const selForma = md.querySelector('#orcForma');
+      const selParc = md.querySelector('#orcParcelas');
+      const wrapParc = md.querySelector('#orcParcelasWrap');
+      const preview = md.querySelector('#orcPreviewCalc');
+
+      function atualizarPreview() {
+        const bruto = parseFloat(inpValor.value)||0;
+        const fk = selForma.value;
+        const f = _formaByKey(fk);
+        const isCartao = fk.startsWith('cartao') || fk.startsWith('credito') || fk.startsWith('debito');
+        wrapParc.style.display = isCartao ? 'block' : 'none';
+        const taxa = _r2(bruto * f.taxa / 100);
+        const liquido = _r2(bruto - taxa);
+        preview.innerHTML = `
+          <div style="display:flex;justify-content:space-between"><span style="color:#6b7280">Valor bruto</span><span style="font-weight:600">${_fmt(bruto)}</span></div>
+          ${taxa>0?`<div style="display:flex;justify-content:space-between"><span style="color:#e65100">Taxa (${f.taxa}%)</span><span style="color:#e65100">− ${_fmt(taxa)}</span></div>`:''}
+          <div style="display:flex;justify-content:space-between;border-top:1px solid #e3e5ec;margin-top:6px;padding-top:6px"><span style="font-weight:700;color:var(--cor-primaria)">Valor líquido</span><span style="font-weight:700;color:#1a7d3a">${_fmt(liquido)}</span></div>`;
+      }
+      inpValor.addEventListener('input', atualizarPreview);
+      selForma.addEventListener('change', atualizarPreview);
+      atualizarPreview();
+
+      md.querySelector('#orcCancelarModal').addEventListener('click', () => md.remove());
+      md.addEventListener('click', e => { if (e.target === md) md.remove(); });
+
+      md.querySelector('#orcConfirmarModal').addEventListener('click', () => {
+        const bruto = parseFloat(inpValor.value)||0;
+        if (bruto <= 0) { _toast('Informe um valor válido.'); return; }
+        const fk = selForma.value;
+        const f = _formaByKey(fk);
+        const parcelas = parseInt(selParc.value)||1;
+        const taxa = _r2(bruto * f.taxa / 100);
+        const liquido = _r2(bruto - taxa);
+        const itensDesc = (o.itens||[]).map(i=>i.nome+(i.regiao?' ('+i.regiao+')':'')).join(', ')||'Orçamento';
+        const hoje2 = new Date().toISOString().slice(0,10);
+
+        // Atualiza orçamento
+        o.status = 'aceito';
+        o.formaPagamento = fk;
+        o.formaPagamentoLabel = f.label;
+        o.parcelas = parcelas;
+        o.valor = bruto;
+        o.financeiroPago = hoje2;
+
+        // Lança no financeiro
+        _st.financeiro = _st.financeiro || [];
+        _st.financeiro.push({
+          id: _uid(), tipo: 'receita', atendimento: true, origem: 'orcamento',
+          descricao: `Orçamento aceito — ${itensDesc}`,
+          valor: bruto, data: hoje2,
+          clienteId: c.id, clienteNome: c.nome,
+          formaPagamento: f.label, taxaPercentual: f.taxa, taxaValor: taxa,
+          custoInsumos: 0, valorLiquido: liquido, lucro: liquido,
+          parcelas, orcamentoId: o.id, baixas: []
+        });
+        _save(_sk.financeiro, _st.financeiro);
+        _save(_sk.clientes, _st.clientes);
+        if (typeof renderFinanceiro === 'function') renderFinanceiro();
+        if (typeof renderDashboard === 'function') renderDashboard();
+        md.remove();
+        renderListaOrcamentos();
+        _toast('✅ Orçamento aceito e lançado no financeiro!');
       });
     }
 
