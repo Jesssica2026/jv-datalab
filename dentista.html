@@ -3350,7 +3350,8 @@
   // Gera ticket de materiais no financeiro quando um procedimento é concluído
   function _gerarTicketMateriais(cliente, item) {
     if (!item.materiais || !item.materiais.length) return;
-    const custo = item.materiais.reduce((s, m) => s + (m.custo||0) * (m.qty||1), 0);
+    // suporta tanto {custo, qty} (plano) quanto {custoUnit, qtd} (atendimento manual)
+    const custo = item.materiais.reduce((s, m) => s + (m.custo||m.custoUnit||0) * (m.qty||m.qtd||1), 0);
     if (custo <= 0) return;
     // evitar duplicata: se já existe lançamento para este item, não gera de novo
     const jaExiste = (state.financeiro||[]).some(f => f.itemPlanoId === item.id && f.tipo === 'despesa' && f.categoria === 'materiais');
@@ -3560,11 +3561,12 @@
     }));
     // 2) Procedimentos do plano de tratamento (concluídos)
     const plano = c.planoTratamento || {};
-    const evPlano = (plano.itens || []).filter(i => i.status === 'concluido' || i.dataConclusao).map(i => ({
-      _tipo: 'plano', id: i.id, data: i.dataConclusao || hoje,
+    const evPlano = (plano.itens || []).filter(i => i.status === 'concluido' || (i.dataConclusao && i.dataConclusao !== '')).map(i => ({
+      _tipo: 'plano', id: i.id, data: i.dataConclusao && i.dataConclusao !== '' ? i.dataConclusao : hoje,
       titulo: esc(i.procedimento) || 'Procedimento',
       subtitulo: i.dente ? `Dente ${esc(i.dente)}` : '',
-      valor: i.valor || 0, custo: 0,
+      valor: i.valor || 0,
+      custo: (i.materiais||[]).reduce((s,m)=>s+(m.custo||m.custoUnit||0)*(m.qty||m.qtd||1),0),
       profissional: '', materiais: i.materiais || [], obs: '',
       status: i.aceiteCliente ? '✅ Aceito' : '', _raw: i
     }));
@@ -3806,18 +3808,38 @@
         return { prodId:m.prodId, nome:prod?prod.nome:'', qtd:m.qtd||1, custoUnit: prod?custoPorUso(prod):0 };
       });
       const custoMateriais = materiais.reduce((s,m)=>s+m.custoUnit*(m.qtd||1),0);
-      c.tratamentos.push({
-        id: uid(), data: el.querySelector('#tratData').value,
-        profissionalId: el.querySelector('#tratProf').value,
+      const dataTrat = el.querySelector('#tratData').value || todayISO();
+      const profId = el.querySelector('#tratProf').value;
+      const novoTrat = {
+        id: uid(), data: dataTrat,
+        profissionalId: profId,
         servicoId: servId,
         procedimento: nomeServicoPorId(servId) || '',
         regiao: el.querySelector('#tratRegiao').value.trim(),
         valor: num(el.querySelector('#tratValor').value),
         materiais, custoMateriais,
         observacoes: el.querySelector('#tratObs').value.trim()
-      });
+      };
+      c.tratamentos.push(novoTrat);
+      // Lançar custo de materiais no financeiro como despesa
+      if (custoMateriais > 0) {
+        const matDesc = materiais.map(m=>`${m.nome} ×${m.qtd||1}`).join(', ');
+        state.financeiro = state.financeiro || [];
+        state.financeiro.push({
+          id: uid(), tipo: 'despesa', origem: 'materiais', categoria: 'materiais',
+          descricao: `Materiais — ${novoTrat.procedimento||'Atendimento'}${novoTrat.regiao ? ' ('+novoTrat.regiao+')' : ''}: ${matDesc}`,
+          valor: custoMateriais, data: dataTrat,
+          clienteId: c.id, clienteNome: c.nome,
+          procedimentoNome: novoTrat.procedimento, tratamentoId: novoTrat.id,
+          profissionalId: profId, profissionalNome: nomeProfissionalPorId(profId)||'',
+          formaPagamento: '', taxaPercentual: 0, taxaValor: 0,
+          custoInsumos: custoMateriais, valorLiquido: -custoMateriais, lucro: -custoMateriais, baixas: []
+        });
+        save(STORAGE_KEYS.financeiro, state.financeiro);
+        showToast(`🔩 Custo de materiais (${formatMoney(custoMateriais)}) lançado no financeiro!`);
+      }
       save(STORAGE_KEYS.clientes, state.clientes);
-      showToast('Atendimento registrado!');
+      if (!custoMateriais) showToast('Atendimento registrado!');
       renderAbaTratamentos(el, c);
     });
 
