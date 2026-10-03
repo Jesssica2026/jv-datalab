@@ -3134,6 +3134,7 @@
   let horarioAgendaSelecionado = null;
 
   function renderGradeHorarios() {
+    if (!session) return;
     const profId = session.tipo === 'profissional' ? session.profissionalId : document.getElementById('agendaProfissional').value;
     const servicoId = document.getElementById('agendaServico').value;
     const data = document.getElementById('agendaData').value;
@@ -3207,7 +3208,8 @@
     const el = document.getElementById(id);
     if (el) el.addEventListener('change', renderGradeHorarios);
   });
-  renderGradeHorarios();
+  // NÃO chamar renderGradeHorarios() aqui — session ainda é null neste momento
+  // Será chamada em renderAgendaCompleta() após login
   function renderAgendamentos() {
     let lista = state.agendamentos.filter(a => a.data >= todayISO());
     if (session.tipo === 'profissional') lista = lista.filter(a => a.profissionalId === session.profissionalId);
@@ -3240,7 +3242,7 @@
     }
     document.getElementById('listaAgendamentos').innerHTML = html;
   }
-  function renderAgendaCompleta() { renderAgendamentos(); renderDisponibilidade(); renderTimeline(); }
+  function renderAgendaCompleta() { renderAgendamentos(); renderDisponibilidade(); renderTimeline(); renderGradeHorarios(); }
   document.getElementById('filtroProfissional').addEventListener('change', renderAgendaCompleta);
   document.getElementById('listaAgendamentos').addEventListener('click', (e) => {
     const whatsBtn = e.target.closest('[data-whats-agenda]');
