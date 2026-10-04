@@ -381,17 +381,6 @@
       text-align: center;
     }
 
-    /* ── PERSONALIZE ── */
-    .customize {
-      padding: 3rem 1.5rem;
-      border-top: 1px solid rgba(255,255,255,0.08);
-      max-width: 640px; margin: 0 auto;
-    }
-    .customize-box {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: var(--radius); padding: 2rem;
-    }
     .form-group { margin-bottom: 1.25rem; }
     .form-group label {
       display: block; font-size: 13px; font-weight: 500;
@@ -408,28 +397,6 @@
     .form-group input::placeholder, .form-group textarea::placeholder { color: rgba(255,255,255,0.3); }
     .form-group input:focus, .form-group select:focus { border-color: rgba(255,255,255,0.4); }
     .form-group select option { background: var(--navy); color: var(--white); }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .btn-gerar {
-      width: 100%; padding: 13px;
-      background: var(--white); color: var(--navy);
-      border: none; border-radius: 10px;
-      font-size: 15px; font-weight: 700; cursor: pointer;
-      font-family: 'Inter', sans-serif; margin-top: 0.5rem;
-    }
-    .link-output {
-      margin-top: 1rem; padding: 12px 14px;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 8px; font-size: 13px;
-      color: rgba(255,255,255,0.85); word-break: break-all;
-      display: none;
-    }
-    .link-output .copy-btn {
-      display: inline-block; margin-top: 8px;
-      background: var(--navy); color: var(--white);
-      border: none; border-radius: 6px; padding: 6px 14px;
-      font-size: 12px; cursor: pointer; font-family: 'Inter', sans-serif;
-    }
 
     /* ── FOOTER ── */
     footer {
@@ -603,8 +570,6 @@
       .form-row { grid-template-columns: 1fr; }
 
       .about { padding: 2rem 1rem; }
-      .customize { padding: 2rem 1rem; }
-      .customize-box { padding: 1.5rem 1rem; }
     }
   </style>
 </head>
@@ -635,7 +600,6 @@
   <p id="hero-subtitle"></p>
   <div class="hero-cta-group">
     <a href="#planos" class="btn-hero">Ver planos</a>
-    <a href="#personalizar" class="btn-hero-outline">Gerar meu link</a>
   </div>
 </section>
 
@@ -682,51 +646,6 @@
 </section>
 
 <!-- ── PERSONALIZAR / GERAR LINK ── -->
-<section class="customize" id="personalizar">
-  <h2 class="section-title">Personalize e gere seu link</h2>
-  <p class="section-sub" style="margin-bottom:1.5rem;">Configure o app do seu negócio e envie o link de agendamento para seus clientes.</p>
-  <div class="customize-box">
-    <div class="form-group">
-      <label>Nome do seu negócio</label>
-      <input type="text" id="biz-name" placeholder="Ex: Salão da Ana" />
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Segmento</label>
-        <select id="biz-niche">
-          <option value="salao">Salão de beleza</option>
-          <option value="estetica">Estética</option>
-          <option value="dentista">Dentista</option>
-          <option value="barbearia">Barbearia</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Plano ativo</label>
-        <select id="biz-plan">
-          <option value="starter">Starter — R$ 49/mês</option>
-          <option value="profissional">Profissional — R$ 89/mês</option>
-          <option value="clinica">Clínica — R$ 149/mês</option>
-          <option value="premium">Premium — R$ 249/mês</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group">
-      <label>WhatsApp do negócio (com DDD)</label>
-      <input type="text" id="biz-whatsapp" placeholder="Ex: 11999999999" />
-    </div>
-    <div class="form-group" id="playstore-group" style="display:none">
-      <label>Link do app na Play Store</label>
-      <input type="text" id="biz-playstore" placeholder="https://play.google.com/store/apps/details?id=..." />
-    </div>
-    <button class="btn-gerar" onclick="gerarLink()">Gerar link de agendamento ↗</button>
-    <div class="link-output" id="link-result">
-      <strong>Seu link:</strong><br/>
-      <span id="link-text"></span>
-      <br/>
-      <button class="copy-btn" onclick="copiarLink()">Copiar link</button>
-    </div>
-  </div>
-</section>
 
 <!-- ── FOOTER ── -->
 <footer>
@@ -829,11 +748,6 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>`;
   });
 
-  // Toggle campo Play Store
-  document.getElementById('biz-plan').addEventListener('change', e => {
-    document.getElementById('playstore-group').style.display =
-      e.target.value === 'app' ? 'block' : 'none';
-  });
 });
 
 // ── WhatsApp ──────────────────────────────────────────────────────
@@ -885,57 +799,6 @@ function irParaWhatsApp() {
 
   window.open(`https://wa.me/${CONFIG.company.whatsapp}?text=${msg}`, '_blank');
   fecharModal();
-
-  // Trecho morto mantido por compatibilidade — nunca será chamado
-  async function processarPagamento_LEGADO() {
-  const btn = document.getElementById('pay-btn');
-  btn.disabled = true;
-  btn.textContent = 'Processando...';
-
-  const name  = document.getElementById('pay-name').value;
-  const email = document.getElementById('pay-email').value;
-
-  if (!name || !email) {
-    document.getElementById('card-errors').textContent = 'Preencha nome e e-mail.';
-    btn.disabled = false; btn.textContent = 'Confirmar assinatura';
-    return;
-  }
-
-  // -----------------------------------------------------------
-  // BACK-END NECESSÁRIO:
-  // Crie um endpoint POST /create-subscription no seu servidor
-  // que receba { email, priceId } e retorne { clientSecret }
-  } // fim processarPagamento_LEGADO
-} // fim irParaWhatsApp
-
-// ── Gerador de link ──────────────────────────────────────────────
-function gerarLink() {
-  const nome = document.getElementById('biz-name').value.trim();
-  const niche = document.getElementById('biz-niche').value;
-  const plano = document.getElementById('biz-plan').value;
-  const wa    = document.getElementById('biz-whatsapp').value.trim();
-  const ps    = document.getElementById('biz-playstore').value.trim();
-
-  if (!nome) { alert('Digite o nome do seu negócio.'); return; }
-
-  let link;
-  if (plano === 'app' && ps) {
-    link = ps;
-  } else {
-    // Gera link de agendamento genérico — substitua pela URL real do seu sistema
-    const slug = nome.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    link = `https://agenda.jvdatalab.com.br/${niche}/${slug}`;
-    if (wa) link += `?wa=${wa}`;
-  }
-
-  const el = document.getElementById('link-result');
-  document.getElementById('link-text').textContent = link;
-  el.style.display = 'block';
-}
-
-function copiarLink() {
-  const txt = document.getElementById('link-text').textContent;
-  navigator.clipboard.writeText(txt).then(() => alert('Link copiado!'));
 }
 
 // Menu hambúrguer mobile
