@@ -125,7 +125,7 @@
       company: {
         name: "Datalab",
         email: "contato@jvdatalab.com.br",
-        whatsapp: "5511999999999",  // número com DDI+DDD, sem espaços
+        whatsapp: "5511953769678",  // número com DDI+DDD, sem espaços
         heroTitle: "Sistema completo, com o menor investimento!",
         heroSubtitle: "Apps para salão de beleza, barbearia, estética e dentista.",
         aboutTitle: "Quem somos",
@@ -469,16 +469,14 @@
     }
     #card-errors { color: var(--danger); font-size: 13px; margin-bottom: 1rem; }
     #pay-btn {
-      width: 100%; padding: 13px;
-      background: var(--navy); color: var(--white);
+      width: 100%; padding: 14px;
+      background: #25D366; color: #fff;
       border: none; border-radius: 10px;
       font-size: 15px; font-weight: 700; cursor: pointer;
       font-family: 'Inter', sans-serif;
+      transition: background .2s;
     }
-    .stripe-badge {
-      text-align: center; font-size: 12px; color: var(--muted);
-      margin-top: 10px;
-    }
+    #pay-btn:hover { background: #1ebe5d; }
 
     /* ── ADD-ONS ── */
     .addons {
@@ -743,26 +741,20 @@
   <div class="modal">
     <button class="modal-close" onclick="fecharModal()">×</button>
     <h2 id="modal-title">Assinar plano</h2>
+    <p style="color:#4a5568;font-size:14px;margin:-8px 0 20px;">Preencha seus dados e fale com a gente pelo WhatsApp para ativar seu acesso com <strong>7 dias grátis</strong> 🎉</p>
     <div class="form-group">
-      <label>Nome completo</label>
-      <input type="text" id="pay-name" placeholder="Seu nome" />
+      <label>Seu nome</label>
+      <input type="text" id="pay-name" placeholder="Nome completo" />
     </div>
     <div class="form-group">
-      <label>E-mail</label>
-      <input type="email" id="pay-email" placeholder="seu@email.com" />
+      <label>WhatsApp</label>
+      <input type="tel" id="pay-phone" placeholder="(11) 99999-9999" />
     </div>
-    <div class="form-group">
-      <label>Dados do cartão</label>
-      <div id="card-element"></div>
-    </div>
-    <div id="card-errors"></div>
-    <button id="pay-btn" onclick="processarPagamento()">Confirmar assinatura</button>
-    <p class="stripe-badge">🔒 Pagamento seguro via <strong>Stripe</strong></p>
+    <div id="card-errors" style="color:#e53e3e;font-size:13px;margin-bottom:8px;"></div>
+    <button id="pay-btn" onclick="irParaWhatsApp()">💬 Falar no WhatsApp e começar grátis</button>
+    <p style="text-align:center;font-size:12px;color:#718096;margin-top:12px;">Respondemos em minutos · Sem compromisso</p>
   </div>
 </div>
-
-<!-- ── STRIPE SDK ── -->
-<script src="https://js.stripe.com/v3/"></script>
 
 <script>
 // ── Renderiza conteúdo dinâmico via CONFIG ──────────────────────
@@ -844,47 +836,58 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// ── Stripe ──────────────────────────────────────────────────────
-let stripe, cardElement, planAtual;
-
-function initStripe() {
-  if (!stripe) {
-    stripe = Stripe(CONFIG.stripePublicKey);
-    const elements = stripe.elements();
-    cardElement = elements.create('card', {
-      style: {
-        base: { fontSize: '15px', color: '#1a1a2e', fontFamily: 'Inter, sans-serif' }
-      }
-    });
-    cardElement.mount('#card-element');
-    cardElement.on('change', e => {
-      document.getElementById('card-errors').textContent = e.error ? e.error.message : '';
-    });
-  }
-}
+// ── WhatsApp ──────────────────────────────────────────────────────
+let planAtual;
 
 function abrirModal(planKey) {
   planAtual = planKey;
   const p = CONFIG.plans[planKey];
-  document.getElementById('modal-title').textContent = `Assinar — ${p.name} ${p.price}`;
+  document.getElementById('modal-title').textContent = `Plano ${p.name} — ${p.price}/mês`;
+  document.getElementById('card-errors').textContent = '';
+  document.getElementById('pay-name').value = '';
+  document.getElementById('pay-phone').value = '';
   document.getElementById('modal').classList.add('open');
-  initStripe();
 }
 
 function abrirModalAddon(addonId, label, price, priceId) {
-  // Reutiliza o mesmo modal, só troca priceId e título
   planAtual = '__addon__' + addonId;
   CONFIG.plans[planAtual] = { name: label, price, priceId };
-  document.getElementById('modal-title').textContent = `Contratar — ${label} · ${price}`;
+  document.getElementById('modal-title').textContent = `Adicional — ${label} · ${price}`;
+  document.getElementById('card-errors').textContent = '';
+  document.getElementById('pay-name').value = '';
+  document.getElementById('pay-phone').value = '';
   document.getElementById('modal').classList.add('open');
-  initStripe();
 }
 
 function fecharModal() {
   document.getElementById('modal').classList.remove('open');
 }
 
-async function processarPagamento() {
+function irParaWhatsApp() {
+  const nome  = document.getElementById('pay-name').value.trim();
+  const fone  = document.getElementById('pay-phone').value.trim();
+  const erros = document.getElementById('card-errors');
+
+  if (!nome || !fone) {
+    erros.textContent = 'Preencha seu nome e WhatsApp para continuar.';
+    return;
+  }
+  erros.textContent = '';
+
+  const p = CONFIG.plans[planAtual];
+  const planNome = planAtual.startsWith('__addon__')
+    ? `Adicional: ${p.name} (${p.price})`
+    : `Plano ${p.name} — ${p.price}/mês`;
+
+  const msg = encodeURIComponent(
+    `Olá! Tenho interesse no ${planNome} do JV Datalab.\n\nNome: ${nome}\nWhatsApp: ${fone}\n\nQuero aproveitar os 7 dias grátis! 🎉`
+  );
+
+  window.open(`https://wa.me/${CONFIG.company.whatsapp}?text=${msg}`, '_blank');
+  fecharModal();
+
+  // Trecho morto mantido por compatibilidade — nunca será chamado
+  async function processarPagamento_LEGADO() {
   const btn = document.getElementById('pay-btn');
   btn.disabled = true;
   btn.textContent = 'Processando...';
@@ -902,42 +905,8 @@ async function processarPagamento() {
   // BACK-END NECESSÁRIO:
   // Crie um endpoint POST /create-subscription no seu servidor
   // que receba { email, priceId } e retorne { clientSecret }
-  // Exemplo em Node.js disponível em: stripe.com/docs/billing
-  // -----------------------------------------------------------
-  try {
-    const res = await fetch('/create-subscription', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, priceId: CONFIG.plans[planAtual].priceId })
-    });
-    const { clientSecret, error: serverError } = await res.json();
-
-    if (serverError) {
-      document.getElementById('card-errors').textContent = serverError;
-      btn.disabled = false; btn.textContent = 'Confirmar assinatura';
-      return;
-    }
-
-    const { error } = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: {
-        card: cardElement,
-        billing_details: { name, email }
-      }
-    });
-
-    if (error) {
-      document.getElementById('card-errors').textContent = error.message;
-    } else {
-      fecharModal();
-      alert(`✅ Assinatura confirmada! Bem-vindo ao Datalab, ${name}!`);
-    }
-  } catch (e) {
-    document.getElementById('card-errors').textContent = 'Erro de conexão. Tente novamente.';
-  }
-
-  btn.disabled = false;
-  btn.textContent = 'Confirmar assinatura';
-}
+  } // fim processarPagamento_LEGADO
+} // fim irParaWhatsApp
 
 // ── Gerador de link ──────────────────────────────────────────────
 function gerarLink() {
