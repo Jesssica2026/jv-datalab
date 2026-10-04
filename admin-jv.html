@@ -157,6 +157,7 @@
               <option value="Profissional">Profissional — R$89/mês (com IA)</option>
               <option value="Clínica">Clínica — R$149/mês (com IA)</option>
               <option value="Premium">Premium — R$249/mês (com IA)</option>
+              <option value="Enterprise">Enterprise — R$399/mês (com IA)</option>
             </select>
           </div>
           <div class="field">
@@ -167,7 +168,7 @@
             </select>
           </div>
           <div class="field"><label>Limite de profissionais (auto)</label><input type="text" id="assLimite" value="1" readonly style="background:#f0f1f5;color:#6b7280"></div>
-          <div class="field"><label>Limite de clientes (auto)</label><input type="text" id="assLimiteClientes" value="50" readonly style="background:#f0f1f5;color:#6b7280"></div>
+          <div class="field"><label>Limite de clientes (auto)</label><input type="text" id="assLimiteClientes" value="200" readonly style="background:#f0f1f5;color:#6b7280"></div>
           <div class="field"><label>Armazenamento (GB)</label><input type="text" id="assLimiteGB" value="1 GB" style="pointer-events:none;background:#f0f1f5;color:#6b7280"></div>
           <div class="field"><label>Data de vencimento</label><input type="date" id="assVencimento" required></div>
         </div>
@@ -279,6 +280,7 @@
           <option value="Profissional">Profissional — R$89/mês (com IA)</option>
           <option value="Clínica">Clínica — R$149/mês (com IA)</option>
           <option value="Premium">Premium — R$249/mês (com IA)</option>
+          <option value="Enterprise">Enterprise — R$399/mês (com IA)</option>
         </select>
       </div>
       <div class="field"><label>Limite de profissionais</label><input type="number" id="editLimite" min="1" step="1" required></div>
@@ -826,10 +828,11 @@
 
   // ===== CONFIGURAÇÃO DOS PLANOS =====
   const PLANOS = {
-    'Starter':      { profissionais: 1,     clientes: 50,    gb: 1,  temIA: false },
-    'Profissional': { profissionais: 3,     clientes: 150,   gb: 3,  temIA: false },
-    'Clínica':      { profissionais: 5,     clientes: 300,   gb: 6,  temIA: true  },
-    'Premium':      { profissionais: 99999, clientes: 99999, gb: 20, temIA: true  }
+    'Starter':      { profissionais: 1,     clientes: 200,   gb: 1,  temIA: true },
+    'Profissional': { profissionais: 3,     clientes: 500,   gb: 3,  temIA: true },
+    'Clínica':      { profissionais: 5,     clientes: 1000,  gb: 6,  temIA: true },
+    'Premium':      { profissionais: 99999, clientes: 99999, gb: 20, temIA: true },
+    'Enterprise':   { profissionais: 99999, clientes: 99999, gb: 50, temIA: true }
   };
 
   function setLimitFields(plano, prefixo) {
