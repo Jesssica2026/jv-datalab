@@ -6828,10 +6828,12 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
       const res = await fetch(`${SUPA_URL_DEN}/rest/v1/licencas?codigo=eq.${encodeURIComponent(codigo)}&limit=1`, {
         headers: { 'apikey': SUPA_KEY_DEN, 'Authorization': 'Bearer ' + SUPA_KEY_DEN }
       });
-      if (!res.ok) return null;
+      if (!res.ok) { console.warn('[DEN] Supabase HTTP', res.status); return null; }
       const rows = await res.json();
+      console.log('[DEN] buscarLicencaSupabase rows:', JSON.stringify(rows));
       if (!rows || rows.length === 0) return null;
       const r = rows[0];
+      console.log('[DEN] segmento encontrado:', r.segmento);
       const lic = {
         id: r.id, codigo: r.codigo,
         nomeAssinante: r.nome_assinante || r.nome_cliente || '', telefone: r.telefone || '', segmento: r.segmento, plano: r.plano || 'Starter',
@@ -6846,7 +6848,7 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
       if (idx >= 0) lista[idx] = lic; else lista.push(lic);
       localStorage.setItem(LICENCAS_SHARED_KEY, JSON.stringify(lista));
       return lic;
-    } catch(e) { return null; }
+    } catch(e) { console.warn('[DEN] buscarLicencaSupabase erro:', e.message); return null; }
   }
   function validarLicencaObj(lic, codigo) {
     if (!lic) return { ok: false, motivo: 'invalido' };
@@ -6930,9 +6932,14 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
     if (!resultado.ok && resultado.motivo === 'invalido') {
       const licSupa = await buscarLicencaSupabase(codigo);
       if (licSupa) {
+        console.log('[DEN] licSupa segmento:', licSupa.segmento, 'aceitos:', ACCEPTED_SEGMENTOS);
         resultado = validarLicencaObj(licSupa, codigo);
+        if (!resultado.ok && resultado.motivo === 'invalido') {
+          mostrarTelaAtivacao('Este código pertence a outro sistema (segmento: ' + licSupa.segmento + '). Use o painel correto ou entre em contato com a JV Datalab.');
+          return;
+        }
       } else {
-        mostrarTelaAtivacao('Código não encontrado. Verifique o código e sua conexão com a internet.');
+        mostrarTelaAtivacao('Código não encontrado. Verifique o código digitado e tente novamente.');
         return;
       }
     }
