@@ -112,7 +112,7 @@
       <div class="logo-placeholder">JV</div>
       <div>
         <h1 id="tituloEmpresa">JV Datalab</h1>
-        <div class="sub">Painel de licenças e assinantes</div>
+        <div class="sub">Painel de licenças e assinantes · v3</div>
       </div>
     </div>
     <button class="btn-sair" id="btnSair">Sair</button>
@@ -570,6 +570,10 @@
     if (!state.config.senhaAdmin) { renderSetupForm(); return; }
     const sessao = load(STORAGE_KEYS.sessao, null);
     if (!sessao || !sessao.ativo) { renderLoginForm(); return; }
+    // limpar registros inválidos (nome ou código undefined/vazio)
+    const antes = state.licencas.length;
+    state.licencas = state.licencas.filter(l => l && l.nomeAssinante && l.nomeAssinante !== 'undefined' && l.codigo);
+    if (state.licencas.length !== antes) save(STORAGE_KEYS.licencas, state.licencas);
     document.getElementById('telaLogin').style.display = 'none';
     document.getElementById('appContainer').style.display = 'block';
     applyConfig();
