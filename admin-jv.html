@@ -320,8 +320,6 @@
     showToast(`Sincronizado! ${ok} ok${erro ? ', ' + erro + ' erro(s)' : ''}`);
   }
 
-  const SEGMENTO_LABEL = { SAL:'Salão', BAR:'Barbearia', EST:'Estética', DEN:'Dentista', MAN:'Manicure', MAC:'Maquiagem', DEP:'Depilação', CIL:'Cílios', SOB:'Sobrancelha' };
-
   async function carregarAceites() {
     const box = document.getElementById('listaAceites');
     box.innerHTML = '<span style="color:#9aa0ab">Carregando...</span>';
