@@ -7923,8 +7923,8 @@
   async function geminiCarregarChave() {
     if (_geminiApiKey) return _geminiApiKey;
     try {
-      const res = await fetch(SUPA_URL + '/rest/v1/config_sistema?chave=eq.gemini_api_key&select=valor', {
-        headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY }
+      const res = await fetch(SUPA_URL_EST + '/rest/v1/config_sistema?chave=eq.gemini_api_key&select=valor', {
+        headers: { 'apikey': SUPA_KEY_EST, 'Authorization': 'Bearer ' + SUPA_KEY_EST }
       });
       const data = await res.json();
       if (data && data[0]) _geminiApiKey = data[0].valor;
