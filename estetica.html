@@ -1342,7 +1342,13 @@
                 <div class="field"><label>Cliente</label><select id="agendaCliente" required></select></div>
                 <div class="field"><label>Serviço</label><select id="agendaServico" required></select></div>
                 <div class="field"><label>Data</label><input type="date" id="agendaData" required></div>
-                <div class="field"><label>Horário</label><input type="time" id="agendaHora" required></div>
+                <div class="field" style="display:none"><label>Horário</label><input type="time" id="agendaHora" required></div>
+              </div>
+              <!-- Grade de horários disponíveis -->
+              <div id="gradeHorariosWrap" style="margin-top:12px">
+                <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:8px">Selecione um horário disponível:</div>
+                <div id="gradeHorarios" style="display:flex;flex-wrap:wrap;gap:8px"><span style="font-size:12px;color:#9aa0ab">Selecione profissional e data para ver os horários.</span></div>
+                <div id="horarioSelecionadoInfo" style="display:none;margin-top:10px;padding:10px 14px;background:#fff7ed;border-left:3px solid var(--cor-primaria);border-radius:6px;font-size:13px;color:#92400e"></div>
               </div>
               <div class="btn-row"><button type="submit" class="btn">Adicionar agendamento</button></div>
             </form>
@@ -4279,6 +4285,80 @@
     renderDashboard();
     showToast('Agendamento reagendado!');
   });
+  // ---------- Grade de horários disponíveis ----------
+  let horarioAgendaSelecionado = null;
+
+  function renderGradeHorarios() {
+    if (!session) return;
+    const profId = session.tipo === 'profissional' ? session.profissionalId : document.getElementById('agendaProfissional').value;
+    const servicoId = document.getElementById('agendaServico').value;
+    const data = document.getElementById('agendaData').value;
+    const gradeEl = document.getElementById('gradeHorarios');
+    const infoEl = document.getElementById('horarioSelecionadoInfo');
+    horarioAgendaSelecionado = null;
+    document.getElementById('agendaHora').value = '';
+    infoEl.style.display = 'none';
+
+    if (!profId || !data) {
+      gradeEl.innerHTML = '<span style="font-size:12px;color:#9aa0ab">Selecione profissional e data para ver os horários.</span>';
+      return;
+    }
+
+    const janelas = janelaDoDia(profId, data);
+    if (!janelas) {
+      gradeEl.innerHTML = '<span style="font-size:12px;color:#9aa0ab">Profissional não atende neste dia.</span>';
+      return;
+    }
+
+    const intervalo = state.config.intervaloGrade || 30;
+    const durServico = servicoId ? duracaoDoServico(servicoId) : intervalo;
+    const slots = [];
+    janelas.forEach(j => { for (let t = j.inicio; t < j.fim; t += intervalo) slots.push(t); });
+    slots.sort((a, b) => a - b);
+
+    if (!slots.length) {
+      gradeEl.innerHTML = '<span style="font-size:12px;color:#9aa0ab">Nenhum horário configurado.</span>';
+      return;
+    }
+
+    gradeEl.innerHTML = slots.map(t => {
+      const status = statusDoSlot(profId, data, t, durServico);
+      const hora = minParaHora(t);
+      if (status.tipo === 'disponivel') {
+        return `<button type="button" class="btn-slot-horario disponivel" data-hora="${hora}" title="${hora} — Disponível" style="padding:7px 12px;border-radius:8px;border:2px solid #1a7d3a;background:#f0fdf4;color:#1a7d3a;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">${hora}</button>`;
+      } else if (status.tipo === 'bloqueado') {
+        return `<button type="button" disabled title="${hora} — Bloqueado" style="padding:7px 12px;border-radius:8px;border:2px solid #e5e7eb;background:#f3f4f6;color:#c4c9d4;font-size:13px;font-weight:600;cursor:not-allowed">${hora}</button>`;
+      } else {
+        return `<button type="button" disabled title="${hora} — ${status.texto}" style="padding:7px 12px;border-radius:8px;border:2px solid #fed7aa;background:#fff7ed;color:#c9701a;font-size:13px;font-weight:600;cursor:not-allowed">${hora}</button>`;
+      }
+    }).join('');
+
+    gradeEl.querySelectorAll('.btn-slot-horario.disponivel').forEach(btn => {
+      btn.addEventListener('click', () => {
+        gradeEl.querySelectorAll('.btn-slot-horario.disponivel').forEach(b => {
+          b.style.background = '#f0fdf4';
+          b.style.color = '#1a7d3a';
+          b.style.borderColor = '#1a7d3a';
+        });
+        btn.style.background = 'var(--cor-primaria)';
+        btn.style.color = '#fff';
+        btn.style.borderColor = 'var(--cor-primaria)';
+        horarioAgendaSelecionado = btn.dataset.hora;
+        document.getElementById('agendaHora').value = horarioAgendaSelecionado;
+        const cli = state.clientes.find(c => c.id === document.getElementById('agendaCliente').value);
+        const serv = state.servicos.find(s => s.id === servicoId);
+        const profNome = state.profissionais.find(p => p.id === profId);
+        infoEl.style.display = 'block';
+        infoEl.innerHTML = `✅ <strong>${horarioAgendaSelecionado}</strong> — ${cli ? cli.nome : 'Selecione uma cliente'}${serv ? ' · ' + serv.nome + ' (' + serv.duracao + 'min)' : ''}${profNome ? ' · ' + profNome.nome : ''}`;
+      });
+    });
+  }
+
+  ['agendaProfissional','agendaServico','agendaData'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', renderGradeHorarios);
+  });
+
   document.getElementById('formAgendamento').addEventListener('submit', (e) => {
     e.preventDefault();
     const clienteId = document.getElementById('agendaCliente').value;
@@ -4294,6 +4374,7 @@
     state.agendamentos.push({ id: uid(), data: document.getElementById('agendaData').value, hora: document.getElementById('agendaHora').value, clienteId, servicoId, profissionalId, origem: 'manual' });
     save(STORAGE_KEYS.agendamentos, state.agendamentos);
     document.getElementById('agendaHora').value = '';
+    horarioAgendaSelecionado = null;
     renderAgendaCompleta();
     renderDashboard();
     showToast('Agendamento adicionado!');
