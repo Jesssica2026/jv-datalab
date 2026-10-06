@@ -115,7 +115,10 @@
         <div class="sub">Painel de licenças e assinantes · v3</div>
       </div>
     </div>
-    <button class="btn-sair" id="btnSair">Sair</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn-sair" id="btnSincronizar" style="background:var(--cor-secundaria);color:var(--cor-primaria);border:none;font-weight:700">⬆ Sincronizar</button>
+      <button class="btn-sair" id="btnSair">Sair</button>
+    </div>
   </div>
 
   <div class="wrap">
@@ -259,6 +262,56 @@
     sessao: 'jv_admin_sessao'
   };
 
+  // ---------- Supabase ----------
+  const SUPA_URL = 'https://dhcbgwoqvemveltqlkyb.supabase.co';
+  const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoY2Jnd29xdmVtdmVsdHFsa3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDYxMDIsImV4cCI6MjEwNTU4MjEwMn0.QBq8rf6MSaVu74q4c-85QiZzfSS_dy_5TV9HT_M_e3g';
+  const SUPA_HEADERS = { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates' };
+
+  function licToSupa(lic) {
+    return {
+      id: lic.id,
+      codigo: lic.codigo,
+      segmento: lic.segmento,
+      plano: lic.plano,
+      nome_cliente: lic.nomeAssinante,
+      data_vencimento: lic.dataVencimento
+    };
+  }
+
+  async function salvarLicencaSupa(lic) {
+    try {
+      await fetch(`${SUPA_URL}/rest/v1/licencas`, {
+        method: 'POST',
+        headers: { ...SUPA_HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify(licToSupa(lic))
+      });
+    } catch(e) { console.warn('Supabase sync:', e); }
+  }
+
+  async function excluirLicencaSupa(id) {
+    try {
+      await fetch(`${SUPA_URL}/rest/v1/licencas?id=eq.${id}`, {
+        method: 'DELETE', headers: SUPA_HEADERS
+      });
+    } catch(e) { console.warn('Supabase delete:', e); }
+  }
+
+  async function sincronizarTudoSupa() {
+    showToast('Sincronizando com o banco...');
+    let ok = 0, erro = 0;
+    for (const lic of state.licencas) {
+      try {
+        const res = await fetch(`${SUPA_URL}/rest/v1/licencas`, {
+          method: 'POST',
+          headers: { ...SUPA_HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify(licToSupa(lic))
+        });
+        if (res.ok) ok++; else erro++;
+      } catch(e) { erro++; }
+    }
+    showToast(`Sincronizado! ${ok} ok${erro ? ', ' + erro + ' erro(s)' : ''}`);
+  }
+
   const DEFAULT_CONFIG = { senhaAdmin: '', nomeEmpresa: 'JV Datalab', whatsappSuporte: '', urlBase: '' };
 
   const SEGMENTO_ARQUIVO = { SAL: 'painel.html', BAR: 'painel.html', EST: 'estetica.html', DEN: 'dentista.html' };
@@ -359,6 +412,7 @@
     };
     state.licencas.push(lic);
     save(STORAGE_KEYS.licencas, state.licencas);
+    salvarLicencaSupa(lic);
     e.target.reset();
     atualizarLimitesPlano();
     renderAssinantes();
@@ -431,6 +485,7 @@
     if (id) {
       state.licencas = state.licencas.filter(l => l.id !== id);
       save(STORAGE_KEYS.licencas, state.licencas);
+      excluirLicencaSupa(id);
       renderAssinantes();
       showToast('Assinante excluído.');
     }
@@ -518,6 +573,7 @@
     lic.temIA = cfgEditado.temIA;
     lic.dataVencimento = document.getElementById('editVencimento').value;
     save(STORAGE_KEYS.licencas, state.licencas);
+    salvarLicencaSupa(lic);
     modalEditar.classList.remove('open');
     renderAssinantes();
     showToast('Assinante atualizado!');
@@ -562,6 +618,7 @@
       document.getElementById('loginErro').classList.add('show');
     });
   }
+  document.getElementById('btnSincronizar').addEventListener('click', () => sincronizarTudoSupa());
   document.getElementById('btnSair').addEventListener('click', () => {
     if (confirm('Deseja sair?')) { localStorage.removeItem(STORAGE_KEYS.sessao); location.reload(); }
   });
