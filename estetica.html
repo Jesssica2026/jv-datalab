@@ -6840,6 +6840,10 @@
     }
     save(STORAGE_KEYS.licenca, { codigo: resultado.licenca.codigo });
     licencaAtiva = resultado.licenca;
+    // Remove ?cod= da URL sem recarregar, depois exige login normalmente
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
     iniciar();
   }
   async function iniciarComLicenca() {
