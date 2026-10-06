@@ -6821,7 +6821,7 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
 
   // --- Supabase fallback para validação de licença ---
   const SUPA_URL_DEN = 'https://dhcbgwoqvemveltqlkyb.supabase.co';
-  const SUPA_KEY_DEN = 'sb_publishable_2NBJeTDfI7FRe3xGfo_QpQ_voN44OJm';
+  const SUPA_KEY_DEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoY2Jnd29xdmVtdmVsdHFsa3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDYxMDIsImV4cCI6MjEwNTU4MjEwMn0.QBq8rf6MSaVu74q4c-85QiZzfSS_dy_5TV9HT_M_e3g';
   async function buscarLicencaSupabase(codigo) {
     try {
       const res = await fetch(`${SUPA_URL_DEN}/rest/v1/licencas?codigo=eq.${encodeURIComponent(codigo)}&limit=1`, {
@@ -6833,7 +6833,7 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
       const r = rows[0];
       const lic = {
         id: r.id, codigo: r.codigo,
-        nomeAssinante: r.nome_assinante, telefone: r.telefone, segmento: r.segmento, plano: r.plano,
+        nomeAssinante: r.nome_assinante || r.nome_cliente || '', telefone: r.telefone || '', segmento: r.segmento, plano: r.plano || 'Starter',
         periodicidade: r.periodicidade,
         limiteProfissionais: r.limite_profissionais || 1,
         limiteClientes: r.limite_clientes || 50,
@@ -6850,7 +6850,7 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
   function validarLicencaObj(lic, codigo) {
     if (!lic) return { ok: false, motivo: 'invalido' };
     if (!ACCEPTED_SEGMENTOS.includes(lic.segmento)) return { ok: false, motivo: 'invalido' };
-    if (lic.dataVencimento < todayISO()) return { ok: false, motivo: 'expirado', licenca: lic };
+    if (lic.dataVencimento && lic.dataVencimento < todayISO()) return { ok: false, motivo: 'expirado', licenca: lic };
     return { ok: true, licenca: lic };
   }
 
@@ -6858,7 +6858,7 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
     const lic = obterLicencasCompartilhadas().find(l => l.codigo === (codigo || '').trim().toUpperCase());
     if (!lic) return { ok: false, motivo: 'invalido' };
     if (!ACCEPTED_SEGMENTOS.includes(lic.segmento)) return { ok: false, motivo: 'invalido' };
-    if (lic.dataVencimento < todayISO()) return { ok: false, motivo: 'expirado', licenca: lic };
+    if (lic.dataVencimento && lic.dataVencimento < todayISO()) return { ok: false, motivo: 'expirado', licenca: lic };
     return { ok: true, licenca: lic };
   }
   function licencaAtualFresca() {
@@ -7760,7 +7760,7 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
 <script>
 (function() {
   const SUPA_URL = 'https://dhcbgwoqvemveltqlkyb.supabase.co';
-  const SUPA_KEY = 'sb_publishable_2NBJeTDfI7FRe3xGfo_QpQ_voN44OJm';
+  const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoY2Jnd29xdmVtdmVsdHFsa3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDYxMDIsImV4cCI6MjEwNTU4MjEwMn0.QBq8rf6MSaVu74q4c-85QiZzfSS_dy_5TV9HT_M_e3g';
   const supa = window.supabase ? window.supabase.createClient(SUPA_URL, SUPA_KEY) : null;
   if (!supa) { console.warn('[Supa] biblioteca não carregada'); return; }
 
@@ -8036,7 +8036,7 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
 const TERMOS_VERSAO = "1.0";
 const TERMOS_KEY    = "jv_aceite_termos_v1.0";
 const SUPA_URL_T    = "https://dhcbgwoqvemveltqlkyb.supabase.co";
-const SUPA_KEY_T    = "sb_publishable_2NBJeTDfI7FRe3xGfo_QpQ_voN44OJm";
+const SUPA_KEY_T    = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoY2Jnd29xdmVtdmVsdHFsa3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDYxMDIsImV4cCI6MjEwNTU4MjEwMn0.QBq8rf6MSaVu74q4c-85QiZzfSS_dy_5TV9HT_M_e3g";
 
 function verificarAceiteTermos() {
   if (localStorage.getItem(TERMOS_KEY)) return;
