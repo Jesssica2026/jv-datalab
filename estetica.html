@@ -2417,10 +2417,12 @@
     if (pageId === 'personalizacao') bkRenderPainel();
     if (session && session.tipo !== 'admin' && ADMIN_ONLY_PAGES.includes(pageId)) pageId = 'agendamentos';
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById('page-' + pageId).classList.add('active');
+    const pageEl = document.getElementById('page-' + pageId);
+    if (!pageEl) return;
+    pageEl.classList.add('active');
     document.querySelectorAll('nav.menu button').forEach(b => b.classList.toggle('active', b.dataset.page === pageId));
     if (pageId === 'ia') iaRenderizarInativos();
-    document.getElementById('topbarTitle').textContent = document.querySelector('#page-' + pageId + ' .page-title').textContent;
+    try { const t = document.querySelector('#page-' + pageId + ' .page-title'); if (t) document.getElementById('topbarTitle').textContent = t.textContent; } catch(e) {}
     if (pageId === 'dashboard') renderDashboard();
     if (pageId === 'agendamentos') { populateSelectsSeLazyVisible(); setAgendaModo(agendaModo); renderAgendaCompleta(); }
     if (pageId === 'clientes') renderClientes();
