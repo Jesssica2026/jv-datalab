@@ -805,14 +805,6 @@
   </script>
 </head>
 <body>
-<script>
-window.onerror = function(msg, src, line, col, err) {
-  var d = document.createElement('div');
-  d.style = 'position:fixed;top:0;left:0;right:0;background:#b91c1c;color:#fff;padding:14px 18px;font-size:13px;z-index:99999;white-space:pre-wrap;word-break:break-all;';
-  d.textContent = '❌ ERRO linha ' + line + ': ' + msg + (err ? '\n' + err.stack : '');
-  document.body.appendChild(d);
-};
-</script>
 
 <div class="login-screen" id="telaAtivacao" style="display:none">
   <div class="login-box">
@@ -8065,7 +8057,6 @@ window.onerror = function(msg, src, line, col, err) {
   }
 
   // Expõe funções de IA chamadas via onclick no HTML
-  window.iaSalvarChave      = iaSalvarChave;
   window.iaGerarPromocao    = iaGerarPromocao;
   window.iaGerarMsgRetorno  = iaGerarMsgRetorno;
   window.iaCopiar           = iaCopiar;
