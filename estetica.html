@@ -403,7 +403,7 @@
 // ============================================================
 (function() {
   const SUPA_URL = "https://dhcbgwoqvemveltqlkyb.supabase.co";
-  const SUPA_KEY = "sb_publishable_2NBJeTDfI7FRe3xGfo_QpQ_voN44OJm";
+  const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoY2Jnd29xdmVtdmVsdHFsa3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDYxMDIsImV4cCI6MjEwNTU4MjEwMn0.QBq8rf6MSaVu74q4c-85QiZzfSS_dy_5TV9HT_M_e3g";
   const LICENCAS_KEY = "jv_datalab_licencas";
   const LICENCA_PAINEL_KEY = "estetica_licenca";
 
@@ -6720,7 +6720,7 @@
 
   // ---------- Licenciamento (ativação via admin-jv.html) ----------
   const SUPA_URL_EST = 'https://dhcbgwoqvemveltqlkyb.supabase.co';
-  const SUPA_KEY_EST = 'sb_publishable_2NBJeTDfI7FRe3xGfo_QpQ_voN44OJm';
+  const SUPA_KEY_EST = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoY2Jnd29xdmVtdmVsdHFsa3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDYxMDIsImV4cCI6MjEwNTU4MjEwMn0.QBq8rf6MSaVu74q4c-85QiZzfSS_dy_5TV9HT_M_e3g';
 
   async function buscarLicencaSupabase(codigo) {
     try {
@@ -6834,7 +6834,7 @@
         // Sem conexão com Supabase — tenta cache local
         resultado = validarCodigoAtivacao(codigo);
         if (!resultado.ok) {
-          mostrarTelaAtivacao('Sem conexão para validar. Abra pelo Safari e ative o código primeiro.');
+          mostrarTelaAtivacao('Não foi possível validar o código agora. Verifique sua conexão com a internet e tente novamente.');
           return;
         }
       }
@@ -8121,7 +8121,7 @@
 const TERMOS_VERSAO = "1.0";
 const TERMOS_KEY    = "jv_aceite_termos_v1.0";
 const SUPA_URL_T    = "https://dhcbgwoqvemveltqlkyb.supabase.co";
-const SUPA_KEY_T    = "sb_publishable_2NBJeTDfI7FRe3xGfo_QpQ_voN44OJm";
+const SUPA_KEY_T    = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoY2Jnd29xdmVtdmVsdHFsa3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDYxMDIsImV4cCI6MjEwNTU4MjEwMn0.QBq8rf6MSaVu74q4c-85QiZzfSS_dy_5TV9HT_M_e3g";
 
 function verificarAceiteTermos() {
   if (localStorage.getItem(TERMOS_KEY)) return;
