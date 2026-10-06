@@ -235,6 +235,18 @@
   </div>
 </div>
 
+<!-- Modal: confirmar exclusão -->
+<div class="modal-overlay" id="modalConfirmar">
+  <div class="modal" style="max-width:360px;text-align:center">
+    <h3 style="color:#c0392b">Excluir assinante?</h3>
+    <p style="font-size:13.5px;color:#4b5162;margin:10px 0 20px"><strong id="confirmarNome"></strong><br>O código de ativação deixará de funcionar imediatamente.</p>
+    <div class="btn-row" style="justify-content:center;gap:12px">
+      <button type="button" class="btn danger" id="btnConfirmarExcluir">Sim, excluir</button>
+      <button type="button" class="btn secondary" id="btnCancelarExcluir">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -411,7 +423,22 @@
   const modalLinkAcesso = document.getElementById('modalLinkAcesso');
   const modalRenovar = document.getElementById('modalRenovar');
   const modalEditar = document.getElementById('modalEditarAssinante');
+  const modalConfirmar = document.getElementById('modalConfirmar');
   let licencaSelecionada = null;
+
+  document.getElementById('btnConfirmarExcluir').addEventListener('click', () => {
+    const id = modalConfirmar.dataset.idExcluir;
+    if (id) {
+      state.licencas = state.licencas.filter(l => l.id !== id);
+      save(STORAGE_KEYS.licencas, state.licencas);
+      renderAssinantes();
+      showToast('Assinante excluído.');
+    }
+    modalConfirmar.classList.remove('open');
+  });
+  document.getElementById('btnCancelarExcluir').addEventListener('click', () => {
+    modalConfirmar.classList.remove('open');
+  });
 
   document.getElementById('listaAssinantes').addEventListener('click', (e) => {
     const btnLink = e.target.closest('[data-link]');
@@ -444,11 +471,12 @@
       document.getElementById('editVencimento').value = lic.dataVencimento;
       modalEditar.classList.add('open');
     } else if (btnExcluir) {
-      if (confirm('Excluir este assinante? O código de ativação dele deixará de funcionar imediatamente.')) {
-        state.licencas = state.licencas.filter(l => l.id !== btnExcluir.dataset.excluir);
-        save(STORAGE_KEYS.licencas, state.licencas);
-        renderAssinantes();
-      }
+      const idExcluir = btnExcluir.dataset.excluir;
+      const licExcluir = state.licencas.find(l => l.id === idExcluir);
+      const nome = licExcluir ? licExcluir.nomeAssinante : 'este assinante';
+      modalConfirmar.dataset.idExcluir = idExcluir;
+      document.getElementById('confirmarNome').textContent = nome;
+      modalConfirmar.classList.add('open');
     }
   });
 
