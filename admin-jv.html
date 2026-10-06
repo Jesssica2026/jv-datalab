@@ -452,7 +452,7 @@
         <div class="assinante-card">
           <div class="topo-card">
             <div>
-              <div class="nome">${l.nomeAssinante} <span class="badge ${status}">${badgeLabel}</span></div>
+              <div class="nome">${l.nomeAssinante || l.nome_cliente || '(sem nome)'} <span class="badge ${status}">${badgeLabel}</span></div>
               <div class="codigo">${l.codigo}</div>
             </div>
             <div style="text-align:right">
@@ -627,9 +627,9 @@
     if (!state.config.senhaAdmin) { renderSetupForm(); return; }
     const sessao = load(STORAGE_KEYS.sessao, null);
     if (!sessao || !sessao.ativo) { renderLoginForm(); return; }
-    // limpar registros inválidos (nome ou código undefined/vazio)
+    // limpar apenas registros completamente vazios (sem código)
     const antes = state.licencas.length;
-    state.licencas = state.licencas.filter(l => l && l.nomeAssinante && l.nomeAssinante !== 'undefined' && l.codigo);
+    state.licencas = state.licencas.filter(l => l && l.codigo);
     if (state.licencas.length !== antes) save(STORAGE_KEYS.licencas, state.licencas);
     document.getElementById('telaLogin').style.display = 'none';
     document.getElementById('appContainer').style.display = 'block';
