@@ -375,8 +375,8 @@
     renderStats();
     const busca = (document.getElementById('buscaAssinante').value || '').toLowerCase();
     const lista = state.licencas
-      .filter(l => l.nomeAssinante.toLowerCase().includes(busca) || l.codigo.toLowerCase().includes(busca))
-      .sort((a, b) => a.dataVencimento.localeCompare(b.dataVencimento));
+      .filter(l => l && ((l.nomeAssinante || '').toLowerCase().includes(busca) || (l.codigo || '').toLowerCase().includes(busca)))
+      .sort((a, b) => (a.dataVencimento || '').localeCompare(b.dataVencimento || ''));
     const box = document.getElementById('listaAssinantes');
     if (!lista.length) { box.innerHTML = '<div class="empty-msg">Nenhum assinante cadastrado ainda.</div>'; return; }
     box.innerHTML = lista.map(l => {
