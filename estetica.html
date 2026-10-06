@@ -392,12 +392,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
-  function iaAtualizarBadge() {
-    const el = document.getElementById('iaRestantesNum');
-    if (el) el.textContent = iaMensagensRestantes();
-  }
-</script>
-<script>
 // ============================================================
 //  JV Datalab — Camada de dados Supabase (fonte de verdade)
 //  localStorage = cache offline apenas
@@ -7915,6 +7909,10 @@
     return uso.count < IA_LIMITE_MES;
   }
 
+  function iaAtualizarBadge() {
+    const el = document.getElementById('iaRestantesNum');
+    if (el) el.textContent = iaMensagensRestantes();
+  }
   function iaMensagensRestantes() {
     const uso = iaGetUsoMes();
     return Math.max(0, IA_LIMITE_MES - uso.count);
