@@ -6676,7 +6676,7 @@
     document.getElementById('telaAtivacao').style.display = 'none';
     document.getElementById('telaLogin').style.display = 'none';
     document.getElementById('appContainer').style.display = 'flex';
-    try { verificarAceiteTermos(); } catch(e) { console.warn('verificarAceiteTermos:', e); }
+    setTimeout(function(){ if(typeof verificarAceiteTermos === 'function') verificarAceiteTermos(); }, 50);
     try { applyConfig(); } catch(e) { console.warn('applyConfig:', e); }
     try { applyRoleRestrictions(); } catch(e) { console.warn('applyRoleRestrictions:', e); }
     try { normalizarStatusClientes(); } catch(e) { console.warn('normalizarStatusClientes:', e); }
