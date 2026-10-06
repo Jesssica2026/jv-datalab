@@ -6676,24 +6676,30 @@
     document.getElementById('telaAtivacao').style.display = 'none';
     document.getElementById('telaLogin').style.display = 'none';
     document.getElementById('appContainer').style.display = 'flex';
-    verificarAceiteTermos();
-    applyConfig();
-    applyRoleRestrictions();
-    normalizarStatusClientes();
-    sincronizarStatusClientes();
-    renderUserFooter();
-    populateTodosSelects();
-    renderServicos();
-    renderProfissionais();
-    renderProtocolos();
-    renderEstoque();
-    renderClientes();
-    renderAgendaCompleta();
-    renderGaleria();
-    renderFinanceiro();
-    renderDashboard();
-    verificarBannerRenovacao(licencaAtiva);
-    goToPage(session.tipo === 'admin' ? 'dashboard' : 'agendamentos');
+    try { verificarAceiteTermos(); } catch(e) { console.warn('verificarAceiteTermos:', e); }
+    try { applyConfig(); } catch(e) { console.warn('applyConfig:', e); }
+    try { applyRoleRestrictions(); } catch(e) { console.warn('applyRoleRestrictions:', e); }
+    try { normalizarStatusClientes(); } catch(e) { console.warn('normalizarStatusClientes:', e); }
+    try { sincronizarStatusClientes(); } catch(e) { console.warn('sincronizarStatusClientes:', e); }
+    try { renderUserFooter(); } catch(e) { console.warn('renderUserFooter:', e); }
+    try { populateTodosSelects(); } catch(e) { console.warn('populateTodosSelects:', e); }
+    try { renderServicos(); } catch(e) { console.warn('renderServicos:', e); }
+    try { renderProfissionais(); } catch(e) { console.warn('renderProfissionais:', e); }
+    try { renderProtocolos(); } catch(e) { console.warn('renderProtocolos:', e); }
+    try { renderEstoque(); } catch(e) { console.warn('renderEstoque:', e); }
+    try { renderClientes(); } catch(e) { console.warn('renderClientes:', e); }
+    try { renderAgendaCompleta(); } catch(e) { console.warn('renderAgendaCompleta:', e); }
+    try { renderGaleria(); } catch(e) { console.warn('renderGaleria:', e); }
+    try { renderFinanceiro(); } catch(e) { console.warn('renderFinanceiro:', e); }
+    try { renderDashboard(); } catch(e) { console.warn('renderDashboard:', e); }
+    try { verificarBannerRenovacao(licencaAtiva); } catch(e) { console.warn('verificarBannerRenovacao:', e); }
+    const _paginaInicial = session.tipo === 'admin' ? 'dashboard' : 'agendamentos';
+    goToPage(_paginaInicial);
+    // Fallback: garante que a página inicial fique visível mesmo se o goToPage falhar no primeiro render
+    setTimeout(() => {
+      const _ativa = document.querySelector('.page.active');
+      if (!_ativa || getComputedStyle(_ativa).display === 'none') goToPage(_paginaInicial);
+    }, 100);
     setTimeout(bkVerificarDiario, 600);
     // Sincroniza com Supabase após o app estar pronto e a licença disponível
     if (window._supaCarregarTudo) {
