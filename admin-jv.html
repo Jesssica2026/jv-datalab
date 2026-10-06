@@ -179,6 +179,14 @@
       <div class="search-box"><input type="text" id="buscaAssinante" placeholder="Buscar por nome ou código..."></div>
       <div id="listaAssinantes"></div>
     </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <h3 style="margin:0;">📋 Aceite de Termos</h3>
+        <button class="btn secondary small" onclick="carregarAceites()">↻ Atualizar</button>
+      </div>
+      <div id="listaAceites" style="font-size:13px;color:#6b7280;">Clique em Atualizar para carregar.</div>
+    </div>
   </div>
 </div>
 
@@ -310,6 +318,32 @@
       } catch(e) { erro++; }
     }
     showToast(`Sincronizado! ${ok} ok${erro ? ', ' + erro + ' erro(s)' : ''}`);
+  }
+
+  const SEGMENTO_LABEL = { SAL:'Salão', BAR:'Barbearia', EST:'Estética', DEN:'Dentista', MAN:'Manicure', MAC:'Maquiagem', DEP:'Depilação', CIL:'Cílios', SOB:'Sobrancelha' };
+
+  async function carregarAceites() {
+    const box = document.getElementById('listaAceites');
+    box.innerHTML = '<span style="color:#9aa0ab">Carregando...</span>';
+    try {
+      const res = await fetch(`${SUPA_URL}/rest/v1/aceite_termos?order=aceito_em.desc&limit=100`, { headers: SUPA_HEADERS });
+      const data = await res.json();
+      if (!data || !data.length) { box.innerHTML = '<span style="color:#9aa0ab">Nenhum aceite registrado ainda.</span>'; return; }
+      box.innerHTML = data.map(a => {
+        const dt = a.aceito_em ? new Date(a.aceito_em).toLocaleString('pt-BR') : '—';
+        const seg = SEGMENTO_LABEL[a.segmento] || a.segmento || '—';
+        return `<div style="display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #f0f1f5;flex-wrap:wrap;">
+          <span style="font-size:18px;">${a.segmento==='DEN'?'🦷':a.segmento==='EST'?'💆':a.segmento==='SAL'||a.segmento==='BAR'?'💇':'✅'}</span>
+          <div style="flex:1;min-width:160px;">
+            <div style="font-weight:600;color:#1f2430;">${a.nome_cliente || '(sem nome)'}</div>
+            <div style="color:#6b7280;font-size:12px;">${seg} · ${a.codigo_licenca || '—'}</div>
+          </div>
+          <div style="text-align:right;font-size:12px;color:#9aa0ab;">${dt}</div>
+        </div>`;
+      }).join('');
+    } catch(e) {
+      box.innerHTML = '<span style="color:#e55;">Erro ao carregar. Verifique a conexão.</span>';
+    }
   }
 
   const DEFAULT_CONFIG = { senhaAdmin: '', nomeEmpresa: 'JV Datalab', whatsappSuporte: '', urlBase: '' };
