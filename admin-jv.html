@@ -370,6 +370,8 @@
   }
 
   function renderAssinantes() {
+    const boxCheck = document.getElementById('listaAssinantes');
+    if (!boxCheck) return; // guard
     renderStats();
     const busca = (document.getElementById('buscaAssinante').value || '').toLowerCase();
     const lista = state.licencas
@@ -587,7 +589,6 @@
 
   iniciar();
   bindPlanSelects();
-  renderAssinantes();
 })();
 </script>
 </body>
