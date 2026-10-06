@@ -295,12 +295,10 @@
   function getLinkAcesso(lic) {
     const arquivo = SEGMENTO_ARQUIVO[lic.segmento];
     const base = state.config.urlBase || 'https://www.jvdatalab.com.br';
-    const url = new URL(arquivo, base.endsWith('/') ? base : base + '/');
-    url.searchParams.set('cod', lic.codigo);
-    return url.toString();
+    return (base.endsWith('/') ? base : base + '/') + arquivo;
   }
   function mensagemBoasVindas(lic) {
-    return `Olá ${lic.nomeAssinante}! Seu acesso ao sistema ${state.config.nomeEmpresa || 'JV Datalab'} foi liberado 🎉\n\nSeu código de ativação: ${lic.codigo}\nAcesse pelo link: ${getLinkAcesso(lic)}\n\nQualquer dúvida, estamos à disposição!`;
+    return `Olá ${lic.nomeAssinante}! Seu acesso ao sistema ${state.config.nomeEmpresa || 'JV Datalab'} foi liberado 🎉\n\n📎 Link de acesso: ${getLinkAcesso(lic)}\n🔑 Código de ativação: ${lic.codigo}\n\nAo abrir o link pela primeira vez, insira o código de ativação e crie sua senha.\n\nQualquer dúvida, estamos à disposição!`;
   }
   function statusLicenca(lic) {
     const hoje = todayISO();
