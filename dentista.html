@@ -6748,6 +6748,7 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
     goToPage(session.tipo === 'admin' ? 'dashboard' : 'agendamentos');
     setTimeout(bkVerificarDiario, 600);
     if (window._supaCarregarTudo) window._supaCarregarTudo().catch(e => console.warn('[Supa]', e));
+    setTimeout(function(){ if(typeof verificarAceiteTermos === 'function') verificarAceiteTermos(); }, 50);
   }
 
   function recarregarStateDoLocalStorage() {
@@ -6931,12 +6932,8 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
       if (licSupa) {
         resultado = validarLicencaObj(licSupa, codigo);
       } else {
-        // Sem conexão com Supabase — tenta cache local
-        resultado = validarCodigoAtivacao(codigo);
-        if (!resultado.ok) {
-          mostrarTelaAtivacao('Sem conexão para validar. Abra pelo Safari e ative o código primeiro.');
-          return;
-        }
+        mostrarTelaAtivacao('Código não encontrado. Verifique o código e sua conexão com a internet.');
+        return;
       }
     }
     if (!resultado.ok) {
@@ -6956,7 +6953,14 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
     let resultado = validarCodigoAtivacao(licencaSalva.codigo);
     if (!resultado.ok && resultado.motivo === 'invalido') {
       const licSupa = await buscarLicencaSupabase(licencaSalva.codigo);
-      resultado = validarLicencaObj(licSupa, licencaSalva.codigo);
+      if (licSupa) {
+        resultado = validarLicencaObj(licSupa, licencaSalva.codigo);
+      } else {
+        // Supabase inacessível mas tem licença salva — deixa entrar
+        licencaAtiva = licencaSalva;
+        iniciar();
+        return;
+      }
     }
     if (!resultado.ok) {
       if (resultado.motivo === 'expirado') { mostrarTelaExpirada(); return; }
