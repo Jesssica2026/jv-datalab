@@ -6854,8 +6854,6 @@
   }
   async function iniciarComLicenca() {
     const licencaSalva = load(STORAGE_KEYS.licenca, null);
-    const codigoUrl = new URLSearchParams(window.location.search).get('cod');
-    if (!licencaSalva && codigoUrl) { await tentarAtivarCodigo(codigoUrl); return; }
     if (!licencaSalva) { mostrarTelaAtivacao(); return; }
     let resultado = validarCodigoAtivacao(licencaSalva.codigo);
     if (!resultado.ok && resultado.motivo === 'invalido') {
