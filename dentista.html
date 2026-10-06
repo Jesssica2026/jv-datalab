@@ -8056,9 +8056,10 @@ function aceitarTermos() {
   const btn = document.getElementById("btnAceitarTermos");
   btn.disabled = true;
   btn.textContent = "Registrando...";
-  const registro = { versao: TERMOS_VERSAO, aceito_em: new Date().toISOString(), ua: navigator.userAgent };
+  const agora = new Date().toISOString();
+  const registro = { versao: TERMOS_VERSAO, aceito_em: agora, ua: navigator.userAgent };
   localStorage.setItem(TERMOS_KEY, JSON.stringify(registro));
-  const licId = localStorage.getItem("jv_licenca_id") || localStorage.getItem("licenca_id") || "desconhecido";
+  const licSalva = JSON.parse(localStorage.getItem("dentista_licenca") || "{}");
   fetch(SUPA_URL_T + "/rest/v1/aceite_termos", {
     method: "POST",
     headers: {
@@ -8067,7 +8068,13 @@ function aceitarTermos() {
       "Content-Type": "application/json",
       "Prefer": "return=minimal"
     },
-    body: JSON.stringify({ licenca_id: licId, versao: TERMOS_VERSAO, aceito_em: registro.aceito_em, ua: registro.ua })
+    body: JSON.stringify({
+      codigo_licenca: licSalva.codigo || "desconhecido",
+      nome_cliente: licSalva.nomeAssinante || "",
+      segmento: licSalva.segmento || "DEN",
+      versao_termos: TERMOS_VERSAO,
+      aceito_em: agora
+    })
   }).catch(e => console.warn("aceite_termos:", e.message));
   document.getElementById("modalTermos").style.display = "none";
   document.body.style.overflow = "";
