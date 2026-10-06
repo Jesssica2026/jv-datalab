@@ -294,7 +294,7 @@
   }
   function getLinkAcesso(lic) {
     const arquivo = SEGMENTO_ARQUIVO[lic.segmento];
-    const base = state.config.urlBase || window.location.origin;
+    const base = state.config.urlBase || 'https://www.jvdatalab.com.br';
     const url = new URL(arquivo, base.endsWith('/') ? base : base + '/');
     url.searchParams.set('cod', lic.codigo);
     return url.toString();
