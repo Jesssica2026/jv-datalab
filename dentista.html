@@ -6748,7 +6748,11 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
     goToPage(session.tipo === 'admin' ? 'dashboard' : 'agendamentos');
     setTimeout(bkVerificarDiario, 600);
     if (window._supaCarregarTudo) window._supaCarregarTudo().catch(e => console.warn('[Supa]', e));
-    setTimeout(function(){ if(typeof verificarAceiteTermos === 'function') verificarAceiteTermos(); }, 50);
+    setTimeout(function(){
+      console.log('[Termos] TERMOS_KEY=', typeof TERMOS_KEY !== 'undefined' ? TERMOS_KEY : 'N/D', '| valor=', localStorage.getItem(typeof TERMOS_KEY !== 'undefined' ? TERMOS_KEY : 'jv_aceite_termos_v1.1'));
+      if(typeof verificarAceiteTermos === 'function') verificarAceiteTermos();
+      else console.warn('[Termos] verificarAceiteTermos não definida ainda');
+    }, 300);
   }
 
   function recarregarStateDoLocalStorage() {
