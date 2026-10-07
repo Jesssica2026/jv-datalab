@@ -6410,8 +6410,8 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
       </form>
       <button type="button" class="link-btn" id="btnEsqueciSenha">Esqueci minha senha</button>
       <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid #e3e5ec;">
-        <p style="font-size:12px;color:#9aa0ab;margin-bottom:6px">Quer usar um código diferente?</p>
-        <button type="button" id="btnUsarOutroCodigo" style="background:none;border:none;color:#0d1b3e;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;font-family:inherit;">Ativar com outro código</button>
+        <p style="font-size:12px;color:#9aa0ab;margin-bottom:6px">Não é você?</p>
+        <button type="button" id="btnUsarOutroCodigo" style="background:none;border:none;color:#0d1b3e;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;font-family:inherit;">Sair e entrar com outra conta</button>
       </div>
     `;
     document.getElementById('btnEsqueciSenha').addEventListener('click', abrirModalEsqueciSenha);
@@ -6867,6 +6867,7 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
     } catch(e) { console.warn('[DEN] buscarLicencaSupabase erro:', e.message); return null; }
   }
   function validarLicencaObj(lic, codigo) {
+    if (!codigo && lic && lic.cpfCnpj) codigo = lic.cpfCnpj;
     if (!lic) return { ok: false, motivo: 'invalido' };
     if (!ACCEPTED_SEGMENTOS.includes(lic.segmento)) return { ok: false, motivo: 'invalido' };
     if (lic.dataVencimento && lic.dataVencimento < todayISO()) return { ok: false, motivo: 'expirado', licenca: lic };
@@ -6917,56 +6918,25 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
     document.getElementById('telaLogin').style.display = 'none';
     document.getElementById('appContainer').style.display = 'none';
     document.getElementById('ativacaoConteudo').innerHTML = `
-      <p style="font-size:13px;color:#6b7280;margin-bottom:16px">Digite o código de ativação que você recebeu para liberar o sistema.</p>
+      <p style="font-size:13px;color:#6b7280;margin-bottom:16px">Entre com seu CPF ou CNPJ e senha para acessar o sistema.</p>
       <form id="formAtivacao">
-        <div class="field"><label>Código de ativação</label><input type="text" id="inputCodigoAtivacao" placeholder="JV-2026-DEN-XXXX" required style="text-transform:uppercase"></div>
-        <div class="error-msg ${erro ? 'show' : ''}" id="ativacaoErro">${erro || 'Código inválido.'}</div>
-        <button type="submit" class="btn" style="width:100%;margin-top:8px">Ativar sistema</button>
+        <div class="field"><label>CPF / CNPJ</label><input type="text" id="inputCpfCnpj" placeholder="000.000.000-00 ou 00.000.000/0001-00" required autocomplete="username"></div>
+        <div class="field"><label>Senha</label><input type="password" id="inputSenhaLogin" placeholder="Sua senha" required autocomplete="current-password"></div>
+        <div class="error-msg ${erro ? 'show' : ''}" id="ativacaoErro">${erro || 'CPF/CNPJ ou senha incorretos.'}</div>
+        <button type="submit" class="btn" style="width:100%;margin-top:8px" id="btnEntrar">Entrar</button>
       </form>
-      <div style="text-align:center;margin-top:18px;padding-top:14px;border-top:1px solid #e3e5ec;">
-        <p style="font-size:12.5px;color:#9aa0ab;margin-bottom:8px">Já ativou em outro dispositivo?</p>
-        <button type="button" id="btnJaTenhoAcesso" style="background:none;border:none;color:#0d1b3e;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;font-family:inherit;">Fazer login com código existente</button>
-      </div>
     `;
-    document.getElementById('formAtivacao').addEventListener('submit', (e) => {
+    document.getElementById('formAtivacao').addEventListener('submit', async (e) => {
       e.preventDefault();
-      tentarAtivarCodigo(document.getElementById('inputCodigoAtivacao').value.trim().toUpperCase());
-    });
-    document.getElementById('btnJaTenhoAcesso').addEventListener('click', () => {
-      mostrarTelaLoginComCodigo();
+      const cpfCnpj = document.getElementById('inputCpfCnpj').value.trim().replace(/\D/g,'');
+      const senha = document.getElementById('inputSenhaLogin').value;
+      const btn = document.getElementById('btnEntrar');
+      btn.disabled = true; btn.textContent = 'Verificando...';
+      await tentarLoginCpfSenha(cpfCnpj, senha);
+      btn.disabled = false; btn.textContent = 'Entrar';
     });
   }
-  function mostrarTelaLoginComCodigo() {
-    document.getElementById('ativacaoConteudo').innerHTML = `
-      <p style="font-size:13px;color:#6b7280;margin-bottom:16px">Digite seu código de ativação para recuperar o acesso neste dispositivo.</p>
-      <form id="formLoginCodigo">
-        <div class="field"><label>Código de ativação</label><input type="text" id="inputCodigoLogin" placeholder="JV-2026-DEN-XXXX" required style="text-transform:uppercase"></div>
-        <div class="error-msg" id="loginCodigoErro">Código não encontrado. Verifique e tente novamente.</div>
-        <button type="submit" class="btn" style="width:100%;margin-top:8px">Recuperar acesso</button>
-      </form>
-      <div style="text-align:center;margin-top:12px;">
-        <button type="button" style="background:none;border:none;color:#9aa0ab;font-size:12.5px;cursor:pointer;font-family:inherit;" onclick="mostrarTelaAtivacao()">← Voltar</button>
-      </div>
-    `;
-    document.getElementById('formLoginCodigo').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const cod = document.getElementById('inputCodigoLogin').value.trim().toUpperCase();
-      const licSupa = await buscarLicencaSupabase(cod);
-      if (!licSupa) {
-        document.getElementById('loginCodigoErro').classList.add('show');
-        return;
-      }
-      const resultado = validarLicencaObj(licSupa, cod);
-      if (!resultado.ok) {
-        if (resultado.motivo === 'expirado') { mostrarTelaExpirada(); return; }
-        document.getElementById('loginCodigoErro').classList.add('show');
-        return;
-      }
-      save(STORAGE_KEYS.licenca, resultado.licenca);
-      licencaAtiva = resultado.licenca;
-      iniciar();
-    });
-  }
+  function mostrarTelaLoginComCodigo() { mostrarTelaAtivacao(); }
   function mostrarTelaExpirada() {
     document.getElementById('telaAtivacao').style.display = 'flex';
     document.getElementById('telaLogin').style.display = 'none';
@@ -7006,40 +6976,130 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
     licencaAtiva = resultado.licenca;
     iniciar();
   }
+  async function tentarLoginCpfSenha(cpfCnpj, senha) {
+    try {
+      const res = await fetch(`${SUPA_URL_DEN}/rest/v1/licencas?cpf_cnpj=eq.${encodeURIComponent(cpfCnpj)}&segmento=eq.DEN&limit=1`, {
+        headers: { 'apikey': SUPA_KEY_DEN, 'Authorization': 'Bearer ' + SUPA_KEY_DEN },
+        signal: AbortSignal.timeout(7000)
+      });
+      if (!res.ok) { document.getElementById('ativacaoErro').classList.add('show'); return; }
+      const rows = await res.json();
+      if (!rows || rows.length === 0) { document.getElementById('ativacaoErro').classList.add('show'); return; }
+      const licSupa = rows[0];
+      if ((licSupa.senha || '123456') !== senha) {
+        document.getElementById('ativacaoErro').innerHTML = 'CPF/CNPJ ou senha incorretos.';
+        document.getElementById('ativacaoErro').classList.add('show');
+        return;
+      }
+      const dadosLicenca = {
+        id: licSupa.id, codigo: licSupa.codigo || licSupa.id,
+        cpfCnpj: licSupa.cpf_cnpj || cpfCnpj,
+        nomeAssinante: licSupa.nome_assinante || licSupa.nome_cliente || '',
+        telefone: licSupa.telefone || '', segmento: licSupa.segmento, plano: licSupa.plano || 'Starter',
+        periodicidade: licSupa.periodicidade,
+        limiteProfissionais: licSupa.limite_profissionais || 1,
+        limiteClientes: licSupa.limite_clientes || 50,
+        temIA: licSupa.tem_ia || false,
+        dataCriacao: licSupa.data_criacao, dataVencimento: licSupa.data_vencimento
+      };
+      const resultado = validarLicencaObj(dadosLicenca, dadosLicenca.codigo);
+      if (!resultado.ok) {
+        if (resultado.motivo === 'expirado') { mostrarTelaExpirada(); return; }
+        document.getElementById('ativacaoErro').innerHTML = 'Acesso inválido. Entre em contato com a JV Datalab.';
+        document.getElementById('ativacaoErro').classList.add('show');
+        return;
+      }
+      save(STORAGE_KEYS.licenca, resultado.licenca);
+      licencaAtiva = resultado.licenca;
+      if (senha === '123456') {
+        mostrarTrocaSenhaObrigatoria(cpfCnpj);
+        return;
+      }
+      iniciar();
+    } catch(e) {
+      document.getElementById('ativacaoErro').innerHTML = 'Erro de conexão. Verifique sua internet.';
+      document.getElementById('ativacaoErro').classList.add('show');
+    }
+  }
+  function mostrarTrocaSenhaObrigatoria(cpfCnpj) {
+    document.getElementById('telaAtivacao').style.display = 'flex';
+    document.getElementById('telaLogin').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'none';
+    document.getElementById('ativacaoConteudo').innerHTML = `
+      <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#856404;">
+        ⚠️ Você está usando a senha padrão. Por segurança, crie uma nova senha antes de continuar.
+      </div>
+      <form id="formTrocaSenha">
+        <div class="field">
+          <label>Nova senha</label>
+          <input type="password" id="novaSenha1" placeholder="Mínimo 8 caracteres" required autocomplete="new-password">
+        </div>
+        <div class="field">
+          <label>Confirmar nova senha</label>
+          <input type="password" id="novaSenha2" placeholder="Repita a senha" required autocomplete="new-password">
+        </div>
+        <div style="font-size:11.5px;color:#6b7280;margin-bottom:12px;line-height:1.6">
+          A senha deve ter: pelo menos 8 caracteres · 1 letra maiúscula · 1 número · 1 caractere especial (* @ ! # $ % &)
+        </div>
+        <div class="error-msg" id="trocaSenhaErro">Senha inválida.</div>
+        <button type="submit" class="btn" style="width:100%" id="btnTrocarSenha">Salvar nova senha e entrar</button>
+      </form>
+    `;
+    document.getElementById('formTrocaSenha').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const s1 = document.getElementById('novaSenha1').value;
+      const s2 = document.getElementById('novaSenha2').value;
+      const erroEl = document.getElementById('trocaSenhaErro');
+      if (s1 !== s2) { erroEl.textContent = 'As senhas não coincidem.'; erroEl.classList.add('show'); return; }
+      const forte = /[A-Z]/.test(s1) && /[0-9]/.test(s1) && /[*@!#$%&]/.test(s1) && s1.length >= 8;
+      if (!forte) { erroEl.textContent = 'A senha precisa ter pelo menos 8 caracteres, 1 letra maiúscula, 1 número e 1 caractere especial (* @ ! # $ % &).'; erroEl.classList.add('show'); return; }
+      erroEl.classList.remove('show');
+      const btn = document.getElementById('btnTrocarSenha');
+      btn.disabled = true; btn.textContent = 'Salvando...';
+      try {
+        const res = await fetch(`${SUPA_URL_DEN}/rest/v1/licencas?cpf_cnpj=eq.${encodeURIComponent(cpfCnpj)}`, {
+          method: 'PATCH',
+          headers: { 'apikey': SUPA_KEY_DEN, 'Authorization': 'Bearer ' + SUPA_KEY_DEN, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ senha: s1 })
+        });
+        if (!res.ok) { erroEl.textContent = 'Erro ao salvar. Tente novamente.'; erroEl.classList.add('show'); btn.disabled=false; btn.textContent='Salvar nova senha e entrar'; return; }
+        iniciar();
+      } catch(err) {
+        erroEl.textContent = 'Erro de conexão. Tente novamente.'; erroEl.classList.add('show');
+        btn.disabled=false; btn.textContent='Salvar nova senha e entrar';
+      }
+    });
+  }
   async function iniciarComLicenca() {
     const licencaSalva = load(STORAGE_KEYS.licenca, null);
-    const codigoUrl = new URLSearchParams(window.location.search).get('cod');
-    if (!licencaSalva && codigoUrl) { await tentarAtivarCodigo(codigoUrl); return; }
     if (!licencaSalva) { mostrarTelaAtivacao(); return; }
 
-    // Sempre valida no Supabase — se a licença foi excluída, bloqueia acesso
+    // Validar no Supabase se licença ainda existe
     let licSupa = null;
     let erroRede = false;
     try {
-      const res = await fetch(`${SUPA_URL_DEN}/rest/v1/licencas?codigo=eq.${encodeURIComponent(licencaSalva.codigo)}&limit=1`, {
+      const filtro = licencaSalva.cpfCnpj
+        ? `cpf_cnpj=eq.${encodeURIComponent(licencaSalva.cpfCnpj)}`
+        : `codigo=eq.${encodeURIComponent(licencaSalva.codigo)}`;
+      const res = await fetch(`${SUPA_URL_DEN}/rest/v1/licencas?${filtro}&limit=1`, {
         headers: { 'apikey': SUPA_KEY_DEN, 'Authorization': 'Bearer ' + SUPA_KEY_DEN },
         signal: AbortSignal.timeout(7000)
       });
       if (res.ok) {
         const rows = await res.json();
         licSupa = rows && rows.length > 0 ? rows[0] : null;
-      } else {
-        erroRede = true;
-      }
-    } catch(e) {
-      erroRede = true; // sem internet
-    }
+      } else { erroRede = true; }
+    } catch(e) { erroRede = true; }
 
     if (!erroRede && !licSupa) {
-      // Licença não existe mais no Supabase — acesso revogado
       localStorage.removeItem(STORAGE_KEYS.licenca);
       mostrarTelaAtivacao('Acesso não encontrado. Entre em contato com a JV Datalab.');
       return;
     }
 
-    // Usa dados do Supabase se disponível, senão usa cache local (sem internet)
     const dadosLicenca = licSupa ? {
-      id: licSupa.id, codigo: licSupa.codigo,
+      id: licSupa.id, codigo: licSupa.codigo || licencaSalva.codigo,
+      cpfCnpj: licSupa.cpf_cnpj || licencaSalva.cpfCnpj || '',
       nomeAssinante: licSupa.nome_assinante || licSupa.nome_cliente || '',
       telefone: licSupa.telefone || '', segmento: licSupa.segmento, plano: licSupa.plano || 'Starter',
       periodicidade: licSupa.periodicidade,
@@ -7049,10 +7109,10 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
       dataCriacao: licSupa.data_criacao, dataVencimento: licSupa.data_vencimento
     } : licencaSalva;
 
-    const resultado = validarLicencaObj(dadosLicenca, dadosLicenca.codigo);
+    const resultado = validarLicencaObj(dadosLicenca, dadosLicenca.codigo || dadosLicenca.cpfCnpj);
     if (!resultado.ok) {
       if (resultado.motivo === 'expirado') { mostrarTelaExpirada(); return; }
-      mostrarTelaAtivacao('Código inválido. Entre em contato com a JV Datalab.');
+      mostrarTelaAtivacao('Acesso inválido. Entre em contato com a JV Datalab.');
       return;
     }
     save(STORAGE_KEYS.licenca, resultado.licenca);
