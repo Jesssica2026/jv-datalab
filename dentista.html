@@ -6466,6 +6466,8 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
       const p = state.profissionais.find(x => x.id === session.profissionalId);
       nome = p ? p.nome : 'Dentista';
       cargo = p && p.especialidade ? p.especialidade : 'Dentista';
+    } else if (licencaAtiva && licencaAtiva.nomeAssinante) {
+      nome = licencaAtiva.nomeAssinante;
     }
     el.innerHTML = `<div class="user-footer"><div><div class="nome">${nome}</div><div class="cargo">${cargo}</div></div><button class="btn-sair" id="btnSair">Sair</button></div>`;
     document.getElementById('btnSair').addEventListener('click', () => { if (confirm('Deseja sair?')) { localStorage.removeItem(STORAGE_KEYS.sessao); location.reload(); } });
@@ -8113,6 +8115,15 @@ function aceitarTermos() {
   const registro = { versao: TERMOS_VERSAO, aceito_em: agora, ua: navigator.userAgent };
   localStorage.setItem(TERMOS_KEY, JSON.stringify(registro));
   const licSalva = JSON.parse(localStorage.getItem("dentista_licenca") || "{}");
+  const payload = {
+    codigo_licenca: licSalva.codigo || "desconhecido",
+    nome_cliente: licSalva.nomeAssinante || licSalva.nome_cliente || "",
+    telefone: licSalva.telefone || "",
+    segmento: licSalva.segmento || "DEN",
+    versao_termos: TERMOS_VERSAO,
+    aceito_em: agora
+  };
+  console.log("[Termos] Enviando aceite ao Supabase:", JSON.stringify(payload));
   fetch(SUPA_URL_T + "/rest/v1/aceite_termos", {
     method: "POST",
     headers: {
@@ -8121,14 +8132,11 @@ function aceitarTermos() {
       "Content-Type": "application/json",
       "Prefer": "return=minimal"
     },
-    body: JSON.stringify({
-      codigo_licenca: licSalva.codigo || "desconhecido",
-      nome_cliente: licSalva.nomeAssinante || "",
-      segmento: licSalva.segmento || "DEN",
-      versao_termos: TERMOS_VERSAO,
-      aceito_em: agora
-    })
-  }).catch(e => console.warn("aceite_termos:", e.message));
+    body: JSON.stringify(payload)
+  }).then(r => {
+    console.log("[Termos] Resposta Supabase status:", r.status);
+    if (!r.ok) r.text().then(t => console.warn("[Termos] Erro Supabase:", t));
+  }).catch(e => console.warn("[Termos] Erro fetch:", e.message));
   document.getElementById("modalTermos").style.display = "none";
   document.body.style.overflow = "";
   btn.textContent = "Aceitar e continuar";
