@@ -117,6 +117,7 @@
     </div>
     <div style="display:flex;gap:8px">
       <button class="btn-sair" id="btnSincronizar" style="background:var(--cor-secundaria);color:var(--cor-primaria);border:none;font-weight:700">⬆ Sincronizar</button>
+      <button class="btn-sair" id="btnLimparTudo" style="background:#e55;color:#fff;border:none;font-weight:700" title="Apaga todas as licenças do localStorage">🗑 Limpar tudo</button>
       <button class="btn-sair" id="btnSair">Sair</button>
     </div>
   </div>
@@ -502,7 +503,7 @@
             <button class="btn gold small" data-whats="${l.id}">🟢 WhatsApp</button>
             <button class="btn secondary small" data-renovar="${l.id}">Renovar</button>
             <button class="btn secondary small" data-editar="${l.id}">Editar</button>
-            <button class="btn danger small" data-excluir="${l.id}">Excluir</button>
+            <button class="btn danger small" data-excluir="${l.id || l.codigo}">Excluir</button>
           </div>
         </div>
       `;
@@ -517,10 +518,16 @@
 
   document.getElementById('btnConfirmarExcluir').addEventListener('click', () => {
     const id = modalConfirmar.dataset.idExcluir;
-    if (id) {
-      state.licencas = state.licencas.filter(l => l.id !== id);
+    const codigo = modalConfirmar.dataset.codigoExcluir;
+    if (id || codigo) {
+      // Remove por id OU por código (para licenças antigas sem id)
+      state.licencas = state.licencas.filter(l => {
+        if (id && l.id === id) return false;
+        if (!l.id && codigo && l.codigo === codigo) return false;
+        return true;
+      });
       save(STORAGE_KEYS.licencas, state.licencas);
-      excluirLicencaSupa(id);
+      if (id) excluirLicencaSupa(id);
       renderAssinantes();
       showToast('Assinante excluído.');
     }
@@ -562,9 +569,10 @@
       modalEditar.classList.add('open');
     } else if (btnExcluir) {
       const idExcluir = btnExcluir.dataset.excluir;
-      const licExcluir = state.licencas.find(l => l.id === idExcluir);
-      const nome = licExcluir ? licExcluir.nomeAssinante : 'este assinante';
-      modalConfirmar.dataset.idExcluir = idExcluir;
+      const licExcluir = state.licencas.find(l => l.id === idExcluir || l.codigo === idExcluir);
+      const nome = licExcluir ? (licExcluir.nomeAssinante || licExcluir.codigo || 'este assinante') : 'este assinante';
+      modalConfirmar.dataset.idExcluir = licExcluir?.id || '';
+      modalConfirmar.dataset.codigoExcluir = licExcluir?.codigo || idExcluir;
       document.getElementById('confirmarNome').textContent = nome;
       modalConfirmar.classList.add('open');
     }
@@ -654,6 +662,15 @@
     });
   }
   document.getElementById('btnSincronizar').addEventListener('click', () => sincronizarTudoSupa());
+
+  document.getElementById('btnLimparTudo').addEventListener('click', () => {
+    if (confirm('⚠️ Isso vai apagar TODAS as licenças do armazenamento local. Tem certeza?\n\nEssa ação não pode ser desfeita. As licenças no Supabase não serão afetadas.')) {
+      state.licencas = [];
+      save(STORAGE_KEYS.licencas, []);
+      renderAssinantes();
+      showToast('Todas as licenças locais foram apagadas.');
+    }
+  });
   document.getElementById('btnSair').addEventListener('click', () => {
     if (confirm('Deseja sair?')) { localStorage.removeItem(STORAGE_KEYS.sessao); location.reload(); }
   });
