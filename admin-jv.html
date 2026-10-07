@@ -139,8 +139,8 @@
       <h3>Novo assinante</h3>
       <form id="formAssinante">
         <div class="form-grid">
-          <div class="field"><label>Nome do assinante / negócio</label><input type="text" id="assNome" required></div>
-          <div class="field"><label>CPF / CNPJ</label><input type="text" id="assCpfCnpj" placeholder="000.000.000-00 ou 00.000.000/0001-00"></div>
+          <div class="field"><label>Nome do estabelecimento</label><input type="text" id="assNome" placeholder="Ex: Clínica Sorriso Belo" required></div>
+          <div class="field"><label>CPF / CNPJ <span style="color:#c0392b">*</span></label><input type="text" id="assCpfCnpj" placeholder="000.000.000-00 ou 00.000.000/0001-00" required></div>
           <div class="field"><label>Telefone (WhatsApp)</label><input type="tel" id="assTelefone" placeholder="(11) 99999-9999" required></div>
           <div class="field">
             <label>Segmento</label>
@@ -172,7 +172,7 @@
           <div class="field"><label>Armazenamento (GB)</label><input type="text" id="assLimiteGB" value="1 GB" style="pointer-events:none;background:#f0f1f5;color:#6b7280"></div>
           <div class="field"><label>Data de vencimento</label><input type="date" id="assVencimento" required></div>
         </div>
-        <div class="btn-row"><button type="submit" class="btn">Gerar código e cadastrar</button></div>
+        <div class="btn-row"><button type="submit" class="btn">Cadastrar assinante</button></div>
       </form>
     </div>
 
@@ -226,7 +226,8 @@
     <h3>Editar assinante</h3>
     <form id="formEditarAssinante">
       <input type="hidden" id="editId">
-      <div class="field"><label>Nome do assinante / negócio</label><input type="text" id="editNome" required></div>
+      <div class="field"><label>Nome do estabelecimento</label><input type="text" id="editNome" required></div>
+      <div class="field"><label>CPF / CNPJ</label><input type="text" id="editCpfCnpj" placeholder="000.000.000-00 ou 00.000.000/0001-00"></div>
       <div class="field"><label>Telefone (WhatsApp)</label><input type="tel" id="editTelefone" required></div>
       <div class="field">
         <label>Plano</label>
@@ -245,6 +246,10 @@
         <button type="button" class="btn secondary" id="btnFecharModalEditar">Cancelar</button>
       </div>
     </form>
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid #e3e5ec;">
+      <p style="font-size:12.5px;color:#6b7280;margin-bottom:8px">🔑 Recuperação de acesso</p>
+      <button type="button" class="btn secondary small" id="btnZerarSenha" style="width:100%">Zerar senha para 123456</button>
+    </div>
   </div>
 </div>
 
@@ -252,7 +257,7 @@
 <div class="modal-overlay" id="modalConfirmar">
   <div class="modal" style="max-width:360px;text-align:center">
     <h3 style="color:#c0392b">Excluir assinante?</h3>
-    <p style="font-size:13.5px;color:#4b5162;margin:10px 0 20px"><strong id="confirmarNome"></strong><br>O código de ativação deixará de funcionar imediatamente.</p>
+    <p style="font-size:13.5px;color:#4b5162;margin:10px 0 20px"><strong id="confirmarNome"></strong><br>O cliente perderá o acesso imediatamente.</p>
     <div class="btn-row" style="justify-content:center;gap:12px">
       <button type="button" class="btn danger" id="btnConfirmarExcluir">Sim, excluir</button>
       <button type="button" class="btn secondary" id="btnCancelarExcluir">Cancelar</button>
@@ -364,6 +369,12 @@
   }
   function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function formatarCpfCnpj(v) {
+    v = (v || '').replace(/\D/g,'');
+    if (v.length === 11) return v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    if (v.length === 14) return v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+    return v;
+  }
   function todayISO() { return new Date().toISOString().slice(0, 10); }
   function somarDias(iso, n) { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
   function formatDateBR(iso) { if (!iso) return ''; const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; }
@@ -496,7 +507,7 @@
           <div class="topo-card">
             <div>
               <div class="nome">${l.nomeAssinante || l.nome_cliente || '(sem nome)'} <span class="badge ${status}">${badgeLabel}</span></div>
-              <div class="codigo">${l.codigo}</div>
+              <div class="codigo">${l.cpfCnpj ? formatarCpfCnpj(l.cpfCnpj) : (l.codigo || '—')}</div>
             </div>
             <div style="text-align:right">
               <div class="meta">${SEGMENTO_LABEL[l.segmento] || l.segmento}</div>
@@ -506,10 +517,10 @@
             </div>
           </div>
           <div class="acoes">
-            <button class="btn secondary small" data-link="${l.id}">Copiar link de acesso</button>
             <button class="btn gold small" data-whats="${l.id}">🟢 WhatsApp</button>
             <button class="btn secondary small" data-renovar="${l.id}">Renovar</button>
             <button class="btn secondary small" data-editar="${l.id}">Editar</button>
+            <button class="btn secondary small" data-zerarsenha="${l.id}">🔑 Zerar senha</button>
             <button class="btn danger small" data-excluir="${l.id || l.codigo}">Excluir</button>
           </div>
         </div>
@@ -545,17 +556,13 @@
   });
 
   document.getElementById('listaAssinantes').addEventListener('click', (e) => {
-    const btnLink = e.target.closest('[data-link]');
     const btnWhats = e.target.closest('[data-whats]');
     const btnRenovar = e.target.closest('[data-renovar]');
     const btnEditar = e.target.closest('[data-editar]');
+    const btnZerarSenha = e.target.closest('[data-zerarsenha]');
     const btnExcluir = e.target.closest('[data-excluir]');
 
-    if (btnLink) {
-      const lic = state.licencas.find(l => l.id === btnLink.dataset.link);
-      document.getElementById('linkAcessoValor').value = getLinkAcesso(lic);
-      modalLinkAcesso.classList.add('open');
-    } else if (btnWhats) {
+    if (btnWhats) {
       const lic = state.licencas.find(l => l.id === btnWhats.dataset.whats);
       const numero = limparTelefoneWhats(lic.telefone);
       if (!numero) { alert('Este assinante não tem telefone cadastrado.'); return; }
@@ -564,10 +571,30 @@
       licencaSelecionada = state.licencas.find(l => l.id === btnRenovar.dataset.renovar);
       document.getElementById('renovarData').value = somarDias(todayISO(), 30);
       modalRenovar.classList.add('open');
+    } else if (btnZerarSenha) {
+      const lic = state.licencas.find(l => l.id === btnZerarSenha.dataset.zerarsenha);
+      if (!lic) return;
+      if (!confirm(`Zerar a senha de "${lic.nomeAssinante || 'este assinante'}" para 123456?\n\nO cliente precisará trocar a senha no próximo acesso.`)) return;
+      lic.senhaPadrao = '123456';
+      save(STORAGE_KEYS.licencas, state.licencas);
+      // Atualizar no Supabase
+      if (lic.cpfCnpj) {
+        fetch(`${SUPA_URL}/rest/v1/licencas?cpf_cnpj=eq.${encodeURIComponent(lic.cpfCnpj)}`, {
+          method: 'PATCH', headers: { ...SUPA_HEADERS, 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ senha: '123456' })
+        }).catch(e => console.warn('Supabase zerar senha:', e));
+      } else if (lic.id) {
+        fetch(`${SUPA_URL}/rest/v1/licencas?id=eq.${lic.id}`, {
+          method: 'PATCH', headers: { ...SUPA_HEADERS, 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ senha: '123456' })
+        }).catch(e => console.warn('Supabase zerar senha:', e));
+      }
+      showToast(`Senha zerada! ${lic.nomeAssinante || ''} precisará trocar no próximo acesso.`);
     } else if (btnEditar) {
       const lic = state.licencas.find(l => l.id === btnEditar.dataset.editar);
       document.getElementById('editId').value = lic.id;
       document.getElementById('editNome').value = lic.nomeAssinante;
+      document.getElementById('editCpfCnpj').value = lic.cpfCnpj ? formatarCpfCnpj(lic.cpfCnpj) : '';
       document.getElementById('editTelefone').value = lic.telefone;
       document.getElementById('editPlano').value = lic.plano;
       document.getElementById('editLimite').value = lic.limiteProfissionais;
@@ -609,6 +636,22 @@
 
   document.getElementById('btnFecharModalEditar').addEventListener('click', () => modalEditar.classList.remove('open'));
   modalEditar.addEventListener('click', (e) => { if (e.target === modalEditar) modalEditar.classList.remove('open'); });
+  document.getElementById('btnZerarSenha').addEventListener('click', () => {
+    const id = document.getElementById('editId').value;
+    const lic = state.licencas.find(l => l.id === id);
+    if (!lic) return;
+    if (!confirm(`Zerar senha de "${lic.nomeAssinante}" para 123456?`)) return;
+    lic.senhaPadrao = '123456';
+    save(STORAGE_KEYS.licencas, state.licencas);
+    if (lic.cpfCnpj) {
+      fetch(`${SUPA_URL}/rest/v1/licencas?cpf_cnpj=eq.${encodeURIComponent(lic.cpfCnpj)}`, {
+        method: 'PATCH', headers: { ...SUPA_HEADERS, 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ senha: '123456' })
+      }).catch(e => console.warn('Supabase zerar senha:', e));
+    }
+    modalEditar.classList.remove('open');
+    showToast('Senha zerada! Cliente precisará trocar no próximo acesso.');
+  });
   document.getElementById('formEditarAssinante').addEventListener('submit', (e) => {
     e.preventDefault();
     const lic = state.licencas.find(l => l.id === document.getElementById('editId').value);
@@ -616,6 +659,8 @@
     const planoEditado = document.getElementById('editPlano').value;
     const cfgEditado = PLANOS[planoEditado] || PLANOS['Starter'];
     lic.nomeAssinante = document.getElementById('editNome').value.trim();
+    const cpfEditado = document.getElementById('editCpfCnpj').value.trim().replace(/\D/g,'');
+    if (cpfEditado) lic.cpfCnpj = cpfEditado;
     lic.telefone = document.getElementById('editTelefone').value.trim();
     lic.plano = planoEditado;
     lic.limiteProfissionais = Math.max(1, parseInt(document.getElementById('editLimite').value, 10) || 1);
