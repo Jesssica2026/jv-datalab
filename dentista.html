@@ -6368,15 +6368,16 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
     document.documentElement.style.setProperty('--cor-secundaria', state.config.corSecundaria || DEFAULT_CONFIG.corSecundaria);
   }
   function renderSetupForm() {
+    const nomeAuto = (licencaAtiva && licencaAtiva.nomeAssinante) ? licencaAtiva.nomeAssinante : (state.config.nomeNegocio || 'Clínica Odontológica');
+    if (!state.config.nomeNegocio && nomeAuto) state.config.nomeNegocio = nomeAuto;
     const box = document.getElementById('loginConteudo');
     box.innerHTML = `
-      <p style="font-size:13px;color:#6b7280;margin-bottom:16px">Primeiro acesso — crie a senha do administrador.</p>
+      <p style="font-size:13px;color:#6b7280;margin-bottom:16px">Primeiro acesso — crie a senha de administrador para <strong>${nomeAuto}</strong>.</p>
       <form id="formSetupAdmin">
-        <div class="field"><label>Nome da clínica</label><input type="text" id="setupNomeNegocio" value="${state.config.nomeNegocio || 'Clínica Odontológica'}"></div>
-        <div class="field"><label>Crie uma senha</label><input type="password" id="setupSenha" required></div>
+        <div class="field"><label>Crie uma senha</label><input type="password" id="setupSenha" required autofocus></div>
         <div class="field"><label>Confirme a senha</label><input type="password" id="setupSenhaConfirma" required></div>
         <div class="error-msg" id="setupErro">As senhas não coincidem.</div>
-        <button type="submit" class="btn" style="width:100%;margin-top:8px">Criar conta de administrador</button>
+        <button type="submit" class="btn" style="width:100%;margin-top:8px">Criar senha e entrar</button>
       </form>
     `;
     document.getElementById('formSetupAdmin').addEventListener('submit', (e) => {
@@ -6384,7 +6385,7 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
       const senha = document.getElementById('setupSenha').value;
       const confirma = document.getElementById('setupSenhaConfirma').value;
       if (!senha || senha !== confirma) { document.getElementById('setupErro').classList.add('show'); return; }
-      state.config.nomeNegocio = document.getElementById('setupNomeNegocio').value.trim() || 'Clínica Odontológica';
+      state.config.nomeNegocio = nomeAuto;
       state.config.senhaAdmin = senha;
       state.config.codigoMaster = gerarCodigoMaster();
       save(STORAGE_KEYS.config, state.config);
