@@ -140,6 +140,7 @@
       <form id="formAssinante">
         <div class="form-grid">
           <div class="field"><label>Nome do assinante / negócio</label><input type="text" id="assNome" required></div>
+          <div class="field"><label>CPF / CNPJ</label><input type="text" id="assCpfCnpj" placeholder="000.000.000-00 ou 00.000.000/0001-00"></div>
           <div class="field"><label>Telefone (WhatsApp)</label><input type="tel" id="assTelefone" placeholder="(11) 99999-9999" required></div>
           <div class="field">
             <label>Segmento</label>
@@ -283,6 +284,10 @@
       segmento: lic.segmento,
       plano: lic.plano,
       nome_cliente: lic.nomeAssinante,
+      nome_assinante: lic.nomeAssinante,
+      telefone: lic.telefone || '',
+      cpf_cnpj: lic.cpfCnpj || '',
+      senha: lic.senhaPadrao || '123456',
       data_vencimento: lic.dataVencimento
     };
   }
@@ -399,7 +404,7 @@
     return (base.endsWith('/') ? base : base + '/') + arquivo;
   }
   function mensagemBoasVindas(lic) {
-    return `Olá ${lic.nomeAssinante}! Seu acesso ao sistema ${state.config.nomeEmpresa || 'JV Datalab'} foi liberado 🎉\n\n📎 Link de acesso: ${getLinkAcesso(lic)}\n🔑 Código de ativação: ${lic.codigo}\n\nAo abrir o link pela primeira vez, insira o código de ativação e crie sua senha.\n\nQualquer dúvida, estamos à disposição!`;
+    return `Olá ${lic.nomeAssinante}! Seu acesso ao sistema ${state.config.nomeEmpresa || 'JV Datalab'} foi liberado 🎉\n\n📎 Link de acesso: ${getLinkAcesso(lic)}\n🔐 Login: CPF/CNPJ cadastrado + senha inicial: 123456\n⚠️ Troque sua senha no primeiro acesso!\n\nQualquer dúvida, estamos à disposição!`;
   }
   function statusLicenca(lic) {
     const hoje = todayISO();
@@ -436,6 +441,8 @@
       id: uid(),
       codigo: gerarCodigoUnico(segmento),
       nomeAssinante: document.getElementById('assNome').value.trim(),
+      cpfCnpj: document.getElementById('assCpfCnpj').value.trim().replace(/\D/g,''),
+      senhaPadrao: '123456',
       telefone: document.getElementById('assTelefone').value.trim(),
       segmento,
       plano: planoSel,
