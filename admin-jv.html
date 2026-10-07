@@ -325,7 +325,10 @@
     box.innerHTML = '<span style="color:#9aa0ab">Carregando...</span>';
     try {
       const res = await fetch(`${SUPA_URL}/rest/v1/aceite_termos?order=aceito_em.desc&limit=100`, { headers: SUPA_HEADERS });
+      console.log('[Admin] aceite_termos status:', res.status);
       const data = await res.json();
+      console.log('[Admin] aceite_termos data:', JSON.stringify(data));
+      if (!res.ok) { box.innerHTML = `<span style="color:#e55;">Erro ${res.status}: ${JSON.stringify(data)}</span>`; return; }
       if (!data || !data.length) { box.innerHTML = '<span style="color:#9aa0ab">Nenhum aceite registrado ainda.</span>'; return; }
       box.innerHTML = data.map(a => {
         const dt = a.aceito_em ? new Date(a.aceito_em).toLocaleString('pt-BR') : '—';
