@@ -6409,8 +6409,18 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
         <button type="submit" class="btn" style="width:100%;margin-top:8px">Entrar</button>
       </form>
       <button type="button" class="link-btn" id="btnEsqueciSenha">Esqueci minha senha</button>
+      <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid #e3e5ec;">
+        <p style="font-size:12px;color:#9aa0ab;margin-bottom:6px">Quer usar um código diferente?</p>
+        <button type="button" id="btnUsarOutroCodigo" style="background:none;border:none;color:#0d1b3e;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;font-family:inherit;">Ativar com outro código</button>
+      </div>
     `;
     document.getElementById('btnEsqueciSenha').addEventListener('click', abrirModalEsqueciSenha);
+    document.getElementById('btnUsarOutroCodigo').addEventListener('click', () => {
+      localStorage.removeItem(STORAGE_KEYS.licenca);
+      localStorage.removeItem(STORAGE_KEYS.config);
+      localStorage.removeItem(STORAGE_KEYS.sessao);
+      mostrarTelaAtivacao();
+    });
     document.getElementById('formLogin').addEventListener('submit', (e) => {
       e.preventDefault();
       const senha = document.getElementById('loginSenha').value;
@@ -7001,23 +7011,51 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
     const codigoUrl = new URLSearchParams(window.location.search).get('cod');
     if (!licencaSalva && codigoUrl) { await tentarAtivarCodigo(codigoUrl); return; }
     if (!licencaSalva) { mostrarTelaAtivacao(); return; }
-    let resultado = validarCodigoAtivacao(licencaSalva.codigo);
-    if (!resultado.ok && resultado.motivo === 'invalido') {
-      const licSupa = await buscarLicencaSupabase(licencaSalva.codigo);
-      if (licSupa) {
-        resultado = validarLicencaObj(licSupa, licencaSalva.codigo);
+
+    // Sempre valida no Supabase — se a licença foi excluída, bloqueia acesso
+    let licSupa = null;
+    let erroRede = false;
+    try {
+      const res = await fetch(`${SUPA_URL_DEN}/rest/v1/licencas?codigo=eq.${encodeURIComponent(licencaSalva.codigo)}&limit=1`, {
+        headers: { 'apikey': SUPA_KEY_DEN, 'Authorization': 'Bearer ' + SUPA_KEY_DEN },
+        signal: AbortSignal.timeout(7000)
+      });
+      if (res.ok) {
+        const rows = await res.json();
+        licSupa = rows && rows.length > 0 ? rows[0] : null;
       } else {
-        // Supabase inacessível mas tem licença salva — deixa entrar
-        licencaAtiva = licencaSalva;
-        iniciar();
-        return;
+        erroRede = true;
       }
+    } catch(e) {
+      erroRede = true; // sem internet
     }
+
+    if (!erroRede && !licSupa) {
+      // Licença não existe mais no Supabase — acesso revogado
+      localStorage.removeItem(STORAGE_KEYS.licenca);
+      mostrarTelaAtivacao('Acesso não encontrado. Entre em contato com a JV Datalab.');
+      return;
+    }
+
+    // Usa dados do Supabase se disponível, senão usa cache local (sem internet)
+    const dadosLicenca = licSupa ? {
+      id: licSupa.id, codigo: licSupa.codigo,
+      nomeAssinante: licSupa.nome_assinante || licSupa.nome_cliente || '',
+      telefone: licSupa.telefone || '', segmento: licSupa.segmento, plano: licSupa.plano || 'Starter',
+      periodicidade: licSupa.periodicidade,
+      limiteProfissionais: licSupa.limite_profissionais || 1,
+      limiteClientes: licSupa.limite_clientes || 50,
+      temIA: licSupa.tem_ia || false,
+      dataCriacao: licSupa.data_criacao, dataVencimento: licSupa.data_vencimento
+    } : licencaSalva;
+
+    const resultado = validarLicencaObj(dadosLicenca, dadosLicenca.codigo);
     if (!resultado.ok) {
       if (resultado.motivo === 'expirado') { mostrarTelaExpirada(); return; }
       mostrarTelaAtivacao('Código inválido. Entre em contato com a JV Datalab.');
       return;
     }
+    save(STORAGE_KEYS.licenca, resultado.licenca);
     licencaAtiva = resultado.licenca;
     iniciar();
   }
