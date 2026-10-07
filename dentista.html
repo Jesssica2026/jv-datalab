@@ -6918,9 +6918,9 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
     document.getElementById('telaLogin').style.display = 'none';
     document.getElementById('appContainer').style.display = 'none';
     document.getElementById('ativacaoConteudo').innerHTML = `
-      <p style="font-size:13px;color:#6b7280;margin-bottom:16px">Entre com seu CPF ou CNPJ e senha para acessar o sistema.</p>
+      <p style="font-size:13px;color:#6b7280;margin-bottom:16px">Entre com o nome do estabelecimento ou CPF/CNPJ e sua senha para acessar o sistema.</p>
       <form id="formAtivacao">
-        <div class="field"><label>CPF / CNPJ</label><input type="text" id="inputCpfCnpj" placeholder="000.000.000-00 ou 00.000.000/0001-00" required autocomplete="username"></div>
+        <div class="field"><label>Nome do estabelecimento ou CPF/CNPJ</label><input type="text" id="inputCpfCnpj" placeholder="Nome ou CPF/CNPJ" required autocomplete="username"></div>
         <div class="field"><label>Senha</label><input type="password" id="inputSenhaLogin" placeholder="Sua senha" required autocomplete="current-password"></div>
         <div class="error-msg ${erro ? 'show' : ''}" id="ativacaoErro">${erro || 'CPF/CNPJ ou senha incorretos.'}</div>
         <button type="submit" class="btn" style="width:100%;margin-top:8px" id="btnEntrar">Entrar</button>
@@ -6928,7 +6928,7 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
     `;
     document.getElementById('formAtivacao').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const cpfCnpj = document.getElementById('inputCpfCnpj').value.trim().replace(/\D/g,'');
+      const cpfCnpj = document.getElementById('inputCpfCnpj').value.trim();
       const senha = document.getElementById('inputSenhaLogin').value;
       const btn = document.getElementById('btnEntrar');
       btn.disabled = true; btn.textContent = 'Verificando...';
@@ -6976,24 +6976,45 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
     licencaAtiva = resultado.licenca;
     iniciar();
   }
-  async function tentarLoginCpfSenha(cpfCnpj, senha) {
+  async function tentarLoginCpfSenha(inputLogin, senha) {
     try {
-      const res = await fetch(`${SUPA_URL_DEN}/rest/v1/licencas?cpf_cnpj=eq.${encodeURIComponent(cpfCnpj)}&segmento=eq.DEN&limit=1`, {
-        headers: { 'apikey': SUPA_KEY_DEN, 'Authorization': 'Bearer ' + SUPA_KEY_DEN },
-        signal: AbortSignal.timeout(7000)
-      });
-      if (!res.ok) { document.getElementById('ativacaoErro').classList.add('show'); return; }
-      const rows = await res.json();
-      if (!rows || rows.length === 0) { document.getElementById('ativacaoErro').classList.add('show'); return; }
+      // Detectar se é CPF/CNPJ (só números, 11 ou 14 dígitos) ou nome
+      const soNumeros = inputLogin.replace(/\D/g,'');
+      const ehCpfCnpj = (soNumeros.length === 11 || soNumeros.length === 14);
+      let rows = null;
+      if (ehCpfCnpj) {
+        const res = await fetch(`${SUPA_URL_DEN}/rest/v1/licencas?cpf_cnpj=eq.${encodeURIComponent(soNumeros)}&segmento=eq.DEN&limit=1`, {
+          headers: { 'apikey': SUPA_KEY_DEN, 'Authorization': 'Bearer ' + SUPA_KEY_DEN },
+          signal: AbortSignal.timeout(7000)
+        });
+        if (!res.ok) { document.getElementById('ativacaoErro').classList.add('show'); return; }
+        rows = await res.json();
+      } else {
+        // Buscar por nome do estabelecimento (ilike)
+        const res = await fetch(`${SUPA_URL_DEN}/rest/v1/licencas?nome_assinante=ilike.${encodeURIComponent('*'+inputLogin+'*')}&segmento=eq.DEN&limit=5`, {
+          headers: { 'apikey': SUPA_KEY_DEN, 'Authorization': 'Bearer ' + SUPA_KEY_DEN },
+          signal: AbortSignal.timeout(7000)
+        });
+        if (!res.ok) { document.getElementById('ativacaoErro').classList.add('show'); return; }
+        const todosFiltrados = await res.json();
+        // Encontrar exato (case-insensitive) ou parcial
+        rows = todosFiltrados && todosFiltrados.length > 0
+          ? todosFiltrados.filter(r => (r.nome_assinante||'').toLowerCase().includes(inputLogin.toLowerCase()))
+          : [];
+      }
+      if (!rows || rows.length === 0) {
+        document.getElementById('ativacaoErro').innerHTML = 'Estabelecimento não encontrado. Verifique o nome ou CPF/CNPJ.';
+        document.getElementById('ativacaoErro').classList.add('show'); return;
+      }
       const licSupa = rows[0];
       if ((licSupa.senha || '123456') !== senha) {
-        document.getElementById('ativacaoErro').innerHTML = 'CPF/CNPJ ou senha incorretos.';
+        document.getElementById('ativacaoErro').innerHTML = 'Senha incorreta.';
         document.getElementById('ativacaoErro').classList.add('show');
         return;
       }
       const dadosLicenca = {
         id: licSupa.id, codigo: licSupa.codigo || licSupa.id,
-        cpfCnpj: licSupa.cpf_cnpj || cpfCnpj,
+        cpfCnpj: licSupa.cpf_cnpj || (ehCpfCnpj ? soNumeros : ''),
         nomeAssinante: licSupa.nome_assinante || licSupa.nome_cliente || '',
         telefone: licSupa.telefone || '', segmento: licSupa.segmento, plano: licSupa.plano || 'Starter',
         periodicidade: licSupa.periodicidade,
@@ -7012,7 +7033,7 @@ ${o.obs?'<div class="section"><h2>Observações</h2><div style="font-size:13px;c
       save(STORAGE_KEYS.licenca, resultado.licenca);
       licencaAtiva = resultado.licenca;
       if (senha === '123456') {
-        mostrarTrocaSenhaObrigatoria(cpfCnpj);
+        mostrarTrocaSenhaObrigatoria(licSupa.cpf_cnpj || soNumeros);
         return;
       }
       iniciar();
