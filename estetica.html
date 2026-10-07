@@ -6994,20 +6994,35 @@
 
     // Validar no Supabase se licença ainda existe
     let licSupa = null;
-    let erroRede = false;
+    let erroRede = false; // true = sem internet/timeout (offline fallback)
     try {
-      const filtro = licencaSalva.cpfCnpj
-        ? `cpf_cnpj=eq.${encodeURIComponent(licencaSalva.cpfCnpj)}`
-        : `codigo=eq.${encodeURIComponent(licencaSalva.codigo)}`;
-      const res = await fetch(`${SUPA_URL_EST}/rest/v1/licencas?${filtro}&limit=1`, {
+      // Tentar primeiro por codigo (coluna sempre existiu), depois por cpf_cnpj
+      const filtroCodigo = licencaSalva.codigo
+        ? `codigo=eq.${encodeURIComponent(licencaSalva.codigo)}&limit=1`
+        : null;
+      const filtroCpf = licencaSalva.cpfCnpj
+        ? `cpf_cnpj=eq.${encodeURIComponent(licencaSalva.cpfCnpj)}&limit=1`
+        : null;
+      const filtro = filtroCodigo || filtroCpf;
+      if (!filtro) { mostrarTelaAtivacao(); return; }
+
+      const res = await fetch(`${SUPA_URL_EST}/rest/v1/licencas?${filtro}`, {
         headers: { 'apikey': SUPA_KEY_EST, 'Authorization': 'Bearer ' + SUPA_KEY_EST },
         signal: AbortSignal.timeout(7000)
       });
       if (res.ok) {
         const rows = await res.json();
         licSupa = rows && rows.length > 0 ? rows[0] : null;
-      } else { erroRede = true; }
-    } catch(e) { erroRede = true; }
+      } else if (res.status >= 500) {
+        // Erro interno do servidor — pode ser instabilidade, permitir cache
+        erroRede = true;
+      } else {
+        // 400, 401, 403, 404 etc — problema de dados/config, negar acesso
+        localStorage.removeItem(STORAGE_KEYS.licenca);
+        mostrarTelaAtivacao('Erro ao verificar acesso. Entre em contato com a JV Datalab.');
+        return;
+      }
+    } catch(e) { erroRede = true; } // timeout ou sem internet
 
     if (!erroRede && !licSupa) {
       localStorage.removeItem(STORAGE_KEYS.licenca);
