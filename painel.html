@@ -5625,14 +5625,14 @@ async function tentarAtivarCodigo(codigo) {
       const ehCpfCnpj = (soNumeros.length === 11 || soNumeros.length === 14);
       let rows = null;
       if (ehCpfCnpj) {
-        const res = await fetch(`${SUPA_URL_PAI}/rest/v1/licencas?cpf_cnpj=eq.${encodeURIComponent(soNumeros)}&segmento=eq.SAL&limit=1`, {
+        const res = await fetch(`${SUPA_URL_PAI}/rest/v1/licencas?cpf_cnpj=eq.${encodeURIComponent(soNumeros)}&segmento=in.(SAL,BAR)&limit=1`, {
           headers: { 'apikey': SUPA_KEY_PAI, 'Authorization': 'Bearer ' + SUPA_KEY_PAI },
           signal: AbortSignal.timeout(7000)
         });
         if (!res.ok) { document.getElementById('ativacaoErro').classList.add('show'); return; }
         rows = await res.json();
       } else {
-        const res = await fetch(`${SUPA_URL_PAI}/rest/v1/licencas?nome_assinante=ilike.${encodeURIComponent('*'+inputLogin+'*')}&segmento=eq.SAL&limit=5`, {
+        const res = await fetch(`${SUPA_URL_PAI}/rest/v1/licencas?nome_assinante=ilike.${encodeURIComponent('*'+inputLogin+'*')}&segmento=in.(SAL,BAR)&limit=5`, {
           headers: { 'apikey': SUPA_KEY_PAI, 'Authorization': 'Bearer ' + SUPA_KEY_PAI },
           signal: AbortSignal.timeout(7000)
         });
