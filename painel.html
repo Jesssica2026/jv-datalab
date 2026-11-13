@@ -5598,18 +5598,17 @@
     document.getElementById('btnWhatsExpirado').addEventListener('click', () => abrirWhatsSuporte('Olá! Minha assinatura do sistema venceu e gostaria de renovar.'));
   }
 async function tentarAtivarCodigo(codigo) {
-  let resultado = validarCodigoAtivacao(codigo);
-  // Se inválido OU expirado no cache, busca no Supabase para ver se foi renovado
-  if (!resultado.ok) {
-    const licSupa = await buscarLicencaSupabase(codigo);
-    if (licSupa) {
-      resultado = validarLicencaObj(licSupa, codigo);
-    } else if (resultado.motivo === 'invalido') {
-      mostrarTelaAtivacao('Código não encontrado. Verifique o código e sua conexão com a internet.');
-      return;
-    }
-    // Se não conseguiu buscar no Supabase (sem internet) e estava expirado no cache, mostra expirado
-  }
+    let resultado = validarCodigoAtivacao(codigo);
+    // Se inválido OU expirado no cache, busca no Supabase para ver se foi renovado
+    if (!resultado.ok) {
+      const licSupa = await buscarLicencaSupabase(codigo);
+      if (licSupa) {
+        resultado = validarLicencaObj(licSupa, codigo);
+      } else if (resultado.motivo === 'invalido') {
+        mostrarTelaAtivacao('Código não encontrado. Verifique o código e sua conexão com a internet.');
+        return;
+      }
+      // Se não conseguiu buscar no Supabase (sem internet) e estava expirado no cache, mostra expirado
     }
     if (!resultado.ok) {
       if (resultado.motivo === 'expirado') { mostrarTelaExpirada(); return; }
